@@ -1,0 +1,32 @@
+{
+  "name": "@story-studio/studio",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "vue-tsc -b && vite build",
+    "dev": "vite --host 127.0.0.1",
+    "lint": "eslint .",
+    "mobile:info": "node ./scripts/mobile-info.mjs",
+    "tauri:build": "node ./scripts/tauri-build.mjs",
+    "tauri:build:raw": "tauri build",
+    "tauri:dev": "tauri dev",
+    "test": "vitest run --passWithNoTests",
+    "typecheck": "vue-tsc -b"
+  },
+  "dependencies": {
+    "@story-studio/types": "workspace:*",
+    "@story-studio/utils": "workspace:*",
+    "@tauri-apps/api": "catalog:tauri",
+    "vue": "catalog:prod"
+  },
+  "devDependencies": {
+    "@story-studio/config": "workspace:*",
+    "@tauri-apps/cli": "catalog:tauri",
+    "@types/node": "catalog:dev",
+    "@vitejs/plugin-vue": "catalog:frontend",
+    "typescript": "catalog:dev",
+    "vite": "catalog:frontend",
+    "vitest": "catalog:dev",
+    "vue-tsc": "catalog:frontend"
+  }
+}

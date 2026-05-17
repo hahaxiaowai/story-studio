@@ -1,0 +1,12 @@
+node_modules
+dist
+dist-ssr
+.turbo
+.cargo-target
+*.local
+
+apps/*/src-tauri/target
+apps/*/src-tauri/gen
+
+.DS_Store
+Thumbs.db

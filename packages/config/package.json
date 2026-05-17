@@ -1,0 +1,13 @@
+{
+  "name": "@story-studio/config",
+  "type": "module",
+  "private": true,
+  "exports": {
+    "./tsconfig/base": "./tsconfig/base.json",
+    "./vitest": "./src/vitest.ts"
+  },
+  "devDependencies": {
+    "typescript": "catalog:dev",
+    "vitest": "catalog:dev"
+  }
+}

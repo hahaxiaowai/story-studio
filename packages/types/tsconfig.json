@@ -1,0 +1,4 @@
+{
+  "extends": "@story-studio/config/tsconfig/base",
+  "include": ["src/**/*.ts"]
+}
