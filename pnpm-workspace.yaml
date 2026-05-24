@@ -1,6 +1,8 @@
 shellEmulator: true
 
 trustPolicy: no-downgrade
+trustPolicyExclude:
+  - undici-types@6.21.0
 
 packages:
   - apps/*
@@ -8,12 +10,15 @@ packages:
 
 allowBuilds:
   esbuild: true
+  simple-git-hooks: true
 
 catalogs:
   dev:
     '@antfu/eslint-config': ^6.0.0
     '@types/node': ^22.19.3
     eslint: ^9.39.2
+    devmoji: ^2.3.0
+    simple-git-hooks: ^2.13.1
     turbo: ^2.6.3
     typescript: ^5.9.3
     vitest: ^4.0.15
