@@ -1,7 +1,1 @@
-export function createSlug(input: string): string {
-  return input
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-}
+export { createSlug } from './slug'

@@ -1,6 +1,6 @@
 // @env browser
 import { createApp } from 'vue'
-import App from './app/App.vue'
-import './app/styles.css'
+import App from './App.vue'
+import './styles/main.css'
 
 createApp(App).mount('#app')

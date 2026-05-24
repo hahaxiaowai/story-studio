@@ -1,14 +1,7 @@
 <script setup lang="ts">
-import type { StoryProject } from '@story-studio/types'
 import { createSlug } from '@story-studio/utils'
 import { computed } from 'vue'
-
-const sampleProject: StoryProject = {
-  id: 'project-seed',
-  title: 'Story Studio',
-  createdAt: '2026-05-17T00:00:00.000Z',
-  updatedAt: '2026-05-17T00:00:00.000Z',
-}
+import { sampleProject } from '../constants/project'
 
 const projectSlug = computed<string>(() => createSlug(sampleProject.title))
 </script>

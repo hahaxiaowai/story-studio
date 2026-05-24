@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createSlug } from './index'
+import { createSlug } from './slug'
 
 describe('createSlug', () => {
   it('normalizes story titles into route-safe slugs', () => {
