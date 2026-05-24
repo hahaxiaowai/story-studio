@@ -1,12 +1,8 @@
 import type { ComputedRef } from 'vue'
-import { computed, ref, watch } from 'vue'
+import { computed, watch } from 'vue'
+import { useStudioData } from '@/modules/storage/useStudioData'
 
 export type ThemeMode = 'light' | 'dark'
-
-const THEME_MODE_STORAGE_KEY = 'story-studio:theme-mode'
-const DEFAULT_THEME_MODE: ThemeMode = 'light'
-
-const themeMode = ref<ThemeMode>(readStoredThemeMode())
 
 export function isThemeMode(value: string | null): value is ThemeMode {
   return value === 'light' || value === 'dark'
@@ -21,14 +17,18 @@ export function applyThemeMode(mode: ThemeMode, root?: HTMLElement): void {
 }
 
 export function useThemeMode(): {
-  mode: typeof themeMode
+  mode: ComputedRef<ThemeMode>
   isDark: ComputedRef<boolean>
   toggleThemeMode: () => void
 } {
+  const studioData = useStudioData()
+  const themeMode = computed<ThemeMode>(() => studioData.document.value.preferences.themeMode)
   const isDark = computed<boolean>(() => themeMode.value === 'dark')
 
   function toggleThemeMode(): void {
-    themeMode.value = getNextThemeMode(themeMode.value)
+    studioData.updateDocument((document) => {
+      document.preferences.themeMode = getNextThemeMode(document.preferences.themeMode)
+    })
   }
 
   return {
@@ -38,23 +38,14 @@ export function useThemeMode(): {
   }
 }
 
-function readStoredThemeMode(): ThemeMode {
-  if (typeof localStorage === 'undefined')
-    return DEFAULT_THEME_MODE
+if (typeof document !== 'undefined') {
+  const { mode } = useThemeMode()
 
-  const storedMode = localStorage.getItem(THEME_MODE_STORAGE_KEY)
-
-  return isThemeMode(storedMode) ? storedMode : DEFAULT_THEME_MODE
+  watch(
+    mode,
+    (nextMode) => {
+      applyThemeMode(nextMode, document.documentElement)
+    },
+    { immediate: true },
+  )
 }
-
-watch(
-  themeMode,
-  (mode) => {
-    if (typeof document !== 'undefined')
-      applyThemeMode(mode, document.documentElement)
-
-    if (typeof localStorage !== 'undefined')
-      localStorage.setItem(THEME_MODE_STORAGE_KEY, mode)
-  },
-  { immediate: true },
-)

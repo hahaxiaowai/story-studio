@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ChevronsUpDownIcon, GalleryVerticalEndIcon, PlusIcon } from '@lucide/vue'
+import { CheckIcon, ChevronsUpDownIcon, GalleryVerticalEndIcon, PlusIcon } from '@lucide/vue'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,9 +16,17 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar'
 import { useLocale } from '@/composables/useLocale'
+import { useWorkspaces } from '@/modules/workspaces/useWorkspaces'
 
 const { isMobile } = useSidebar()
 const { t } = useLocale()
+const {
+  activeWorkspace,
+  activeWorkspaceId,
+  addWorkspace,
+  setActiveWorkspace,
+  workspaces,
+} = useWorkspaces()
 </script>
 
 <template>
@@ -34,7 +42,7 @@ const { t } = useLocale()
               <GalleryVerticalEndIcon class="size-4" />
             </div>
             <div class="grid flex-1 text-left text-sm leading-tight">
-              <span class="truncate font-semibold">{{ t('app.name') }}</span>
+              <span class="truncate font-semibold">{{ activeWorkspace.title }}</span>
               <span class="truncate text-xs">{{ t('app.workspace') }}</span>
             </div>
             <ChevronsUpDownIcon class="ml-auto size-4" />
@@ -49,15 +57,22 @@ const { t } = useLocale()
           <DropdownMenuLabel class="text-muted-foreground text-xs">
             {{ t('app.spaces') }}
           </DropdownMenuLabel>
-          <DropdownMenuItem class="gap-2 p-2">
+          <DropdownMenuItem
+            v-for="workspace in workspaces"
+            :key="workspace.id"
+            class="gap-2 p-2"
+            @click="setActiveWorkspace(workspace.id)"
+          >
             <div class="flex size-6 items-center justify-center rounded-md border">
               <GalleryVerticalEndIcon class="size-3.5 shrink-0" />
             </div>
-            {{ t('app.name') }}
-            <DropdownMenuShortcut>⌘1</DropdownMenuShortcut>
+            <span class="min-w-0 flex-1 truncate">{{ workspace.title }}</span>
+            <DropdownMenuShortcut v-if="workspace.id === activeWorkspaceId">
+              <CheckIcon class="size-3.5" />
+            </DropdownMenuShortcut>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem class="gap-2 p-2">
+          <DropdownMenuItem class="gap-2 p-2" @click="addWorkspace">
             <div class="bg-background flex size-6 items-center justify-center rounded-md border">
               <PlusIcon class="size-4" />
             </div>

@@ -25,6 +25,7 @@ defineProps<{
     url: string
     icon: Component
   }>
+  showActions?: boolean
 }>()
 
 const { isMobile } = useSidebar()
@@ -33,7 +34,7 @@ const { t } = useLocale()
 
 <template>
   <SidebarGroup class="group-data-[collapsible=icon]:hidden">
-    <SidebarGroupLabel>{{ t('nav.group.manuscripts') }}</SidebarGroupLabel>
+    <SidebarGroupLabel>{{ t('nav.group.public') }}</SidebarGroupLabel>
     <SidebarMenu>
       <SidebarMenuItem v-for="project in projects" :key="project.name">
         <SidebarMenuButton as-child>
@@ -42,7 +43,7 @@ const { t } = useLocale()
             <span>{{ project.name }}</span>
           </a>
         </SidebarMenuButton>
-        <DropdownMenu>
+        <DropdownMenu v-if="showActions">
           <DropdownMenuTrigger as-child>
             <SidebarMenuAction show-on-hover>
               <MoreHorizontalIcon />
@@ -55,7 +56,7 @@ const { t } = useLocale()
             align="end"
           >
             <DropdownMenuItem>
-              {{ t('menu.openProject') }}
+              {{ t('menu.openWorkspace') }}
             </DropdownMenuItem>
             <DropdownMenuItem>
               {{ t('menu.rename') }}

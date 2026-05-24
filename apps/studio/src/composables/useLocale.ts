@@ -1,10 +1,8 @@
 import type { ComputedRef } from 'vue'
-import { computed, ref, watch } from 'vue'
+import { computed, watch } from 'vue'
+import { useStudioData } from '@/modules/storage/useStudioData'
 
 export type Locale = 'zh-CN' | 'en-US'
-
-const LOCALE_STORAGE_KEY = 'story-studio:locale'
-const DEFAULT_LOCALE: Locale = 'zh-CN'
 
 const zhMessages = {
   'app.name': 'Story Studio',
@@ -12,7 +10,7 @@ const zhMessages = {
   'app.spaces': '空间',
   'assistant.prompts': '提示词',
   'assistant.settings': '设置',
-  'breadcrumb.project': '项目',
+  'breadcrumb.project': '工作区',
   'language.en': 'English',
   'language.label': '语言',
   'language.zh': '中文',
@@ -23,6 +21,7 @@ const zhMessages = {
   'menu.newWorkspace': '新建工作区',
   'menu.notifications': '通知',
   'menu.openProject': '打开项目',
+  'menu.openWorkspace': '打开工作区',
   'menu.rename': '重命名',
   'nav.acts': '幕',
   'nav.archive': '归档',
@@ -31,9 +30,14 @@ const zhMessages = {
   'nav.cast': '角色',
   'nav.characters': '人物',
   'nav.chapters': '章节',
+  'nav.content': '内容',
   'nav.group.manuscripts': '手稿',
+  'nav.group.public': '公共功能',
   'nav.group.studio': '工作台',
+  'nav.group.workspace': '当前工作区',
   'nav.manuscript': '正文',
+  'nav.maps': '地图',
+  'nav.materials': '素材',
   'nav.outline': '大纲',
   'nav.overview': '概览',
   'nav.project': '项目',
@@ -47,9 +51,11 @@ const zhMessages = {
   'project.cast': '角色',
   'project.chapterOne': '第一章',
   'project.chapters': '章节',
+  'project.content': '内容',
   'project.draft': '草稿',
   'project.empty': '空',
   'project.local': '本地',
+  'project.maps': '地图',
   'project.manuscript': '正文',
   'project.outline': '大纲',
   'project.status': '状态',
@@ -69,7 +75,7 @@ const enMessages: Record<MessageKey, string> = {
   'app.spaces': 'Spaces',
   'assistant.prompts': 'Prompts',
   'assistant.settings': 'Settings',
-  'breadcrumb.project': 'Project',
+  'breadcrumb.project': 'Workspace',
   'language.en': 'English',
   'language.label': 'Language',
   'language.zh': '中文',
@@ -80,6 +86,7 @@ const enMessages: Record<MessageKey, string> = {
   'menu.newWorkspace': 'New workspace',
   'menu.notifications': 'Notifications',
   'menu.openProject': 'Open project',
+  'menu.openWorkspace': 'Open workspace',
   'menu.rename': 'Rename',
   'nav.acts': 'Acts',
   'nav.archive': 'Archive',
@@ -88,9 +95,14 @@ const enMessages: Record<MessageKey, string> = {
   'nav.cast': 'Cast',
   'nav.characters': 'Characters',
   'nav.chapters': 'Chapters',
+  'nav.content': 'Content',
   'nav.group.manuscripts': 'Manuscripts',
+  'nav.group.public': 'Public',
   'nav.group.studio': 'Studio',
+  'nav.group.workspace': 'Current workspace',
   'nav.manuscript': 'Manuscript',
+  'nav.maps': 'Map',
+  'nav.materials': 'Materials',
   'nav.outline': 'Outline',
   'nav.overview': 'Overview',
   'nav.project': 'Project',
@@ -104,9 +116,11 @@ const enMessages: Record<MessageKey, string> = {
   'project.cast': 'Cast',
   'project.chapterOne': 'Chapter One',
   'project.chapters': 'Chapters',
+  'project.content': 'Content',
   'project.draft': 'Draft',
   'project.empty': 'Empty',
   'project.local': 'Local',
+  'project.maps': 'Map',
   'project.manuscript': 'Manuscript',
   'project.outline': 'Outline',
   'project.status': 'Status',
@@ -123,8 +137,6 @@ const messages: Record<Locale, Record<MessageKey, string>> = {
   'en-US': enMessages,
 }
 
-const locale = ref<Locale>(readStoredLocale())
-
 export function isLocale(value: string | null): value is Locale {
   return value === 'zh-CN' || value === 'en-US'
 }
@@ -134,15 +146,19 @@ export function translate(targetLocale: Locale, key: MessageKey): string {
 }
 
 export function useLocale(): {
-  locale: typeof locale
+  locale: ComputedRef<Locale>
   localeLabel: ComputedRef<string>
   setLocale: (nextLocale: Locale) => void
   t: (key: MessageKey) => string
 } {
+  const studioData = useStudioData()
+  const locale = computed<Locale>(() => studioData.document.value.preferences.locale)
   const localeLabel = computed<string>(() => translate(locale.value, `language.${locale.value === 'zh-CN' ? 'zh' : 'en'}`))
 
   function setLocale(nextLocale: Locale): void {
-    locale.value = nextLocale
+    studioData.updateDocument((document) => {
+      document.preferences.locale = nextLocale
+    })
   }
 
   function t(key: MessageKey): string {
@@ -157,23 +173,14 @@ export function useLocale(): {
   }
 }
 
-function readStoredLocale(): Locale {
-  if (typeof localStorage === 'undefined')
-    return DEFAULT_LOCALE
+if (typeof document !== 'undefined') {
+  const { locale } = useLocale()
 
-  const storedLocale = localStorage.getItem(LOCALE_STORAGE_KEY)
-
-  return isLocale(storedLocale) ? storedLocale : DEFAULT_LOCALE
-}
-
-watch(
-  locale,
-  (nextLocale) => {
-    if (typeof document !== 'undefined')
+  watch(
+    locale,
+    (nextLocale) => {
       document.documentElement.lang = nextLocale
-
-    if (typeof localStorage !== 'undefined')
-      localStorage.setItem(LOCALE_STORAGE_KEY, nextLocale)
-  },
-  { immediate: true },
-)
+    },
+    { immediate: true },
+  )
+}

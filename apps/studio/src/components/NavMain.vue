@@ -36,7 +36,7 @@ const { t } = useLocale()
 
 <template>
   <SidebarGroup>
-    <SidebarGroupLabel>{{ t('nav.group.studio') }}</SidebarGroupLabel>
+    <SidebarGroupLabel>{{ t('nav.group.workspace') }}</SidebarGroupLabel>
     <SidebarMenu>
       <Collapsible
         v-for="item in items"
