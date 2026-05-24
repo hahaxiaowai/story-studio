@@ -16,6 +16,7 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from '@/components/ui/sidebar'
+import { useLocale } from '@/composables/useLocale'
 
 defineProps<{
   items: Array<{
@@ -29,11 +30,13 @@ defineProps<{
     }>
   }>
 }>()
+
+const { t } = useLocale()
 </script>
 
 <template>
   <SidebarGroup>
-    <SidebarGroupLabel>Studio</SidebarGroupLabel>
+    <SidebarGroupLabel>{{ t('nav.group.studio') }}</SidebarGroupLabel>
     <SidebarMenu>
       <Collapsible
         v-for="item in items"

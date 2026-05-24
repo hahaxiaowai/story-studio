@@ -17,6 +17,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from '@/components/ui/sidebar'
+import { useLocale } from '@/composables/useLocale'
 
 defineProps<{
   projects: Array<{
@@ -27,11 +28,12 @@ defineProps<{
 }>()
 
 const { isMobile } = useSidebar()
+const { t } = useLocale()
 </script>
 
 <template>
   <SidebarGroup class="group-data-[collapsible=icon]:hidden">
-    <SidebarGroupLabel>Manuscripts</SidebarGroupLabel>
+    <SidebarGroupLabel>{{ t('nav.group.manuscripts') }}</SidebarGroupLabel>
     <SidebarMenu>
       <SidebarMenuItem v-for="project in projects" :key="project.name">
         <SidebarMenuButton as-child>
@@ -44,7 +46,7 @@ const { isMobile } = useSidebar()
           <DropdownMenuTrigger as-child>
             <SidebarMenuAction show-on-hover>
               <MoreHorizontalIcon />
-              <span class="sr-only">More</span>
+              <span class="sr-only">{{ t('menu.more') }}</span>
             </SidebarMenuAction>
           </DropdownMenuTrigger>
           <DropdownMenuContent
@@ -53,14 +55,14 @@ const { isMobile } = useSidebar()
             align="end"
           >
             <DropdownMenuItem>
-              Open project
+              {{ t('menu.openProject') }}
             </DropdownMenuItem>
             <DropdownMenuItem>
-              Rename
+              {{ t('menu.rename') }}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem>
-              Archive
+              {{ t('menu.archive') }}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

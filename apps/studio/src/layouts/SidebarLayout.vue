@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AppHeaderActions from '@/components/AppHeaderActions.vue'
 import AppSidebar from '@/components/AppSidebar.vue'
 import {
   Breadcrumb,
@@ -14,6 +15,9 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from '@/components/ui/sidebar'
+import { useLocale } from '@/composables/useLocale'
+
+const { t } = useLocale()
 </script>
 
 <template>
@@ -31,16 +35,17 @@ import {
             <BreadcrumbList>
               <BreadcrumbItem class="hidden md:block">
                 <BreadcrumbLink href="#project">
-                  Story Studio
+                  {{ t('app.name') }}
                 </BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator class="hidden md:block" />
               <BreadcrumbItem>
-                <BreadcrumbPage>Project</BreadcrumbPage>
+                <BreadcrumbPage>{{ t('breadcrumb.project') }}</BreadcrumbPage>
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
         </div>
+        <AppHeaderActions />
       </header>
       <slot />
     </SidebarInset>

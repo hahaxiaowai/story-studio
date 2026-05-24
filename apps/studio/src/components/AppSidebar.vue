@@ -9,6 +9,8 @@ import {
   SquareTerminalIcon,
   UsersIcon,
 } from '@lucide/vue'
+import { computed } from 'vue'
+import { useLocale } from '@/composables/useLocale'
 import { sampleProject } from '@/constants/project'
 import NavMain from './NavMain.vue'
 import NavProjects from './NavProjects.vue'
@@ -22,96 +24,98 @@ import {
   SidebarRail,
 } from './ui/sidebar'
 
-const navMain = [
+const { t } = useLocale()
+
+const navMain = computed(() => [
   {
-    title: 'Project',
+    title: t('nav.project'),
     url: '#project',
     icon: SquareTerminalIcon,
     isActive: true,
     items: [
       {
-        title: 'Overview',
+        title: t('nav.overview'),
         url: '#project',
       },
       {
-        title: 'Manuscript',
+        title: t('nav.manuscript'),
         url: '#manuscript',
       },
       {
-        title: 'Structure',
+        title: t('nav.structure'),
         url: '#structure',
       },
     ],
   },
   {
-    title: 'Outline',
+    title: t('nav.outline'),
     url: '#outline',
     icon: BookOpenIcon,
     items: [
       {
-        title: 'Acts',
+        title: t('nav.acts'),
         url: '#outline',
       },
       {
-        title: 'Scenes',
+        title: t('nav.chapters'),
         url: '#chapters',
       },
     ],
   },
   {
-    title: 'Cast',
+    title: t('nav.cast'),
     url: '#cast',
     icon: UsersIcon,
     items: [
       {
-        title: 'Characters',
+        title: t('nav.characters'),
         url: '#cast',
       },
       {
-        title: 'Relationships',
+        title: t('nav.relationships'),
         url: '#cast',
       },
     ],
   },
   {
-    title: 'Assistant',
+    title: t('nav.assistant'),
     url: '#assistant',
     icon: BotIcon,
     items: [
       {
-        title: 'Prompts',
+        title: t('assistant.prompts'),
         url: '#assistant',
       },
       {
-        title: 'Settings',
+        title: t('assistant.settings'),
         url: '#settings',
       },
     ],
   },
-]
+])
 
-const projects = [
+const projects = computed(() => [
   {
     name: sampleProject.title,
     url: '#project',
     icon: PenLineIcon,
   },
   {
-    name: 'World bible',
+    name: t('nav.worldBible'),
     url: '#outline',
     icon: MapIcon,
   },
   {
-    name: 'Archive',
+    name: t('nav.archive'),
     url: '#settings',
     icon: FolderIcon,
   },
   {
-    name: 'Canvas',
+    name: t('nav.canvas'),
     url: '#manuscript',
     icon: FrameIcon,
   },
-]
+])
 </script>
 
 <template>

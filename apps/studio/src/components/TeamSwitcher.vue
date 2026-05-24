@@ -15,8 +15,10 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from '@/components/ui/sidebar'
+import { useLocale } from '@/composables/useLocale'
 
 const { isMobile } = useSidebar()
+const { t } = useLocale()
 </script>
 
 <template>
@@ -32,8 +34,8 @@ const { isMobile } = useSidebar()
               <GalleryVerticalEndIcon class="size-4" />
             </div>
             <div class="grid flex-1 text-left text-sm leading-tight">
-              <span class="truncate font-semibold">Story Studio</span>
-              <span class="truncate text-xs">Workspace</span>
+              <span class="truncate font-semibold">{{ t('app.name') }}</span>
+              <span class="truncate text-xs">{{ t('app.workspace') }}</span>
             </div>
             <ChevronsUpDownIcon class="ml-auto size-4" />
           </SidebarMenuButton>
@@ -45,13 +47,13 @@ const { isMobile } = useSidebar()
           :side-offset="4"
         >
           <DropdownMenuLabel class="text-muted-foreground text-xs">
-            Spaces
+            {{ t('app.spaces') }}
           </DropdownMenuLabel>
           <DropdownMenuItem class="gap-2 p-2">
             <div class="flex size-6 items-center justify-center rounded-md border">
               <GalleryVerticalEndIcon class="size-3.5 shrink-0" />
             </div>
-            Story Studio
+            {{ t('app.name') }}
             <DropdownMenuShortcut>⌘1</DropdownMenuShortcut>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
@@ -60,7 +62,7 @@ const { isMobile } = useSidebar()
               <PlusIcon class="size-4" />
             </div>
             <div class="text-muted-foreground font-medium">
-              New workspace
+              {{ t('menu.newWorkspace') }}
             </div>
           </DropdownMenuItem>
         </DropdownMenuContent>
