@@ -7,52 +7,89 @@ const projectSlug = computed<string>(() => createSlug(sampleProject.title))
 </script>
 
 <template>
-  <main class="studio-shell" aria-label="Story Studio workspace">
-    <aside class="studio-sidebar" aria-label="Workspace navigation">
-      <div class="brand-mark" aria-hidden="true">
-        SS
-      </div>
-      <nav class="nav-list" aria-label="Primary">
-        <a class="nav-item is-active" href="#project">Project</a>
-        <a class="nav-item" href="#outline">Outline</a>
-        <a class="nav-item" href="#chapters">Chapters</a>
-        <a class="nav-item" href="#cast">Cast</a>
-      </nav>
-    </aside>
+  <main id="project" class="flex flex-1 flex-col gap-4 p-4 pt-0" aria-label="Story Studio workspace">
+    <section class="grid gap-4 pt-4 md:grid-cols-3" aria-label="Project overview">
+      <article class="bg-muted/50 border-border/70 rounded-lg border p-4">
+        <p class="text-muted-foreground text-sm">
+          Status
+        </p>
+        <p class="mt-3 text-2xl font-semibold">
+          Draft
+        </p>
+      </article>
+      <article class="bg-muted/50 border-border/70 rounded-lg border p-4">
+        <p class="text-muted-foreground text-sm">
+          Chapters
+        </p>
+        <p class="mt-3 text-2xl font-semibold">
+          0
+        </p>
+      </article>
+      <article class="bg-muted/50 border-border/70 rounded-lg border p-4">
+        <p class="text-muted-foreground text-sm">
+          Characters
+        </p>
+        <p class="mt-3 text-2xl font-semibold">
+          0
+        </p>
+      </article>
+    </section>
 
-    <section id="project" class="workspace-panel">
-      <header class="workspace-header">
-        <p class="eyebrow">
+    <section class="border-border/70 bg-background min-h-[calc(100svh-12rem)] rounded-lg border shadow-sm">
+      <div class="border-border/70 border-b px-5 py-4">
+        <p class="text-muted-foreground text-xs font-medium uppercase">
           {{ projectSlug }}
         </p>
-        <h1>{{ sampleProject.title }}</h1>
-      </header>
+        <h1 class="mt-2 text-3xl font-semibold tracking-normal md:text-5xl">
+          {{ sampleProject.title }}
+        </h1>
+      </div>
 
-      <div class="workspace-grid" aria-label="Project overview">
-        <article class="focus-pane">
-          <h2>Manuscript</h2>
-          <div class="writing-surface" aria-label="Draft surface">
-            <p>Chapter One</p>
-            <p class="draft-line" />
-            <p class="draft-line short" />
-            <p class="draft-line" />
+      <div class="grid gap-4 p-5 lg:grid-cols-[minmax(0,1fr)_20rem]">
+        <article id="manuscript" class="border-border/70 rounded-lg border p-5">
+          <h2 class="text-lg font-semibold">
+            Manuscript
+          </h2>
+          <div class="mt-4 min-h-80 rounded-lg border bg-[linear-gradient(180deg,#fffdf8,#f8f0e0)] p-6 text-stone-900" aria-label="Draft surface">
+            <p class="font-serif text-2xl">
+              Chapter One
+            </p>
+            <div class="mt-8 space-y-4">
+              <p class="bg-muted h-3 rounded-full" />
+              <p class="bg-muted h-3 w-2/3 rounded-full" />
+              <p class="bg-muted h-3 rounded-full" />
+            </div>
           </div>
         </article>
 
-        <aside class="inspector-pane" aria-label="Project inspector">
-          <h2>Structure</h2>
-          <dl>
-            <div>
-              <dt>Status</dt>
-              <dd>Draft</dd>
+        <aside id="structure" class="border-border/70 rounded-lg border p-5" aria-label="Project inspector">
+          <h2 class="text-lg font-semibold">
+            Structure
+          </h2>
+          <dl class="mt-4 grid gap-3">
+            <div class="flex items-center justify-between border-b pb-3">
+              <dt class="text-muted-foreground">
+                Outline
+              </dt>
+              <dd class="font-medium">
+                Empty
+              </dd>
             </div>
-            <div>
-              <dt>Chapters</dt>
-              <dd>0</dd>
+            <div class="flex items-center justify-between border-b pb-3">
+              <dt class="text-muted-foreground">
+                Cast
+              </dt>
+              <dd class="font-medium">
+                Empty
+              </dd>
             </div>
-            <div>
-              <dt>Characters</dt>
-              <dd>0</dd>
+            <div class="flex items-center justify-between">
+              <dt class="text-muted-foreground">
+                Sync
+              </dt>
+              <dd class="font-medium">
+                Local
+              </dd>
             </div>
           </dl>
         </aside>

@@ -14,16 +14,25 @@
     "typecheck": "vue-tsc -b"
   },
   "dependencies": {
+    "@lucide/vue": "catalog:prod",
     "@story-studio/types": "workspace:*",
     "@story-studio/utils": "workspace:*",
     "@tauri-apps/api": "catalog:tauri",
+    "@vueuse/core": "catalog:prod",
+    "class-variance-authority": "catalog:prod",
+    "clsx": "catalog:prod",
+    "reka-ui": "catalog:prod",
+    "tailwind-merge": "catalog:prod",
+    "tw-animate-css": "catalog:prod",
     "vue": "catalog:prod"
   },
   "devDependencies": {
     "@story-studio/config": "workspace:*",
+    "@tailwindcss/vite": "catalog:frontend",
     "@tauri-apps/cli": "catalog:tauri",
     "@types/node": "catalog:dev",
     "@vitejs/plugin-vue": "catalog:frontend",
+    "tailwindcss": "catalog:frontend",
     "typescript": "catalog:dev",
     "vite": "catalog:frontend",
     "vitest": "catalog:dev",
