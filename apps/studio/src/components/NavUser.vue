@@ -19,8 +19,10 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from '@/components/ui/sidebar'
+import { useLocale } from '@/composables/useLocale'
 
 const { isMobile } = useSidebar()
+const { t } = useLocale()
 </script>
 
 <template>
@@ -38,8 +40,8 @@ const { isMobile } = useSidebar()
               </AvatarFallback>
             </Avatar>
             <div class="grid flex-1 text-left text-sm leading-tight">
-              <span class="truncate font-semibold">Writer</span>
-              <span class="truncate text-xs">local workspace</span>
+              <span class="truncate font-semibold">{{ t('user.writer') }}</span>
+              <span class="truncate text-xs">{{ t('user.localWorkspace') }}</span>
             </div>
             <ChevronsUpDownIcon class="ml-auto size-4" />
           </SidebarMenuButton>
@@ -58,8 +60,8 @@ const { isMobile } = useSidebar()
                 </AvatarFallback>
               </Avatar>
               <div class="grid flex-1 text-left text-sm leading-tight">
-                <span class="truncate font-semibold">Writer</span>
-                <span class="truncate text-xs">local workspace</span>
+                <span class="truncate font-semibold">{{ t('user.writer') }}</span>
+                <span class="truncate text-xs">{{ t('user.localWorkspace') }}</span>
               </div>
             </div>
           </DropdownMenuLabel>
@@ -67,17 +69,17 @@ const { isMobile } = useSidebar()
           <DropdownMenuGroup>
             <DropdownMenuItem>
               <BadgeCheckIcon />
-              Account
+              {{ t('menu.account') }}
             </DropdownMenuItem>
             <DropdownMenuItem>
               <BellIcon />
-              Notifications
+              {{ t('menu.notifications') }}
             </DropdownMenuItem>
           </DropdownMenuGroup>
           <DropdownMenuSeparator />
           <DropdownMenuItem>
             <LogOutIcon />
-            Log out
+            {{ t('menu.logout') }}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

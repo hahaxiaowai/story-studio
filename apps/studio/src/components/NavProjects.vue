@@ -17,6 +17,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from '@/components/ui/sidebar'
+import { useLocale } from '@/composables/useLocale'
 
 defineProps<{
   projects: Array<{
@@ -24,14 +25,16 @@ defineProps<{
     url: string
     icon: Component
   }>
+  showActions?: boolean
 }>()
 
 const { isMobile } = useSidebar()
+const { t } = useLocale()
 </script>
 
 <template>
   <SidebarGroup class="group-data-[collapsible=icon]:hidden">
-    <SidebarGroupLabel>Manuscripts</SidebarGroupLabel>
+    <SidebarGroupLabel>{{ t('nav.group.public') }}</SidebarGroupLabel>
     <SidebarMenu>
       <SidebarMenuItem v-for="project in projects" :key="project.name">
         <SidebarMenuButton as-child>
@@ -40,11 +43,11 @@ const { isMobile } = useSidebar()
             <span>{{ project.name }}</span>
           </a>
         </SidebarMenuButton>
-        <DropdownMenu>
+        <DropdownMenu v-if="showActions">
           <DropdownMenuTrigger as-child>
             <SidebarMenuAction show-on-hover>
               <MoreHorizontalIcon />
-              <span class="sr-only">More</span>
+              <span class="sr-only">{{ t('menu.more') }}</span>
             </SidebarMenuAction>
           </DropdownMenuTrigger>
           <DropdownMenuContent
@@ -53,14 +56,14 @@ const { isMobile } = useSidebar()
             align="end"
           >
             <DropdownMenuItem>
-              Open project
+              {{ t('menu.openWorkspace') }}
             </DropdownMenuItem>
             <DropdownMenuItem>
-              Rename
+              {{ t('menu.rename') }}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem>
-              Archive
+              {{ t('menu.archive') }}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

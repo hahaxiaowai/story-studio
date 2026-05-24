@@ -3,13 +3,12 @@ import {
   BookOpenIcon,
   BotIcon,
   FolderIcon,
-  FrameIcon,
   MapIcon,
   PenLineIcon,
-  SquareTerminalIcon,
   UsersIcon,
 } from '@lucide/vue'
-import { sampleProject } from '@/constants/project'
+import { computed } from 'vue'
+import { useLocale } from '@/composables/useLocale'
 import NavMain from './NavMain.vue'
 import NavProjects from './NavProjects.vue'
 import NavUser from './NavUser.vue'
@@ -22,96 +21,84 @@ import {
   SidebarRail,
 } from './ui/sidebar'
 
-const navMain = [
+const { t } = useLocale()
+
+const navMain = computed(() => [
   {
-    title: 'Project',
-    url: '#project',
-    icon: SquareTerminalIcon,
+    title: t('nav.outline'),
+    url: '#outline',
+    icon: BookOpenIcon,
     isActive: true,
     items: [
       {
-        title: 'Overview',
-        url: '#project',
-      },
-      {
-        title: 'Manuscript',
-        url: '#manuscript',
-      },
-      {
-        title: 'Structure',
-        url: '#structure',
-      },
-    ],
-  },
-  {
-    title: 'Outline',
-    url: '#outline',
-    icon: BookOpenIcon,
-    items: [
-      {
-        title: 'Acts',
+        title: t('nav.acts'),
         url: '#outline',
       },
       {
-        title: 'Scenes',
-        url: '#chapters',
+        title: t('nav.chapters'),
+        url: '#outline',
       },
     ],
   },
   {
-    title: 'Cast',
+    title: t('nav.characters'),
     url: '#cast',
     icon: UsersIcon,
     items: [
       {
-        title: 'Characters',
+        title: t('nav.characters'),
         url: '#cast',
       },
       {
-        title: 'Relationships',
+        title: t('nav.relationships'),
         url: '#cast',
       },
     ],
   },
   {
-    title: 'Assistant',
-    url: '#assistant',
-    icon: BotIcon,
+    title: t('nav.maps'),
+    url: '#maps',
+    icon: MapIcon,
     items: [
       {
-        title: 'Prompts',
-        url: '#assistant',
+        title: t('nav.worldBible'),
+        url: '#maps',
       },
       {
-        title: 'Settings',
-        url: '#settings',
+        title: t('nav.structure'),
+        url: '#maps',
       },
     ],
   },
-]
-
-const projects = [
   {
-    name: sampleProject.title,
-    url: '#project',
+    title: t('nav.content'),
+    url: '#manuscript',
     icon: PenLineIcon,
+    items: [
+      {
+        title: t('nav.manuscript'),
+        url: '#manuscript',
+      },
+      {
+        title: t('nav.chapters'),
+        url: '#manuscript',
+      },
+    ],
   },
+])
+
+const projects = computed(() => [
   {
-    name: 'World bible',
-    url: '#outline',
-    icon: MapIcon,
-  },
-  {
-    name: 'Archive',
-    url: '#settings',
+    name: t('nav.materials'),
+    url: '#materials',
     icon: FolderIcon,
   },
   {
-    name: 'Canvas',
-    url: '#manuscript',
-    icon: FrameIcon,
+    name: t('nav.assistant'),
+    url: '#assistant',
+    icon: BotIcon,
   },
-]
+])
 </script>
 
 <template>
@@ -121,7 +108,7 @@ const projects = [
     </SidebarHeader>
     <SidebarContent>
       <NavMain :items="navMain" />
-      <NavProjects :projects="projects" />
+      <NavProjects :projects="projects" :show-actions="false" />
     </SidebarContent>
     <SidebarFooter>
       <NavUser />
