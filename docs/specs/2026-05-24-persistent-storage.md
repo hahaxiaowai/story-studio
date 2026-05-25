@@ -41,6 +41,7 @@ Story Studio 当前只有偏好设置写入浏览器 `localStorage`，工作区�
   - `schemaVersion: 1`
   - `preferences: StudioPreferences`
   - `workspaces: Workspace[]`
+    - 每个工作区包含作品名称和可选简介。
   - `activeWorkspaceId: string`
   - `materials: MaterialAsset[]`
   - `materialRefs: WorkspaceMaterialRef[]`
@@ -74,8 +75,9 @@ Story Studio 当前只有偏好设置写入浏览器 `localStorage`，工作区�
 
 ## 验收标准
 
-- [ ] Web 端新建工作区后刷新仍存在。
+- [ ] Web 端通过表单新建工作区后刷新仍存在。
 - [ ] Tauri 端新建工作区后重启仍存在。
+- [ ] 工作区简介随工作区一起持久化。
 - [ ] 切换工作区后刷新或重启仍保留当前工作区。
 - [ ] 切换语言和主题后刷新或重启仍保留。
 - [ ] 缺失存档时能创建默认文档。

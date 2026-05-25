@@ -1,5 +1,6 @@
 import type { Workspace } from '@story-studio/types'
 import type { ComputedRef, Ref } from 'vue'
+import type { AppendWorkspaceOptions } from './workspaces'
 import { computed } from 'vue'
 import { useStudioData } from '../storage/useStudioData'
 import {
@@ -7,10 +8,12 @@ import {
   getWorkspaceById,
 } from './workspaces'
 
+export type AddWorkspaceInput = Pick<AppendWorkspaceOptions, 'title' | 'description'>
+
 export function useWorkspaces(): {
   activeWorkspace: ComputedRef<Workspace>
   activeWorkspaceId: Ref<string, string>
-  addWorkspace: () => Workspace
+  addWorkspace: (input?: AddWorkspaceInput) => Workspace
   setActiveWorkspace: (workspaceId: string) => void
   workspaces: Ref<Workspace[], Workspace[]>
 } {
@@ -44,9 +47,10 @@ export function useWorkspaces(): {
     }
   }
 
-  function addWorkspace(): Workspace {
+  function addWorkspace(input?: AddWorkspaceInput): Workspace {
     const result = appendWorkspace(workspaces.value, {
-      title: `未命名作品 ${workspaces.value.length + 1}`,
+      title: input?.title ?? `未命名作品 ${workspaces.value.length + 1}`,
+      description: input?.description,
       now: new Date().toISOString(),
     })
 

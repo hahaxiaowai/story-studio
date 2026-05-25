@@ -8,6 +8,7 @@
 
 - 已实现第一版工作区结构。
 - 已完成工作区切换、新建、模块导航、公共功能导航和面包屑映射。
+- 新建工作区已从直接创建默认名称升级为 Dialog 表单，支持作品名称和简介。
 - 当前计划用于记录已落地的实施边界，后续持久化、归档、重命名可在新规格中继续拆分。
 
 ## 实施步骤
@@ -31,6 +32,8 @@
    - 定义 `workspaceModules`。
    - 定义 `seedWorkspaces`。
    - 实现 `appendWorkspace`、`getWorkspaceById`、`getWorkspaceModuleLabelKey`、`getNavigationLabelKey`、`createWorkspace`。
+   - 支持 `Workspace.description`。
+   - 拒绝空标题，并为重复标题生成唯一 id。
 
 4. 实现工作区组合式状态。
    - 文件：`apps/studio/src/modules/workspaces/useWorkspaces.ts`
@@ -43,7 +46,13 @@
    - 用当前工作区替代旧团队/项目展示。
    - 下拉菜单列出所有工作区。
    - 当前工作区显示选中状态。
-   - 增加“新建工作区”入口。
+   - 增加“新建工作区”入口，点击后打开基础信息表单。
+
+5.1. 增加新建工作区表单。
+   - 文件：`apps/studio/src/components/WorkspaceCreateDialog.vue`
+   - 使用 shadcn-vue `Dialog`、`Field`、`Input`、`Textarea`、`Button`。
+   - 表单字段：作品名称必填，简介可选。
+   - 提交后创建并切换到新工作区。
 
 6. 更新侧边栏导航。
    - 文件：`apps/studio/src/components/AppSidebar.vue`
@@ -73,6 +82,7 @@
 10. 补充 locale key。
     - 文件：`apps/studio/src/composables/useLocale.ts`
     - 增加工作区、公共功能、模块导航和菜单相关中英文文案。
+    - 增加新建工作区表单、占位符和校验错误中英文文案。
 
 11. 运行验证命令。
     - `pnpm run lint`

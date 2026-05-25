@@ -33,6 +33,7 @@ export interface WorkspaceModuleCounts {
 export interface Workspace {
   id: string
   title: string
+  description?: string
   status: 'draft' | 'archived'
   moduleCounts: WorkspaceModuleCounts
   createdAt: string

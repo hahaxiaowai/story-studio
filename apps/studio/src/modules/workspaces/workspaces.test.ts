@@ -37,6 +37,43 @@ describe('workspaces', () => {
     expect(result.activeWorkspaceId).toBe('workspace-wei-ming-ming-zuo-pin-3')
   })
 
+  it('stores workspace descriptions', () => {
+    const result = appendWorkspace([], {
+      title: '海上群星',
+      description: '一部关于远航与失忆城市的作品',
+      now: '2026-05-24T00:00:00.000Z',
+    })
+
+    expect(result.workspaces[0]).toMatchObject({
+      title: '海上群星',
+      description: '一部关于远航与失忆城市的作品',
+    })
+  })
+
+  it('rejects empty workspace titles', () => {
+    expect(() => appendWorkspace([], {
+      title: '   ',
+      now: '2026-05-24T00:00:00.000Z',
+    })).toThrow('Workspace title is required.')
+  })
+
+  it('creates unique ids for duplicate workspace titles', () => {
+    const firstResult = appendWorkspace([], {
+      title: 'Story Studio',
+      now: '2026-05-24T00:00:00.000Z',
+    })
+    const secondResult = appendWorkspace(firstResult.workspaces, {
+      title: 'Story Studio',
+      now: '2026-05-24T00:00:00.000Z',
+    })
+
+    expect(secondResult.activeWorkspaceId).toBe('workspace-story-studio-2')
+    expect(secondResult.workspaces[1]).toMatchObject({
+      id: 'workspace-story-studio-2',
+      title: 'Story Studio',
+    })
+  })
+
   it('finds a workspace by id', () => {
     const result = appendWorkspace([], {
       title: 'Story Studio',

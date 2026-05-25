@@ -65,6 +65,15 @@ const zhMessages = {
   'theme.light': '切换到深色模式',
   'user.localWorkspace': '本地工作区',
   'user.writer': '写作者',
+  'workspace.create.description': '填写这部作品的基础信息，创建后会自动切换到新工作区。',
+  'workspace.create.title': '新建工作区',
+  'workspace.form.cancel': '取消',
+  'workspace.form.description': '简介',
+  'workspace.form.descriptionPlaceholder': '写下作品题材、核心设定或创作方向',
+  'workspace.form.name': '作品名称',
+  'workspace.form.namePlaceholder': '例如：长夜手稿',
+  'workspace.form.submit': '创建工作区',
+  'workspace.validation.nameRequired': '请填写作品名称。',
 } as const
 
 export type MessageKey = keyof typeof zhMessages
@@ -130,6 +139,15 @@ const enMessages: Record<MessageKey, string> = {
   'theme.light': 'Switch to dark mode',
   'user.localWorkspace': 'local workspace',
   'user.writer': 'Writer',
+  'workspace.create.description': 'Add the basic details for this work. The new workspace will become active after creation.',
+  'workspace.create.title': 'New workspace',
+  'workspace.form.cancel': 'Cancel',
+  'workspace.form.description': 'Description',
+  'workspace.form.descriptionPlaceholder': 'Add the genre, core premise, or writing direction',
+  'workspace.form.name': 'Work title',
+  'workspace.form.namePlaceholder': 'For example: Long Night Manuscript',
+  'workspace.form.submit': 'Create workspace',
+  'workspace.validation.nameRequired': 'Enter a work title.',
 }
 
 const messages: Record<Locale, Record<MessageKey, string>> = {

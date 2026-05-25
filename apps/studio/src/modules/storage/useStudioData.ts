@@ -1,7 +1,7 @@
 import type { StudioDataDocument } from '@story-studio/types'
 import type { ComputedRef, Ref } from 'vue'
 import type { StudioStorageDriver } from './types'
-import { computed, ref } from 'vue'
+import { computed, isProxy, ref } from 'vue'
 import { resolveStudioDataDocument } from './document'
 import { createStudioStorageDriver } from './runtime'
 
@@ -72,7 +72,16 @@ async function saveNow(): Promise<void> {
   if (!storageDriver)
     return
 
-  await storageDriver.save(document.value)
+  await storageDriver.save(createPersistableDocument(document.value))
+}
+
+function createPersistableDocument(sourceDocument: StudioDataDocument): StudioDataDocument {
+  const serializedDocument = JSON.parse(JSON.stringify(sourceDocument)) as StudioDataDocument
+
+  if (isProxy(serializedDocument))
+    throw new Error('Studio data document must be serialized before saving.')
+
+  return serializedDocument
 }
 
 function toError(error: unknown): Error {
