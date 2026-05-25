@@ -8,6 +8,7 @@
 
 1. 更新共享类型。
    - 在 `packages/types/src/types/story.ts` 增加 `StudioDataDocument`、`StudioPreferences`、`StudioDataSchemaVersion`。
+   - `Workspace` 支持可选 `description`，随单一 JSON 文档持久化。
    - 从 `packages/types/src/index.ts` 导出新增类型。
 
 2. 先补前端存储测试。
@@ -30,6 +31,10 @@
    - Rust 端新增 `load_studio_data` 和 `save_studio_data`。
    - 使用 app data dir 下的 `story-studio-data.json`。
    - 增加 Rust 单元测试覆盖文件不存在、写入读取、损坏 JSON。
+
+5.1. 接入新建工作区表单数据。
+   - 表单提交后通过 `useWorkspaces.addWorkspace({ title, description })` 更新统一文档。
+   - 新工作区名称、简介和 active workspace 一起保存。
 
 6. 运行验证命令。
    - `pnpm run lint`

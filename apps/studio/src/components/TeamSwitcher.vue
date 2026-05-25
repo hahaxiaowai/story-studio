@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { CheckIcon, ChevronsUpDownIcon, GalleryVerticalEndIcon, PlusIcon } from '@lucide/vue'
+import { ref } from 'vue'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,15 +16,16 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from '@/components/ui/sidebar'
+import WorkspaceCreateDialog from '@/components/WorkspaceCreateDialog.vue'
 import { useLocale } from '@/composables/useLocale'
 import { useWorkspaces } from '@/modules/workspaces/useWorkspaces'
 
 const { isMobile } = useSidebar()
 const { t } = useLocale()
+const createDialogOpen = ref(false)
 const {
   activeWorkspace,
   activeWorkspaceId,
-  addWorkspace,
   setActiveWorkspace,
   workspaces,
 } = useWorkspaces()
@@ -72,7 +74,7 @@ const {
             </DropdownMenuShortcut>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem class="gap-2 p-2" @click="addWorkspace">
+          <DropdownMenuItem class="gap-2 p-2" @click="createDialogOpen = true">
             <div class="bg-background flex size-6 items-center justify-center rounded-md border">
               <PlusIcon class="size-4" />
             </div>
@@ -82,6 +84,7 @@ const {
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+      <WorkspaceCreateDialog v-model:open="createDialogOpen" />
     </SidebarMenuItem>
   </SidebarMenu>
 </template>

@@ -1,7 +1,7 @@
 import type { StudioDataDocument } from '@story-studio/types'
 import type { StudioStorageDriver } from './types'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { nextTick } from 'vue'
+import { isProxy, nextTick } from 'vue'
 import { createDefaultStudioDataDocument } from './document'
 import { resetStudioDataForTest, useStudioData } from './useStudioData'
 
@@ -50,6 +50,36 @@ describe('useStudioData', () => {
     expect(driver.save).toHaveBeenLastCalledWith(expect.objectContaining({
       activeWorkspaceId: 'workspace-wu-gang-lai-xin',
     }))
+  })
+
+  it('saves plain JSON documents instead of Vue proxies', async () => {
+    const driver = createDriver(createDefaultStudioDataDocument())
+    const studioData = useStudioData(driver)
+    await studioData.ready
+
+    studioData.updateDocument((document) => {
+      document.workspaces.push({
+        id: 'workspace-star-harbor',
+        title: 'Star Harbor',
+        description: '远航故事',
+        status: 'draft',
+        moduleCounts: {
+          characters: 0,
+          content: 0,
+          maps: 0,
+          outline: 0,
+        },
+        createdAt: '2026-05-24T12:00:00.000Z',
+        updatedAt: '2026-05-24T12:00:00.000Z',
+      })
+    })
+    await nextTick()
+
+    const savedDocument = driver.save.mock.calls.at(-1)?.[0]
+
+    expect(savedDocument).toBeDefined()
+    expect(isProxy(savedDocument)).toBe(false)
+    expect(isProxy(savedDocument?.workspaces)).toBe(false)
   })
 })
 

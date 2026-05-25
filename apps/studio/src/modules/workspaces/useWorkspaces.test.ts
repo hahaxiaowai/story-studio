@@ -42,6 +42,33 @@ describe('useWorkspaces', () => {
       ]),
     }))
   })
+
+  it('persists workspace descriptions when adding workspaces', async () => {
+    const driver = createDriver(createDefaultStudioDataDocument())
+    await useStudioData(driver).ready
+
+    const workspaces = useWorkspaces()
+    const workspace = workspaces.addWorkspace({
+      title: 'Star Harbor',
+      description: '远航故事',
+    })
+    await nextTick()
+
+    expect(workspace).toMatchObject({
+      id: 'workspace-star-harbor',
+      title: 'Star Harbor',
+      description: '远航故事',
+    })
+    expect(driver.save).toHaveBeenLastCalledWith(expect.objectContaining({
+      activeWorkspaceId: 'workspace-star-harbor',
+      workspaces: expect.arrayContaining([
+        expect.objectContaining({
+          id: 'workspace-star-harbor',
+          description: '远航故事',
+        }),
+      ]),
+    }))
+  })
 })
 
 function createDriver(document: StudioDataDocument): StudioStorageDriver & {

@@ -3,6 +3,7 @@ import type { MessageKey } from '@/composables/useLocale'
 
 export interface AppendWorkspaceOptions {
   title: string
+  description?: string
   now: string
 }
 
@@ -54,10 +55,11 @@ export const seedWorkspaces: Workspace[] = [
 
 export function appendWorkspace(workspaces: Workspace[], options: AppendWorkspaceOptions): AppendWorkspaceResult {
   const workspace = createWorkspace(options)
+  const workspaceId = createUniqueWorkspaceId(workspace.id, workspaces)
 
   return {
-    activeWorkspaceId: workspace.id,
-    workspaces: [...workspaces, workspace],
+    activeWorkspaceId: workspaceId,
+    workspaces: [...workspaces, { ...workspace, id: workspaceId }],
   }
 }
 
@@ -93,9 +95,16 @@ export function getNavigationLabelKey(hash: string): MessageKey {
 }
 
 export function createWorkspace(options: AppendWorkspaceOptions & Partial<Pick<Workspace, 'moduleCounts'>>): Workspace {
+  const title = options.title.trim()
+  const description = options.description?.trim()
+
+  if (!title)
+    throw new Error('Workspace title is required.')
+
   return {
-    id: createWorkspaceId(options.title),
-    title: options.title,
+    id: createWorkspaceId(title),
+    title,
+    ...(description ? { description } : {}),
     status: 'draft',
     moduleCounts: options.moduleCounts ?? {
       characters: 0,
@@ -108,13 +117,30 @@ export function createWorkspace(options: AppendWorkspaceOptions & Partial<Pick<W
   }
 }
 
+function createUniqueWorkspaceId(baseId: string, workspaces: Workspace[]): string {
+  const workspaceIds = new Set(workspaces.map(workspace => workspace.id))
+
+  if (!workspaceIds.has(baseId))
+    return baseId
+
+  let index = 2
+  let workspaceId = `${baseId}-${index}`
+
+  while (workspaceIds.has(workspaceId)) {
+    index += 1
+    workspaceId = `${baseId}-${index}`
+  }
+
+  return workspaceId
+}
+
 function createWorkspaceId(title: string): string {
   const slug = title
     .trim()
     .toLowerCase()
     .split('')
-    .map(character => workspaceIdSegments[character] ?? character)
-    .join('-')
+    .map(character => workspaceIdSegments[character] ? `-${workspaceIdSegments[character]}-` : character)
+    .join('')
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
 
