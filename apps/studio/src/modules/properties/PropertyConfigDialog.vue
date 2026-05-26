@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import type { EntityKind, PropertyDefinition, PropertyValueType } from '@story-studio/types'
-import { EyeIcon, EyeOffIcon, GripVerticalIcon, PlusIcon, Trash2Icon } from '@lucide/vue'
+import { EyeIcon, EyeOffIcon, PlusIcon, Trash2Icon } from '@lucide/vue'
 import { computed, ref, watch } from 'vue'
-import { useDraggable } from 'vue-draggable-plus'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -32,7 +31,6 @@ const {
 } = useProperties(props.kind)
 
 const isOpen = ref(false)
-const propertyListRef = ref<HTMLElement | null>(null)
 const draftProperties = ref<PropertyDefinition[]>([])
 const newPropertyName = ref('')
 const newPropertyType = ref<PropertyValueType>('text')
@@ -49,15 +47,6 @@ const propertyTypes = [
 
 const optionCapableTypes = new Set<PropertyValueType>(['select', 'multiSelect'])
 const visibleProperties = computed(() => draftProperties.value.filter(property => property.visible).length)
-
-useDraggable<PropertyDefinition>(propertyListRef, draftProperties, {
-  animation: 150,
-  draggable: '.property-config-row',
-  fallbackOnBody: true,
-  forceFallback: true,
-  ghostClass: 'border-primary bg-muted/70 opacity-70',
-  handle: '.drag-handle',
-})
 
 watch(isOpen, (nextOpen) => {
   if (nextOpen)
@@ -129,23 +118,12 @@ function updateOptions(property: PropertyDefinition, rawValue: string): void {
         </DialogDescription>
       </DialogHeader>
 
-      <div
-        ref="propertyListRef"
-        class="grid gap-3"
-      >
+      <div class="grid gap-3">
         <div
           v-for="property in draftProperties"
           :key="property.id"
-          class="property-config-row border-border grid gap-3 rounded-md border p-3 transition md:grid-cols-[2rem_minmax(8rem,1fr)_8.5rem_12rem_auto]"
+          class="border-border grid gap-3 rounded-md border p-3 transition md:grid-cols-[minmax(8rem,1fr)_8.5rem_12rem_auto]"
         >
-          <button
-            type="button"
-            class="drag-handle text-muted-foreground hover:bg-muted focus-visible:ring-ring/50 mt-5 inline-flex size-8 cursor-grab touch-none items-center justify-center rounded-md active:cursor-grabbing focus-visible:ring-3"
-            aria-label="拖拽排序"
-          >
-            <GripVerticalIcon class="size-4" />
-          </button>
-
           <div class="grid gap-1.5">
             <label class="text-muted-foreground text-xs">{{ t('property.name') }}</label>
             <Input
