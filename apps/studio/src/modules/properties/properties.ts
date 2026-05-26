@@ -31,6 +31,39 @@ export interface CreateCustomPropertyInput {
   valueType: PropertyValueType
 }
 
+export function addPropertyOption(
+  options: PropertyDefinition['options'] = [],
+  label: string,
+): PropertyDefinition['options'] {
+  const nextLabel = label.trim()
+
+  if (!nextLabel)
+    return options
+
+  const baseId = slugify(nextLabel) || 'option'
+  const ids = new Set(options.map(option => option.id))
+  const duplicateLabelCount = options.filter(option => option.label === nextLabel).length
+  let id = duplicateLabelCount > 0 ? `${baseId}-${duplicateLabelCount + 1}` : baseId
+  let index = duplicateLabelCount + 2
+
+  while (ids.has(id)) {
+    id = `${baseId}-${index}`
+    index += 1
+  }
+
+  return [
+    ...options,
+    { id, label: nextLabel },
+  ]
+}
+
+export function removePropertyOption(
+  options: PropertyDefinition['options'] = [],
+  optionId: string,
+): PropertyDefinition['options'] {
+  return options.filter(option => option.id !== optionId)
+}
+
 export function getPropertiesByKind(properties: PropertyDefinition[], kind: EntityKind): PropertyDefinition[] {
   return properties
     .filter(property => property.kind === kind)

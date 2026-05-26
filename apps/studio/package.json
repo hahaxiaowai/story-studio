@@ -24,7 +24,8 @@
     "reka-ui": "catalog:prod",
     "tailwind-merge": "catalog:prod",
     "tw-animate-css": "catalog:prod",
-    "vue": "catalog:prod"
+    "vue": "catalog:prod",
+    "vue-draggable-plus": "catalog:prod"
   },
   "devDependencies": {
     "@story-studio/config": "workspace:*",

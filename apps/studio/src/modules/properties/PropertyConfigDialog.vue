@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import type { EntityKind, PropertyDefinition, PropertyValueType } from '@story-studio/types'
-import { EyeIcon, EyeOffIcon, PlusIcon, Trash2Icon } from '@lucide/vue'
-import { computed, ref, watch } from 'vue'
+import { EyeIcon, EyeOffIcon, GripVerticalIcon, PlusIcon, Trash2Icon, XIcon } from '@lucide/vue'
+import { computed, nextTick, ref, watch } from 'vue'
+import { useDraggable } from 'vue-draggable-plus'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -13,9 +14,11 @@ import {
 import { Input } from '@/components/ui/input'
 import { useLocale } from '@/composables/useLocale'
 import {
+  addPropertyOption,
   createCustomProperty,
   createPropertyDraft,
   removeCustomProperty,
+  removePropertyOption,
   updateProperty,
 } from './properties'
 import { useProperties } from './useProperties'
@@ -31,7 +34,9 @@ const {
 } = useProperties(props.kind)
 
 const isOpen = ref(false)
+const propertyListRef = ref<HTMLElement | null>(null)
 const draftProperties = ref<PropertyDefinition[]>([])
+const optionInputs = ref<Record<string, string>>({})
 const newPropertyName = ref('')
 const newPropertyType = ref<PropertyValueType>('text')
 
@@ -48,13 +53,29 @@ const propertyTypes = [
 const optionCapableTypes = new Set<PropertyValueType>(['select', 'multiSelect'])
 const visibleProperties = computed(() => draftProperties.value.filter(property => property.visible).length)
 
-watch(isOpen, (nextOpen) => {
-  if (nextOpen)
+const propertyDraggable = useDraggable<PropertyDefinition>(propertyListRef, draftProperties, {
+  animation: 150,
+  chosenClass: 'property-drag-chosen',
+  draggable: '.property-config-item',
+  ghostClass: 'opacity-50',
+  handle: '.property-drag-handle',
+  immediate: false,
+})
+
+watch(isOpen, async (nextOpen) => {
+  if (nextOpen) {
     resetDraft()
+    await nextTick()
+    propertyDraggable.start()
+    return
+  }
+
+  propertyDraggable.destroy()
 })
 
 function resetDraft(): void {
   draftProperties.value = createPropertyDraft(properties.value, props.kind)
+  optionInputs.value = {}
   newPropertyName.value = ''
   newPropertyType.value = 'text'
 }
@@ -83,6 +104,13 @@ function removeDraftProperty(propertyId: string): void {
   draftProperties.value = removeCustomProperty(draftProperties.value, propertyId)
 }
 
+function updatePropertyType(property: PropertyDefinition, valueType: PropertyValueType): void {
+  updateDraftProperty(property.id, {
+    valueType,
+    options: optionCapableTypes.has(valueType) ? property.options : undefined,
+  })
+}
+
 function saveDraft(): void {
   saveProperties(draftProperties.value)
   isOpen.value = false
@@ -93,13 +121,22 @@ function cancelDraft(): void {
   isOpen.value = false
 }
 
-function updateOptions(property: PropertyDefinition, rawValue: string): void {
+function addDraftOption(property: PropertyDefinition): void {
+  const nextOptions = addPropertyOption(property.options, optionInputs.value[property.id] ?? '')
+
+  if (nextOptions === property.options)
+    return
+
+  updateDraftProperty(property.id, { options: nextOptions })
+  optionInputs.value = {
+    ...optionInputs.value,
+    [property.id]: '',
+  }
+}
+
+function removeDraftOption(property: PropertyDefinition, optionId: string): void {
   updateDraftProperty(property.id, {
-    options: rawValue
-      .split(',')
-      .map(option => option.trim())
-      .filter(Boolean)
-      .map(option => ({ id: option, label: option })),
+    options: removePropertyOption(property.options, optionId),
   })
 }
 </script>
@@ -118,11 +155,11 @@ function updateOptions(property: PropertyDefinition, rawValue: string): void {
         </DialogDescription>
       </DialogHeader>
 
-      <div class="grid gap-3">
+      <div ref="propertyListRef" class="grid gap-3">
         <div
           v-for="property in draftProperties"
           :key="property.id"
-          class="border-border grid gap-3 rounded-md border p-3 transition md:grid-cols-[minmax(8rem,1fr)_8.5rem_12rem_auto]"
+          class="property-config-item border-border grid gap-3 rounded-md border p-3 transition md:grid-cols-[minmax(8rem,1fr)_8.5rem_auto]"
         >
           <div class="grid gap-1.5">
             <label class="text-muted-foreground text-xs">{{ t('property.name') }}</label>
@@ -137,21 +174,12 @@ function updateOptions(property: PropertyDefinition, rawValue: string): void {
             <select
               class="border-input bg-background h-9 rounded-md border px-2 text-sm"
               :value="property.valueType"
-              @change="updateDraftProperty(property.id, { valueType: ($event.target as HTMLSelectElement).value as PropertyValueType })"
+              @change="updatePropertyType(property, ($event.target as HTMLSelectElement).value as PropertyValueType)"
             >
               <option v-for="type in propertyTypes" :key="type.value" :value="type.value">
                 {{ type.label }}
               </option>
             </select>
-          </div>
-
-          <div class="grid gap-1.5">
-            <label class="text-muted-foreground text-xs">{{ t('property.optionHint') }}</label>
-            <Input
-              :disabled="!optionCapableTypes.has(property.valueType)"
-              :model-value="property.options?.map(option => option.label).join(', ') ?? ''"
-              @update:model-value="updateOptions(property, String($event))"
-            />
           </div>
 
           <div class="flex items-end justify-end gap-1">
@@ -171,6 +199,49 @@ function updateOptions(property: PropertyDefinition, rawValue: string): void {
             >
               <Trash2Icon class="size-4" />
             </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              class="property-drag-handle cursor-grab active:cursor-grabbing"
+              aria-label="拖拽排序"
+            >
+              <GripVerticalIcon class="size-4" />
+            </Button>
+          </div>
+
+          <div v-if="optionCapableTypes.has(property.valueType)" class="grid gap-2 md:col-span-3">
+            <label class="text-muted-foreground text-xs">{{ t('property.options') }}</label>
+            <div class="flex min-h-9 flex-wrap items-center gap-2 rounded-md border border-dashed p-2">
+              <span
+                v-for="option in property.options ?? []"
+                :key="option.id"
+                class="bg-secondary text-secondary-foreground inline-flex h-7 max-w-full items-center gap-1 rounded-md px-2 text-sm"
+              >
+                <span class="truncate">{{ option.label }}</span>
+                <button
+                  type="button"
+                  class="text-muted-foreground hover:text-foreground inline-flex size-4 items-center justify-center"
+                  :aria-label="`${t('property.delete')} ${option.label}`"
+                  @click="removeDraftOption(property, option.id)"
+                >
+                  <XIcon class="size-3" />
+                </button>
+              </span>
+              <span v-if="!property.options?.length" class="text-muted-foreground text-sm">
+                {{ t('property.optionEmpty') }}
+              </span>
+            </div>
+            <form class="flex gap-2" @submit.prevent="addDraftOption(property)">
+              <Input
+                v-model="optionInputs[property.id]"
+                :placeholder="t('property.optionAdd')"
+              />
+              <Button type="submit" variant="outline">
+                <PlusIcon class="size-4" />
+                {{ t('property.optionAdd') }}
+              </Button>
+            </form>
           </div>
         </div>
       </div>
@@ -199,3 +270,9 @@ function updateOptions(property: PropertyDefinition, rawValue: string): void {
     </DialogContent>
   </Dialog>
 </template>
+
+<style scoped>
+.property-drag-chosen {
+  box-shadow: 0 0 0 2px hsl(var(--ring));
+}
+</style>

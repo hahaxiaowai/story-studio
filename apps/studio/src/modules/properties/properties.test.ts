@@ -1,12 +1,14 @@
 import type { PropertyDefinition } from '@story-studio/types'
 import { describe, expect, it } from 'vitest'
 import {
+  addPropertyOption,
   createCustomProperty,
   createPropertyDraft,
   defaultPropertyDefinitions,
   getPropertiesByKind,
   moveProperty,
   normalizePropertyValue,
+  removePropertyOption,
   reorderProperty,
   replacePropertiesByKind,
   updateProperty,
@@ -134,6 +136,21 @@ describe('properties', () => {
       'character-personality',
       'character-motivation',
       'character-relationship-notes',
+    ])
+  })
+
+  it('adds and removes select options with stable unique ids', () => {
+    const options = addPropertyOption([
+      { id: 'leading-role', label: '主角' },
+    ], ' 主角 ')
+
+    expect(options).toEqual([
+      { id: 'leading-role', label: '主角' },
+      { id: 'option-2', label: '主角' },
+    ])
+    expect(addPropertyOption(options, '   ')).toBe(options)
+    expect(removePropertyOption(options, 'leading-role')).toEqual([
+      { id: 'option-2', label: '主角' },
     ])
   })
 })
