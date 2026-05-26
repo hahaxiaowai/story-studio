@@ -1,7 +1,8 @@
 import type { StudioDataDocument, StudioPreferences } from '@story-studio/types'
+import { defaultPropertyDefinitions } from '../properties/properties'
 import { seedWorkspaces } from '../workspaces/workspaces'
 
-export const STUDIO_DATA_SCHEMA_VERSION = 1
+export const STUDIO_DATA_SCHEMA_VERSION = 2
 
 export const LEGACY_LOCALE_STORAGE_KEY = 'story-studio:locale'
 export const LEGACY_THEME_MODE_STORAGE_KEY = 'story-studio:theme-mode'
@@ -17,6 +18,8 @@ export function createDefaultStudioDataDocument(now = new Date().toISOString()):
     preferences: { ...DEFAULT_PREFERENCES },
     workspaces: [...seedWorkspaces],
     activeWorkspaceId: seedWorkspaces[0]?.id ?? '',
+    propertyDefinitions: [...defaultPropertyDefinitions],
+    entityRecords: [],
     materials: [],
     materialRefs: [],
     createdAt: now,
@@ -35,7 +38,33 @@ export function mergeLegacyPreferences(document: StudioDataDocument): StudioData
 }
 
 export function resolveStudioDataDocument(document: StudioDataDocument | undefined): StudioDataDocument {
-  return document ?? mergeLegacyPreferences(createDefaultStudioDataDocument())
+  return document ? migrateStudioDataDocument(document) : mergeLegacyPreferences(createDefaultStudioDataDocument())
+}
+
+function migrateStudioDataDocument(document: StudioDataDocument): StudioDataDocument {
+  const sourceDocument = document as StudioDataDocument & {
+    schemaVersion?: number
+    propertyDefinitions?: StudioDataDocument['propertyDefinitions']
+    entityRecords?: StudioDataDocument['entityRecords']
+  }
+  const propertyDefinitions = sourceDocument.propertyDefinitions ?? [...defaultPropertyDefinitions]
+  const entityRecords = sourceDocument.entityRecords ?? []
+
+  return {
+    ...sourceDocument,
+    schemaVersion: STUDIO_DATA_SCHEMA_VERSION,
+    workspaces: sourceDocument.workspaces.map(workspace => ({
+      ...workspace,
+      moduleCounts: {
+        outline: workspace.moduleCounts.outline,
+        characters: workspace.moduleCounts.characters,
+        maps: workspace.moduleCounts.maps,
+        content: workspace.moduleCounts.content,
+      },
+    })),
+    propertyDefinitions: propertyDefinitions.filter(property => String(property.kind) !== 'task'),
+    entityRecords: entityRecords.filter(record => String(record.kind) !== 'task'),
+  }
 }
 
 function readLegacyLocale(): StudioPreferences['locale'] | undefined {

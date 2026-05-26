@@ -1,5 +1,11 @@
 export type {
+  EntityKind,
+  EntityRecord,
   MaterialAsset,
+  PropertyDefinition,
+  PropertyOption,
+  PropertyValue,
+  PropertyValueType,
   PublicModule,
   StoryChapter,
   StoryCharacter,

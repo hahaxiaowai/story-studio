@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "build": "vue-tsc -b && vite build",
-    "dev": "vite --host 127.0.0.1",
+    "dev": "vite",
     "lint": "eslint .",
     "mobile:info": "node ./scripts/mobile-info.mjs",
     "tauri:build": "node ./scripts/tauri-build.mjs",
@@ -24,7 +24,8 @@
     "reka-ui": "catalog:prod",
     "tailwind-merge": "catalog:prod",
     "tw-animate-css": "catalog:prod",
-    "vue": "catalog:prod"
+    "vue": "catalog:prod",
+    "vue-draggable-plus": "catalog:prod"
   },
   "devDependencies": {
     "@story-studio/config": "workspace:*",

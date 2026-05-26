@@ -19,6 +19,39 @@ export interface StoryCharacter {
   role?: string
 }
 
+export type EntityKind = 'character' | 'outline'
+
+export type PropertyValue = string | number | boolean | string[] | null
+
+export type PropertyValueType = 'text' | 'longText' | 'number' | 'select' | 'multiSelect' | 'boolean' | 'date'
+
+export interface PropertyOption {
+  id: string
+  label: string
+}
+
+export interface PropertyDefinition {
+  id: string
+  kind: EntityKind
+  name: string
+  valueType: PropertyValueType
+  required: boolean
+  options?: PropertyOption[]
+  visible: boolean
+  order: number
+  system: boolean
+}
+
+export interface EntityRecord {
+  id: string
+  workspaceId: string
+  kind: EntityKind
+  title: string
+  values: Record<string, PropertyValue>
+  createdAt: string
+  updatedAt: string
+}
+
 export type WorkspaceModule = 'outline' | 'characters' | 'maps' | 'content'
 
 export type PublicModule = 'materials' | 'assistant'
@@ -56,7 +89,7 @@ export interface WorkspaceMaterialRef {
   createdAt: string
 }
 
-export type StudioDataSchemaVersion = 1
+export type StudioDataSchemaVersion = 2
 
 export interface StudioPreferences {
   locale: 'zh-CN' | 'en-US'
@@ -68,6 +101,8 @@ export interface StudioDataDocument {
   preferences: StudioPreferences
   workspaces: Workspace[]
   activeWorkspaceId: string
+  propertyDefinitions: PropertyDefinition[]
+  entityRecords: EntityRecord[]
   materials: MaterialAsset[]
   materialRefs: WorkspaceMaterialRef[]
   createdAt: string

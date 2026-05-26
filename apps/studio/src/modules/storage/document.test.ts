@@ -27,8 +27,23 @@ describe('studio data document', () => {
       },
       materials: [],
       materialRefs: [],
+      entityRecords: [],
     })
     expect(document.workspaces.map(workspace => workspace.title)).toEqual(['长夜手稿', '雾港来信'])
+    expect(document.propertyDefinitions.map(property => property.id)).toEqual([
+      'character-name',
+      'character-role',
+      'character-faction',
+      'character-appearance',
+      'character-personality',
+      'character-motivation',
+      'character-relationship-notes',
+      'outline-title',
+      'outline-stage',
+      'outline-summary',
+      'outline-conflict',
+      'outline-result',
+    ])
     expect(document.createdAt).toBe('2026-05-24T12:00:00.000Z')
     expect(document.updatedAt).toBe('2026-05-24T12:00:00.000Z')
   })
@@ -74,6 +89,42 @@ describe('studio data document', () => {
       locale: 'zh-CN',
       themeMode: 'light',
     })
+  })
+
+  it('migrates v1 documents to v2 without losing workspace data', () => {
+    const v1Document = {
+      schemaVersion: 1,
+      preferences: {
+        locale: 'en-US',
+        themeMode: 'dark',
+      },
+      workspaces: createDefaultStudioDataDocument().workspaces,
+      activeWorkspaceId: 'workspace-wu-gang-lai-xin',
+      materials: [],
+      materialRefs: [],
+      createdAt: '2026-05-24T08:00:00.000Z',
+      updatedAt: '2026-05-24T09:00:00.000Z',
+    }
+
+    const document = resolveStudioDataDocument(v1Document as unknown as StudioDataDocument)
+
+    expect(document).toMatchObject({
+      schemaVersion: 2,
+      activeWorkspaceId: 'workspace-wu-gang-lai-xin',
+      preferences: {
+        locale: 'en-US',
+        themeMode: 'dark',
+      },
+      entityRecords: [],
+      createdAt: '2026-05-24T08:00:00.000Z',
+      updatedAt: '2026-05-24T09:00:00.000Z',
+    })
+    expect(document.workspaces[0]?.moduleCounts).toMatchObject({
+      characters: 2,
+      outline: 3,
+    })
+    expect(document.propertyDefinitions.some(property => property.id === 'outline-stage')).toBe(true)
+    expect(document.propertyDefinitions.some(property => String(property.kind) === 'task')).toBe(false)
   })
 })
 
