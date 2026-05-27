@@ -3,6 +3,7 @@ name = "story-studio"
 version = "0.1.0"
 description = "Story Studio desktop shell"
 authors = [ "Story Studio" ]
+license-file = "../../../LICENSE.md"
 edition = "2021"
 
 [lib]

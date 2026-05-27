@@ -2,6 +2,7 @@
   "name": "@story-studio/config",
   "type": "module",
   "private": true,
+  "license": "SEE LICENSE IN ../../LICENSE.md",
   "exports": {
     "./tsconfig/base": "./tsconfig/base.json",
     "./vitest": "./src/vitest.ts"

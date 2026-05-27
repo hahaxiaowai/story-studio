@@ -4,11 +4,20 @@
 
 - `docs/specs/2026-05-24-persistent-storage.md`
 
+## 当前状态
+
+- 已实现 Web IndexedDB driver、Tauri command driver、运行时 driver 选择和应用级 `useStudioData()`。
+- 已实现 Tauri 端 `load_studio_data`、`save_studio_data`，保存到 app data dir 下的 `story-studio-data.json`。
+- 文档 schema 已从 v1 升级到 v2，新增属性定义和实体记录。
+- 已有 v1 文档加载时会补齐 `propertyDefinitions`、`entityRecords`，并过滤历史 `task` 类型数据。
+
 ## 实施步骤
 
 1. 更新共享类型。
    - 在 `packages/types/src/types/story.ts` 增加 `StudioDataDocument`、`StudioPreferences`、`StudioDataSchemaVersion`。
+   - `StudioDataSchemaVersion` 当前为 `2`。
    - `Workspace` 支持可选 `description`，随单一 JSON 文档持久化。
+   - `StudioDataDocument` 包含 `propertyDefinitions` 和 `entityRecords`。
    - 从 `packages/types/src/index.ts` 导出新增类型。
 
 2. 先补前端存储测试。
@@ -21,10 +30,13 @@
 3. 实现前端存储模块。
    - 新增 `apps/studio/src/modules/storage`。
    - 实现 JSON 文档创建、IndexedDB driver、Tauri driver、运行时 driver 选择和 `useStudioData`。
+   - 默认文档使用 `defaultPropertyDefinitions` 初始化属性配置。
+   - 迁移已有文档时补齐 v2 字段，并过滤历史 `task` 类型。
 
 4. 接入现有状态。
    - `useWorkspaces()` 改为读写 `useStudioData()`。
    - `useLocale()` 和 `useThemeMode()` 改为读写 `document.preferences`。
+   - `useProperties()` 和 `useEntities()` 改为读写 `document.propertyDefinitions` 和 `document.entityRecords`。
    - 布局或页面等待数据加载后再渲染主要内容。
 
 5. 实现 Tauri 端读写命令。
@@ -47,6 +59,8 @@
 
 - `packages/types/src/types/story.ts`
 - `packages/types/src/index.ts`
+- `apps/studio/src/modules/entities/*`
+- `apps/studio/src/modules/properties/*`
 - `apps/studio/src/modules/storage/*`
 - `apps/studio/src/modules/workspaces/useWorkspaces.ts`
 - `apps/studio/src/composables/useLocale.ts`
