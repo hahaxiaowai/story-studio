@@ -8,7 +8,7 @@ import type {
 import {
   createFantasyMapRenderer,
 } from '@story-studio/fantasy-map'
-import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, markRaw, nextTick, onMounted, onUnmounted, ref, shallowRef, watch } from 'vue'
 import { useLocale } from '@/composables/useLocale'
 import { useWorld } from './useWorld'
 import { createWorldMapStrokeHandler } from './worldMapRenderer'
@@ -19,7 +19,7 @@ const selectedColor = ref('#1d4ed8')
 const selectedWidth = ref(4)
 const mode = ref<FantasyMapMode>('draw')
 const mapContainer = ref<HTMLDivElement>()
-const renderer = ref<FantasyMapRenderer>()
+const renderer = shallowRef<FantasyMapRenderer>()
 
 const palette = ['#1d4ed8', '#16a34a', '#a16207', '#dc2626', '#111827']
 const brush = computed<FantasyMapBrush>(() => ({
@@ -40,11 +40,11 @@ onMounted(async () => {
   if (!mapContainer.value)
     return
 
-  renderer.value = createFantasyMapRenderer(mapContainer.value, {
+  renderer.value = markRaw(createFantasyMapRenderer(mapContainer.value, {
     brush: brush.value,
     mode: mode.value,
     onStrokeComplete: handleStrokeComplete,
-  })
+  }))
   renderer.value.setStrokes(strokes.value)
 })
 

@@ -38,9 +38,7 @@ function submitItem(groupId: string): void {
 }
 
 function getItemDraft(groupId: string): { title: string, body: string } {
-  itemDrafts.value[groupId] ??= { title: '', body: '' }
-
-  return itemDrafts.value[groupId]!
+  return itemDrafts.value[groupId] ?? { title: '', body: '' }
 }
 
 function updateItemDraft(groupId: string, patch: Partial<{ title: string, body: string }>): void {
