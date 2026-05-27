@@ -1,9 +1,10 @@
 import type { StudioDataDocument, StudioPreferences } from '@story-studio/types'
 import { defaultPropertyDefinitions } from '../properties/properties'
 import { seedWorkspaces } from '../workspaces/workspaces'
-import { createDefaultEntityRecords, createDefaultOutlines, isLegacyPrototypeSeedDocument } from './defaultContent'
+import { createWorkspaceWorld } from '../worlds/world'
+import { createDefaultEntityRecords, createDefaultOutlines, createDefaultWorlds, isLegacyPrototypeSeedDocument } from './defaultContent'
 
-export const STUDIO_DATA_SCHEMA_VERSION = 3
+export const STUDIO_DATA_SCHEMA_VERSION = 4
 
 export const LEGACY_LOCALE_STORAGE_KEY = 'story-studio:locale'
 export const LEGACY_THEME_MODE_STORAGE_KEY = 'story-studio:theme-mode'
@@ -22,6 +23,7 @@ export function createDefaultStudioDataDocument(now = new Date().toISOString()):
     propertyDefinitions: [...defaultPropertyDefinitions],
     entityRecords: createDefaultEntityRecords(now),
     outlines: createDefaultOutlines(now),
+    worlds: createDefaultWorlds(now),
     materials: [],
     materialRefs: [],
     createdAt: now,
@@ -40,11 +42,16 @@ export function mergeLegacyPreferences(document: StudioDataDocument): StudioData
 }
 
 export function resolveStudioDataDocument(document: StudioDataDocument | undefined): StudioDataDocument {
-  if (!document || document.schemaVersion !== STUDIO_DATA_SCHEMA_VERSION)
+  if (!document)
     return mergeLegacyPreferences(createDefaultStudioDataDocument())
 
   if (isLegacyPrototypeSeedDocument(document))
     return createDefaultStudioDataDocument()
+
+  const schemaVersion = Number((document as StudioDataDocument & { schemaVersion?: number }).schemaVersion ?? 0)
+
+  if (schemaVersion < 3)
+    return mergeLegacyPreferences(createDefaultStudioDataDocument())
 
   return migrateStudioDataDocument(document)
 }
@@ -55,10 +62,12 @@ function migrateStudioDataDocument(document: StudioDataDocument): StudioDataDocu
     propertyDefinitions?: StudioDataDocument['propertyDefinitions']
     entityRecords?: StudioDataDocument['entityRecords']
     outlines?: StudioDataDocument['outlines']
+    worlds?: StudioDataDocument['worlds']
   }
   const propertyDefinitions = sourceDocument.propertyDefinitions ?? [...defaultPropertyDefinitions]
   const entityRecords = sourceDocument.entityRecords ?? []
   const outlines = sourceDocument.outlines ?? []
+  const worlds = sourceDocument.worlds ?? sourceDocument.workspaces.map(workspace => createWorkspaceWorld(workspace.id, sourceDocument.updatedAt))
 
   return {
     ...sourceDocument,
@@ -75,6 +84,7 @@ function migrateStudioDataDocument(document: StudioDataDocument): StudioDataDocu
     propertyDefinitions: propertyDefinitions.filter(property => String(property.kind) !== 'task' && String(property.kind) !== 'outline'),
     entityRecords: entityRecords.filter(record => String(record.kind) !== 'task' && String(record.kind) !== 'outline'),
     outlines,
+    worlds,
   }
 }
 

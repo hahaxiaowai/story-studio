@@ -1,0 +1,24 @@
+{
+  "name": "@story-studio/fantasy-map",
+  "type": "module",
+  "private": true,
+  "license": "SEE LICENSE IN ../../LICENSE.md",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "build": "tsc --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "three": "catalog:prod"
+  },
+  "devDependencies": {
+    "@story-studio/config": "workspace:*",
+    "@types/three": "catalog:dev",
+    "typescript": "catalog:dev",
+    "vitest": "catalog:dev"
+  }
+}

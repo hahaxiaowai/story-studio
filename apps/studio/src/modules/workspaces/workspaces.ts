@@ -66,7 +66,7 @@ export function getWorkspaceModuleLabelKey(module: WorkspaceModule): MessageKey 
   const keys = {
     characters: 'nav.characters',
     content: 'nav.content',
-    maps: 'nav.maps',
+    maps: 'nav.world',
     outline: 'nav.outline',
   } as const satisfies Record<WorkspaceModule, MessageKey>
 
@@ -80,10 +80,12 @@ export function getNavigationLabelKey(hash: string): MessageKey {
     '#cast': 'nav.characters',
     '#characters': 'nav.characters',
     '#content': 'nav.content',
-    '#maps': 'nav.maps',
+    '#maps': 'nav.world',
     '#materials': 'nav.materials',
     '#manuscript': 'nav.content',
     '#outline': 'nav.outline',
+    '#world-map': 'nav.worldMap',
+    '#world-settings': 'nav.worldSettings',
   }
 
   return keys[normalizedHash] ?? 'nav.content'

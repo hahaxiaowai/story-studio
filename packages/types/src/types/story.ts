@@ -109,6 +109,56 @@ export interface WorkspaceOutline {
   updatedAt: string
 }
 
+export interface WorldSettingItem {
+  id: string
+  title: string
+  body: string
+  order: number
+  createdAt: string
+  updatedAt: string
+}
+
+export interface WorldSettingGroup {
+  id: string
+  title: string
+  description: string
+  items: WorldSettingItem[]
+  order: number
+  createdAt: string
+  updatedAt: string
+}
+
+export interface WorldMapPoint {
+  x: number
+  y: number
+}
+
+export interface WorldMapStroke {
+  id: string
+  color: string
+  width: number
+  points: WorldMapPoint[]
+  createdAt: string
+}
+
+export interface WorldMap {
+  id: string
+  title: string
+  strokes: WorldMapStroke[]
+  createdAt: string
+  updatedAt: string
+}
+
+export interface WorkspaceWorld {
+  id: string
+  workspaceId: string
+  settingGroups: WorldSettingGroup[]
+  maps: WorldMap[]
+  activeMapId: string
+  createdAt: string
+  updatedAt: string
+}
+
 export type WorkspaceModule = 'outline' | 'characters' | 'maps' | 'content'
 
 export type PublicModule = 'materials' | 'assistant'
@@ -146,7 +196,7 @@ export interface WorkspaceMaterialRef {
   createdAt: string
 }
 
-export type StudioDataSchemaVersion = 3
+export type StudioDataSchemaVersion = 4
 
 export interface StudioPreferences {
   locale: 'zh-CN' | 'en-US'
@@ -161,6 +211,7 @@ export interface StudioDataDocument {
   propertyDefinitions: PropertyDefinition[]
   entityRecords: EntityRecord[]
   outlines: WorkspaceOutline[]
+  worlds: WorkspaceWorld[]
   materials: MaterialAsset[]
   materialRefs: WorkspaceMaterialRef[]
   createdAt: string

@@ -5,6 +5,7 @@ import EntityWorkspace from '@/modules/entities/EntityWorkspace.vue'
 import OutlineWorkspace from '@/modules/outlines/OutlineWorkspace.vue'
 import { useStudioData } from '@/modules/storage/useStudioData'
 import { useWorkspaces } from '@/modules/workspaces/useWorkspaces'
+import WorldWorkspace from '@/modules/worlds/WorldWorkspace.vue'
 
 const { t } = useLocale()
 const { activeWorkspace } = useWorkspaces()
@@ -13,12 +14,18 @@ const currentHash = ref(getCurrentHash())
 const workspaceSlug = computed<string>(() => activeWorkspace.value.id.replace(/^workspace-/, ''))
 const outlineCount = computed<number>(() => studioData.document.value.outlines.find(outline => outline.workspaceId === activeWorkspace.value.id)?.beats.length ?? 0)
 const characterCount = computed<number>(() => studioData.document.value.entityRecords.filter(record => record.workspaceId === activeWorkspace.value.id && record.kind === 'character').length || activeWorkspace.value.moduleCounts.characters)
-const activeView = computed<'overview' | 'outline' | 'characters'>(() => {
+const activeView = computed<'overview' | 'outline' | 'characters' | 'world-settings' | 'world-map'>(() => {
   if (currentHash.value === '#outline')
     return 'outline'
 
   if (currentHash.value === '#cast' || currentHash.value === '#characters')
     return 'characters'
+
+  if (currentHash.value === '#world-settings' || currentHash.value === '#maps')
+    return 'world-settings'
+
+  if (currentHash.value === '#world-map')
+    return 'world-map'
 
   return 'overview'
 })
@@ -52,6 +59,11 @@ onUnmounted(() => {
 
     <OutlineWorkspace v-else-if="activeView === 'outline'" />
 
+    <WorldWorkspace
+      v-else-if="activeView === 'world-settings' || activeView === 'world-map'"
+      :initial-tab="activeView === 'world-map' ? 'map' : 'settings'"
+    />
+
     <template v-else>
       <section class="grid gap-4 pt-4 sm:grid-cols-2 xl:grid-cols-4" :aria-label="t('project.aria.overview')">
         <article class="bg-muted/50 border-border/70 rounded-lg border p-4">
@@ -72,7 +84,7 @@ onUnmounted(() => {
         </article>
         <article class="bg-muted/50 border-border/70 rounded-lg border p-4">
           <p class="text-muted-foreground text-sm">
-            {{ t('project.maps') }}
+            {{ t('project.world') }}
           </p>
           <p class="mt-3 text-2xl font-semibold">
             {{ activeWorkspace.moduleCounts.maps }}
@@ -138,7 +150,7 @@ onUnmounted(() => {
               </div>
               <div id="maps" class="flex items-center justify-between border-b pb-3">
                 <dt class="text-muted-foreground">
-                  {{ t('project.maps') }}
+                  {{ t('project.world') }}
                 </dt>
                 <dd class="font-medium">
                   {{ activeWorkspace.moduleCounts.maps }}

@@ -1,6 +1,7 @@
-import type { EntityRecord, StudioDataDocument, TimelineBeat, WorkspaceOutline } from '@story-studio/types'
+import type { EntityRecord, StudioDataDocument, TimelineBeat, WorkspaceOutline, WorkspaceWorld } from '@story-studio/types'
 import { createWorkspaceOutline } from '../outlines/outline'
 import { seedWorkspaces } from '../workspaces/workspaces'
+import { createWorkspaceWorld } from '../worlds/world'
 
 const WARCRAFT_WORKSPACE_ID = 'workspace-mo-shou-shi-jie'
 
@@ -78,6 +79,66 @@ export function createDefaultOutlines(now: string): WorkspaceOutline[] {
       return createWorkspaceOutline(workspace.id, now)
 
     return createWarcraftOutline(now)
+  })
+}
+
+export function createDefaultWorlds(now: string): WorkspaceWorld[] {
+  return seedWorkspaces.map((workspace) => {
+    const world = createWorkspaceWorld(workspace.id, now)
+
+    if (workspace.id !== WARCRAFT_WORKSPACE_ID)
+      return world
+
+    return {
+      ...world,
+      settingGroups: [
+        {
+          id: 'setting-geography',
+          title: '地理与势力',
+          description: '记录艾泽拉斯大陆、主城、阵营控制区和战略资源。',
+          items: [
+            {
+              id: 'setting-item-eastern-kingdoms',
+              title: '东部王国',
+              body: '联盟核心区域，暴风城、铁炉堡和洛丹伦遗迹共同构成主要政治舞台。',
+              order: 0,
+              createdAt: now,
+              updatedAt: now,
+            },
+            {
+              id: 'setting-item-kalimdor',
+              title: '卡利姆多',
+              body: '新部落与暗夜精灵的重要舞台，迁徙、建国和自然守护冲突集中于此。',
+              order: 1,
+              createdAt: now,
+              updatedAt: now,
+            },
+          ],
+          order: 0,
+          createdAt: now,
+          updatedAt: now,
+        },
+        {
+          id: 'setting-history',
+          title: '历史与规则',
+          description: '整理阵营战争、远古威胁和魔法力量的基础规则。',
+          items: [
+            {
+              id: 'setting-item-faction-war',
+              title: '联盟与部落',
+              body: '世界冲突长期围绕资源、生存、复仇和荣誉展开，共同敌人只能短暂压住阵营裂痕。',
+              order: 0,
+              createdAt: now,
+              updatedAt: now,
+            },
+          ],
+          order: 1,
+          createdAt: now,
+          updatedAt: now,
+        },
+      ],
+      updatedAt: now,
+    }
   })
 }
 

@@ -28,7 +28,7 @@ describe('studio data document', () => {
       materials: [],
       materialRefs: [],
     })
-    expect(document.schemaVersion).toBe(3)
+    expect(document.schemaVersion).toBe(4)
     expect(document.workspaces.map(workspace => workspace.title)).toEqual(['魔兽世界'])
     expect(document.propertyDefinitions.map(property => property.id)).toEqual([
       'character-name',
@@ -79,6 +79,24 @@ describe('studio data document', () => {
       'character-anduin-wrynn',
       'character-jaina-proudmoore',
     ])
+    expect(document.worlds).toHaveLength(1)
+    expect(document.worlds[0]).toMatchObject({
+      workspaceId: 'workspace-mo-shou-shi-jie',
+      settingGroups: [
+        {
+          title: '地理与势力',
+        },
+        {
+          title: '历史与规则',
+        },
+      ],
+      maps: [
+        {
+          title: '世界地图',
+          strokes: [],
+        },
+      ],
+    })
     expect(document.createdAt).toBe('2026-05-24T12:00:00.000Z')
     expect(document.updatedAt).toBe('2026-05-24T12:00:00.000Z')
   })
@@ -174,6 +192,7 @@ describe('studio data document', () => {
           updatedAt: '2026-05-24T09:00:00.000Z',
         },
       ],
+      worlds: [],
       materials: [],
       materialRefs: [],
       createdAt: '2026-05-24T08:00:00.000Z',
@@ -183,7 +202,7 @@ describe('studio data document', () => {
     const document = resolveStudioDataDocument(v2Document as unknown as StudioDataDocument)
 
     expect(document).toMatchObject({
-      schemaVersion: 3,
+      schemaVersion: 4,
       activeWorkspaceId: 'workspace-mo-shou-shi-jie',
       preferences: {
         locale: 'zh-CN',
@@ -194,6 +213,20 @@ describe('studio data document', () => {
     expect(document.entityRecords.map(record => record.id)).toContain('character-thrall')
     expect(document.propertyDefinitions.some(property => property.id.startsWith('outline-'))).toBe(false)
     expect(document.outlines.map(outline => outline.workspaceId)).toEqual(['workspace-mo-shou-shi-jie'])
+  })
+
+  it('migrates v3 documents by adding workspace worlds', () => {
+    const v3Document = {
+      ...createDefaultStudioDataDocument(),
+      schemaVersion: 3,
+      worlds: undefined,
+    } as unknown as StudioDataDocument
+
+    const document = resolveStudioDataDocument(v3Document)
+
+    expect(document.schemaVersion).toBe(4)
+    expect(document.worlds.map(world => world.workspaceId)).toEqual(['workspace-mo-shou-shi-jie'])
+    expect(document.worlds[0]?.maps[0]?.title).toBe('世界地图')
   })
 
   it('replaces the old prototype seed document with the Warcraft sample', () => {

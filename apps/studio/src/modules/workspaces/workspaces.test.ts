@@ -86,13 +86,16 @@ describe('workspaces', () => {
   it('maps workspace modules to locale labels', () => {
     expect(getWorkspaceModuleLabelKey('outline')).toBe('nav.outline')
     expect(getWorkspaceModuleLabelKey('characters')).toBe('nav.characters')
-    expect(getWorkspaceModuleLabelKey('maps')).toBe('nav.maps')
+    expect(getWorkspaceModuleLabelKey('maps')).toBe('nav.world')
     expect(getWorkspaceModuleLabelKey('content')).toBe('nav.content')
   })
 
   it('maps navigation hashes to locale labels', () => {
     expect(getNavigationLabelKey('#outline')).toBe('nav.outline')
     expect(getNavigationLabelKey('#cast')).toBe('nav.characters')
+    expect(getNavigationLabelKey('#maps')).toBe('nav.world')
+    expect(getNavigationLabelKey('#world-settings')).toBe('nav.worldSettings')
+    expect(getNavigationLabelKey('#world-map')).toBe('nav.worldMap')
     expect(getNavigationLabelKey('#manuscript')).toBe('nav.content')
     expect(getNavigationLabelKey('#materials')).toBe('nav.materials')
     expect(getNavigationLabelKey('#unknown')).toBe('nav.content')

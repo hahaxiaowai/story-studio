@@ -56,17 +56,17 @@ const navMain = computed(() => [
     ],
   },
   {
-    title: t('nav.maps'),
-    url: '#maps',
+    title: t('nav.world'),
+    url: '#world-settings',
     icon: MapIcon,
     items: [
       {
-        title: t('nav.worldBible'),
-        url: '#maps',
+        title: t('nav.worldSettings'),
+        url: '#world-settings',
       },
       {
-        title: t('nav.structure'),
-        url: '#maps',
+        title: t('nav.worldMap'),
+        url: '#world-map',
       },
     ],
   },

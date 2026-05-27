@@ -25,4 +25,10 @@ export type {
   WorkspaceModule,
   WorkspaceModuleCounts,
   WorkspaceOutline,
+  WorkspaceWorld,
+  WorldMap,
+  WorldMapPoint,
+  WorldMapStroke,
+  WorldSettingGroup,
+  WorldSettingItem,
 } from './types/story'
