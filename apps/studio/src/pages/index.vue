@@ -2,6 +2,7 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useLocale } from '@/composables/useLocale'
 import EntityWorkspace from '@/modules/entities/EntityWorkspace.vue'
+import OutlineWorkspace from '@/modules/outlines/OutlineWorkspace.vue'
 import { useStudioData } from '@/modules/storage/useStudioData'
 import { useWorkspaces } from '@/modules/workspaces/useWorkspaces'
 
@@ -10,8 +11,12 @@ const { activeWorkspace } = useWorkspaces()
 const studioData = useStudioData()
 const currentHash = ref(getCurrentHash())
 const workspaceSlug = computed<string>(() => activeWorkspace.value.id.replace(/^workspace-/, ''))
+const outlineCount = computed<number>(() => studioData.document.value.outlines.find(outline => outline.workspaceId === activeWorkspace.value.id)?.beats.length ?? 0)
 const characterCount = computed<number>(() => studioData.document.value.entityRecords.filter(record => record.workspaceId === activeWorkspace.value.id && record.kind === 'character').length || activeWorkspace.value.moduleCounts.characters)
-const activeView = computed<'overview' | 'characters'>(() => {
+const activeView = computed<'overview' | 'outline' | 'characters'>(() => {
+  if (currentHash.value === '#outline')
+    return 'outline'
+
   if (currentHash.value === '#cast' || currentHash.value === '#characters')
     return 'characters'
 
@@ -45,6 +50,8 @@ onUnmounted(() => {
       :empty-label="t('character.empty')"
     />
 
+    <OutlineWorkspace v-else-if="activeView === 'outline'" />
+
     <template v-else>
       <section class="grid gap-4 pt-4 sm:grid-cols-2 xl:grid-cols-4" :aria-label="t('project.aria.overview')">
         <article class="bg-muted/50 border-border/70 rounded-lg border p-4">
@@ -52,7 +59,7 @@ onUnmounted(() => {
             {{ t('project.outline') }}
           </p>
           <p class="mt-3 text-2xl font-semibold">
-            {{ activeWorkspace.moduleCounts.outline }}
+            {{ outlineCount }}
           </p>
         </article>
         <article class="bg-muted/50 border-border/70 rounded-lg border p-4">
@@ -118,7 +125,7 @@ onUnmounted(() => {
                   {{ t('project.outline') }}
                 </dt>
                 <dd class="font-medium">
-                  {{ activeWorkspace.moduleCounts.outline }}
+                  {{ outlineCount }}
                 </dd>
               </div>
               <div id="cast" class="flex items-center justify-between border-b pb-3">

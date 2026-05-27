@@ -15,6 +15,8 @@ export interface AppendWorkspaceResult {
 export const workspaceModules = ['outline', 'characters', 'maps', 'content'] as const satisfies readonly WorkspaceModule[]
 
 const workspaceIdSegments: Record<string, string> = {
+  兽: 'shou',
+  界: 'jie',
   名: 'ming',
   长: 'long',
   稿: 'gao',
@@ -28,27 +30,20 @@ const workspaceIdSegments: Record<string, string> = {
   信: 'xin',
   夜: 'ye',
   作: 'zuo',
+  世: 'shi',
+  魔: 'mo',
 }
 
 export const seedWorkspaces: Workspace[] = [
   createWorkspace({
-    title: '长夜手稿',
+    title: '魔兽世界',
+    description: '以艾泽拉斯的阵营冲突、远古威胁和关键人物选择为样例，展示时间轴大纲能力。',
     now: '2026-05-24T00:00:00.000Z',
     moduleCounts: {
-      outline: 3,
-      characters: 2,
-      maps: 1,
-      content: 4,
-    },
-  }),
-  createWorkspace({
-    title: '雾港来信',
-    now: '2026-05-24T00:00:00.000Z',
-    moduleCounts: {
-      outline: 1,
-      characters: 1,
-      maps: 2,
-      content: 2,
+      outline: 6,
+      characters: 5,
+      maps: 3,
+      content: 0,
     },
   }),
 ]

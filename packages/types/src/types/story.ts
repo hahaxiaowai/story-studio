@@ -52,6 +52,63 @@ export interface EntityRecord {
   updatedAt: string
 }
 
+export type PlotLineKind = 'main' | 'branch'
+
+export interface PlotLine {
+  id: string
+  title: string
+  kind: PlotLineKind
+  color: string
+  order: number
+}
+
+export interface OutlineEventTag {
+  id: string
+  label: string
+  color: string
+  system: boolean
+  order: number
+}
+
+export interface BeatEvent {
+  id: string
+  title: string
+  description: string
+  tagIds: string[]
+}
+
+export type CharacterChangeCategory = 'relationship' | 'personality' | 'depth' | 'state'
+
+export interface CharacterChange {
+  id: string
+  characterId: string
+  category: CharacterChangeCategory
+  summary: string
+}
+
+export interface TimelineBeat {
+  id: string
+  title: string
+  order: number
+  timeLabel: string
+  summary: string
+  plotLineIds: string[]
+  events: BeatEvent[]
+  characterChanges: CharacterChange[]
+  createdAt: string
+  updatedAt: string
+}
+
+export interface WorkspaceOutline {
+  id: string
+  workspaceId: string
+  plotLines: PlotLine[]
+  eventTags: OutlineEventTag[]
+  beats: TimelineBeat[]
+  createdAt: string
+  updatedAt: string
+}
+
 export type WorkspaceModule = 'outline' | 'characters' | 'maps' | 'content'
 
 export type PublicModule = 'materials' | 'assistant'
@@ -89,7 +146,7 @@ export interface WorkspaceMaterialRef {
   createdAt: string
 }
 
-export type StudioDataSchemaVersion = 2
+export type StudioDataSchemaVersion = 3
 
 export interface StudioPreferences {
   locale: 'zh-CN' | 'en-US'
@@ -103,6 +160,7 @@ export interface StudioDataDocument {
   activeWorkspaceId: string
   propertyDefinitions: PropertyDefinition[]
   entityRecords: EntityRecord[]
+  outlines: WorkspaceOutline[]
   materials: MaterialAsset[]
   materialRefs: WorkspaceMaterialRef[]
   createdAt: string

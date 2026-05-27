@@ -12,21 +12,23 @@ describe('entities', () => {
   it('creates records with values initialized from visible properties', () => {
     const record = createEntityRecord({
       workspaceId: 'workspace-a',
-      kind: 'outline',
+      kind: 'character',
       properties: defaultPropertyDefinitions,
       now: '2026-05-25T10:00:00.000Z',
     })
 
     expect(record).toMatchObject({
       workspaceId: 'workspace-a',
-      kind: 'outline',
-      title: '新大纲',
+      kind: 'character',
+      title: '新人物',
       values: {
-        'outline-title': '新大纲',
-        'outline-stage': 'setup',
-        'outline-summary': '',
-        'outline-conflict': '',
-        'outline-result': '',
+        'character-name': '新人物',
+        'character-role': '',
+        'character-faction': '',
+        'character-appearance': '',
+        'character-personality': '',
+        'character-motivation': '',
+        'character-relationship-notes': '',
       },
       createdAt: '2026-05-25T10:00:00.000Z',
       updatedAt: '2026-05-25T10:00:00.000Z',

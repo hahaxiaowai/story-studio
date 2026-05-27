@@ -20,16 +20,16 @@ describe('studio data document', () => {
 
     expect(document).toMatchObject({
       schemaVersion: STUDIO_DATA_SCHEMA_VERSION,
-      activeWorkspaceId: 'workspace-long-ye-shou-gao',
+      activeWorkspaceId: 'workspace-mo-shou-shi-jie',
       preferences: {
         locale: 'zh-CN',
         themeMode: 'light',
       },
       materials: [],
       materialRefs: [],
-      entityRecords: [],
     })
-    expect(document.workspaces.map(workspace => workspace.title)).toEqual(['长夜手稿', '雾港来信'])
+    expect(document.schemaVersion).toBe(3)
+    expect(document.workspaces.map(workspace => workspace.title)).toEqual(['魔兽世界'])
     expect(document.propertyDefinitions.map(property => property.id)).toEqual([
       'character-name',
       'character-role',
@@ -38,11 +38,46 @@ describe('studio data document', () => {
       'character-personality',
       'character-motivation',
       'character-relationship-notes',
-      'outline-title',
-      'outline-stage',
-      'outline-summary',
-      'outline-conflict',
-      'outline-result',
+    ])
+    expect(document.entityRecords.map(record => record.title)).toEqual([
+      '萨尔',
+      '吉安娜·普罗德摩尔',
+      '安度因·乌瑞恩',
+      '希尔瓦娜斯·风行者',
+      '伊利丹·怒风',
+    ])
+    expect(document.entityRecords.every(record => record.workspaceId === 'workspace-mo-shou-shi-jie')).toBe(true)
+    expect(document.outlines).toHaveLength(1)
+    expect(document.outlines[0]).toMatchObject({
+      workspaceId: 'workspace-mo-shou-shi-jie',
+    })
+    expect(document.outlines[0]?.plotLines.map(line => line.title)).toEqual([
+      '艾泽拉斯主线',
+      '联盟与部落',
+      '燃烧军团',
+      '天灾与暗影',
+    ])
+    expect(document.outlines[0]?.eventTags.map(tag => tag.label)).toEqual([
+      '冲突',
+      '高潮',
+      '转折',
+      '日常',
+      '战争',
+      '背叛',
+      '牺牲',
+    ])
+    expect(document.outlines[0]?.beats.map(beat => beat.title)).toEqual([
+      '黑暗之门开启',
+      '萨尔建立新部落',
+      '海加尔山并肩作战',
+      '天谴之门灾变',
+      '燃烧军团再临',
+      '第四次大战爆发',
+    ])
+    expect(document.outlines[0]?.beats[5]?.characterChanges.map(change => change.characterId)).toEqual([
+      'character-sylvanas-windrunner',
+      'character-anduin-wrynn',
+      'character-jaina-proudmoore',
     ])
     expect(document.createdAt).toBe('2026-05-24T12:00:00.000Z')
     expect(document.updatedAt).toBe('2026-05-24T12:00:00.000Z')
@@ -91,40 +126,117 @@ describe('studio data document', () => {
     })
   })
 
-  it('migrates v1 documents to v2 without losing workspace data', () => {
-    const v1Document = {
-      schemaVersion: 1,
+  it('resets older documents to the v3 prototype seed data', () => {
+    const v2Document = {
+      schemaVersion: 2,
       preferences: {
         locale: 'en-US',
         themeMode: 'dark',
       },
-      workspaces: createDefaultStudioDataDocument().workspaces,
+      workspaces: [
+        {
+          id: 'workspace-old',
+          title: '旧项目',
+          status: 'draft',
+          moduleCounts: {
+            characters: 9,
+            content: 8,
+            maps: 7,
+            outline: 6,
+          },
+          createdAt: '2026-05-24T08:00:00.000Z',
+          updatedAt: '2026-05-24T09:00:00.000Z',
+        },
+      ],
       activeWorkspaceId: 'workspace-wu-gang-lai-xin',
+      propertyDefinitions: [
+        {
+          id: 'outline-title',
+          kind: 'outline',
+          name: '标题',
+          valueType: 'text',
+          required: true,
+          visible: true,
+          order: 0,
+          system: true,
+        },
+      ],
+      entityRecords: [
+        {
+          id: 'outline-old',
+          workspaceId: 'workspace-old',
+          kind: 'outline',
+          title: '旧大纲',
+          values: {
+            'outline-title': '旧大纲',
+          },
+          createdAt: '2026-05-24T08:00:00.000Z',
+          updatedAt: '2026-05-24T09:00:00.000Z',
+        },
+      ],
       materials: [],
       materialRefs: [],
       createdAt: '2026-05-24T08:00:00.000Z',
       updatedAt: '2026-05-24T09:00:00.000Z',
     }
 
-    const document = resolveStudioDataDocument(v1Document as unknown as StudioDataDocument)
+    const document = resolveStudioDataDocument(v2Document as unknown as StudioDataDocument)
 
     expect(document).toMatchObject({
-      schemaVersion: 2,
-      activeWorkspaceId: 'workspace-wu-gang-lai-xin',
+      schemaVersion: 3,
+      activeWorkspaceId: 'workspace-mo-shou-shi-jie',
       preferences: {
-        locale: 'en-US',
-        themeMode: 'dark',
+        locale: 'zh-CN',
+        themeMode: 'light',
       },
+    })
+    expect(document.workspaces.map(workspace => workspace.id)).toEqual(['workspace-mo-shou-shi-jie'])
+    expect(document.entityRecords.map(record => record.id)).toContain('character-thrall')
+    expect(document.propertyDefinitions.some(property => property.id.startsWith('outline-'))).toBe(false)
+    expect(document.outlines.map(outline => outline.workspaceId)).toEqual(['workspace-mo-shou-shi-jie'])
+  })
+
+  it('replaces the old prototype seed document with the Warcraft sample', () => {
+    const legacySeedDocument = {
+      ...createDefaultStudioDataDocument(),
+      workspaces: [
+        {
+          id: 'workspace-long-ye-shou-gao',
+          title: '长夜手稿',
+          status: 'draft',
+          moduleCounts: {
+            characters: 2,
+            content: 4,
+            maps: 1,
+            outline: 3,
+          },
+          createdAt: '2026-05-24T00:00:00.000Z',
+          updatedAt: '2026-05-24T00:00:00.000Z',
+        },
+        {
+          id: 'workspace-wu-gang-lai-xin',
+          title: '雾港来信',
+          status: 'draft',
+          moduleCounts: {
+            characters: 1,
+            content: 2,
+            maps: 2,
+            outline: 1,
+          },
+          createdAt: '2026-05-24T00:00:00.000Z',
+          updatedAt: '2026-05-24T00:00:00.000Z',
+        },
+      ],
+      activeWorkspaceId: 'workspace-long-ye-shou-gao',
       entityRecords: [],
-      createdAt: '2026-05-24T08:00:00.000Z',
-      updatedAt: '2026-05-24T09:00:00.000Z',
-    })
-    expect(document.workspaces[0]?.moduleCounts).toMatchObject({
-      characters: 2,
-      outline: 3,
-    })
-    expect(document.propertyDefinitions.some(property => property.id === 'outline-stage')).toBe(true)
-    expect(document.propertyDefinitions.some(property => String(property.kind) === 'task')).toBe(false)
+      outlines: [],
+    } as StudioDataDocument
+
+    const document = resolveStudioDataDocument(legacySeedDocument)
+
+    expect(document.workspaces.map(workspace => workspace.title)).toEqual(['魔兽世界'])
+    expect(document.activeWorkspaceId).toBe('workspace-mo-shou-shi-jie')
+    expect(document.outlines[0]?.beats).toHaveLength(6)
   })
 })
 

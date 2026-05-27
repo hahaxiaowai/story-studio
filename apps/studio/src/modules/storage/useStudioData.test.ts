@@ -15,7 +15,7 @@ describe('useStudioData', () => {
   it('loads persisted documents from the storage driver', async () => {
     const persistedDocument: StudioDataDocument = {
       ...createDefaultStudioDataDocument(),
-      activeWorkspaceId: 'workspace-wu-gang-lai-xin',
+      activeWorkspaceId: 'workspace-star-harbor',
     }
     const driver = createDriver(persistedDocument)
 
@@ -23,7 +23,7 @@ describe('useStudioData', () => {
     await studioData.ready
 
     expect(studioData.isLoaded.value).toBe(true)
-    expect(studioData.document.value.activeWorkspaceId).toBe('workspace-wu-gang-lai-xin')
+    expect(studioData.document.value.activeWorkspaceId).toBe('workspace-star-harbor')
     expect(driver.save).not.toHaveBeenCalled()
   })
 
@@ -33,7 +33,7 @@ describe('useStudioData', () => {
     const studioData = useStudioData(driver)
     await studioData.ready
 
-    expect(studioData.document.value.activeWorkspaceId).toBe('workspace-long-ye-shou-gao')
+    expect(studioData.document.value.activeWorkspaceId).toBe('workspace-mo-shou-shi-jie')
     expect(driver.save).toHaveBeenCalledWith(studioData.document.value)
   })
 
@@ -43,12 +43,12 @@ describe('useStudioData', () => {
     await studioData.ready
 
     studioData.updateDocument((document) => {
-      document.activeWorkspaceId = 'workspace-wu-gang-lai-xin'
+      document.activeWorkspaceId = 'workspace-star-harbor'
     })
     await nextTick()
 
     expect(driver.save).toHaveBeenLastCalledWith(expect.objectContaining({
-      activeWorkspaceId: 'workspace-wu-gang-lai-xin',
+      activeWorkspaceId: 'workspace-star-harbor',
     }))
   })
 

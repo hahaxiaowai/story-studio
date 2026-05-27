@@ -13,16 +13,6 @@ export const defaultPropertyDefinitions: PropertyDefinition[] = [
   createSystemProperty('character-personality', 'character', '性格', 'longText', 4),
   createSystemProperty('character-motivation', 'character', '动机', 'longText', 5),
   createSystemProperty('character-relationship-notes', 'character', '关系备注', 'longText', 6),
-  createSystemProperty('outline-title', 'outline', '标题', 'text', 0, true),
-  createSystemProperty('outline-stage', 'outline', '阶段', 'select', 1, false, [
-    { id: 'setup', label: '开端' },
-    { id: 'development', label: '发展' },
-    { id: 'turning-point', label: '转折' },
-    { id: 'ending', label: '结局' },
-  ]),
-  createSystemProperty('outline-summary', 'outline', '摘要', 'longText', 2),
-  createSystemProperty('outline-conflict', 'outline', '冲突', 'longText', 3),
-  createSystemProperty('outline-result', 'outline', '结果', 'longText', 4),
 ]
 
 export interface CreateCustomPropertyInput {

@@ -2,8 +2,8 @@
   "name": "story-studio",
   "type": "module",
   "private": true,
-  "license": "SEE LICENSE IN LICENSE.md",
   "packageManager": "pnpm@11.2.2",
+  "license": "SEE LICENSE IN LICENSE.md",
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev",
@@ -13,9 +13,6 @@
     "typecheck": "turbo run typecheck",
     "log": "git log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --decorate --date=short | devmoji --log"
   },
-  "simple-git-hooks": {
-    "prepare-commit-msg": "pnpm exec devmoji -e"
-  },
   "devDependencies": {
     "@antfu/eslint-config": "catalog:dev",
     "devmoji": "catalog:dev",
@@ -24,5 +21,8 @@
     "turbo": "catalog:dev",
     "typescript": "catalog:dev",
     "vitest": "catalog:dev"
+  },
+  "simple-git-hooks": {
+    "prepare-commit-msg": "pnpm exec devmoji -e"
   }
 }

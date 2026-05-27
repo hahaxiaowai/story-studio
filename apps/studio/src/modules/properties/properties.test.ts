@@ -25,13 +25,7 @@ describe('properties', () => {
       'character-motivation',
       'character-relationship-notes',
     ])
-    expect(getPropertiesByKind(defaultPropertyDefinitions, 'outline').map(property => property.id)).toEqual([
-      'outline-title',
-      'outline-stage',
-      'outline-summary',
-      'outline-conflict',
-      'outline-result',
-    ])
+    expect(getPropertiesByKind(defaultPropertyDefinitions, 'outline')).toEqual([])
   })
 
   it('creates editable custom properties after system properties', () => {
@@ -54,23 +48,25 @@ describe('properties', () => {
   })
 
   it('updates and reorders properties without losing the rest of the list', () => {
-    const renamed = updateProperty(defaultPropertyDefinitions, 'outline-conflict', {
-      name: '核心冲突',
+    const renamed = updateProperty(defaultPropertyDefinitions, 'character-motivation', {
+      name: '核心动机',
       visible: false,
     })
-    const moved = moveProperty(renamed, 'outline-conflict', 'up')
+    const moved = moveProperty(renamed, 'character-motivation', 'up')
 
-    expect(getPropertiesByKind(moved, 'outline').map(property => property.id)).toEqual([
-      'outline-title',
-      'outline-stage',
-      'outline-conflict',
-      'outline-summary',
-      'outline-result',
+    expect(getPropertiesByKind(moved, 'character').map(property => property.id)).toEqual([
+      'character-name',
+      'character-role',
+      'character-faction',
+      'character-appearance',
+      'character-motivation',
+      'character-personality',
+      'character-relationship-notes',
     ])
-    expect(moved.find(property => property.id === 'outline-conflict')).toMatchObject({
-      name: '核心冲突',
+    expect(moved.find(property => property.id === 'character-motivation')).toMatchObject({
+      name: '核心动机',
       visible: false,
-      order: 2,
+      order: 4,
     })
   })
 
@@ -108,15 +104,15 @@ describe('properties', () => {
   })
 
   it('keeps property edits in a draft until saved', () => {
-    const draft = createPropertyDraft(defaultPropertyDefinitions, 'outline')
-    draft[0]!.name = '草稿大纲标题'
+    const draft = createPropertyDraft(defaultPropertyDefinitions, 'character')
+    draft[0]!.name = '草稿人物姓名'
 
-    expect(getPropertiesByKind(defaultPropertyDefinitions, 'outline')[0]?.name).toBe('标题')
+    expect(getPropertiesByKind(defaultPropertyDefinitions, 'character')[0]?.name).toBe('姓名')
 
-    const savedProperties = replacePropertiesByKind(defaultPropertyDefinitions, 'outline', draft)
+    const savedProperties = replacePropertiesByKind(defaultPropertyDefinitions, 'character', draft)
 
-    expect(getPropertiesByKind(savedProperties, 'outline')[0]?.name).toBe('草稿大纲标题')
-    expect(getPropertiesByKind(savedProperties, 'character')[0]?.name).toBe('姓名')
+    expect(getPropertiesByKind(savedProperties, 'character')[0]?.name).toBe('草稿人物姓名')
+    expect(getPropertiesByKind(savedProperties, 'outline')).toEqual([])
   })
   it('saves property drafts using the visible draft order', () => {
     const draft = createPropertyDraft(defaultPropertyDefinitions, 'character')

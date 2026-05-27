@@ -9,15 +9,15 @@ import {
 describe('workspaces', () => {
   it('adds a workspace and makes it active', () => {
     const result = appendWorkspace([], {
-      title: '长夜手稿',
+      title: '魔兽世界',
       now: '2026-05-24T00:00:00.000Z',
     })
 
-    expect(result.activeWorkspaceId).toBe('workspace-long-ye-shou-gao')
+    expect(result.activeWorkspaceId).toBe('workspace-mo-shou-shi-jie')
     expect(result.workspaces).toMatchObject([
       {
-        id: 'workspace-long-ye-shou-gao',
-        title: '长夜手稿',
+        id: 'workspace-mo-shou-shi-jie',
+        title: '魔兽世界',
         moduleCounts: {
           characters: 0,
           content: 0,

@@ -18,11 +18,14 @@ describe('useWorkspaces', () => {
     await useStudioData(driver).ready
 
     const workspaces = useWorkspaces()
-    workspaces.setActiveWorkspace('workspace-wu-gang-lai-xin')
+    const workspace = workspaces.addWorkspace({
+      title: 'Star Harbor',
+    })
+    workspaces.setActiveWorkspace(workspace.id)
     await nextTick()
 
     expect(driver.save).toHaveBeenLastCalledWith(expect.objectContaining({
-      activeWorkspaceId: 'workspace-wu-gang-lai-xin',
+      activeWorkspaceId: 'workspace-star-harbor',
     }))
   })
 
@@ -34,11 +37,11 @@ describe('useWorkspaces', () => {
     const workspace = workspaces.addWorkspace()
     await nextTick()
 
-    expect(workspace.title).toBe('未命名作品 3')
+    expect(workspace.title).toBe('未命名作品 2')
     expect(driver.save).toHaveBeenLastCalledWith(expect.objectContaining({
-      activeWorkspaceId: 'workspace-wei-ming-ming-zuo-pin-3',
+      activeWorkspaceId: 'workspace-wei-ming-ming-zuo-pin-2',
       workspaces: expect.arrayContaining([
-        expect.objectContaining({ id: 'workspace-wei-ming-ming-zuo-pin-3' }),
+        expect.objectContaining({ id: 'workspace-wei-ming-ming-zuo-pin-2' }),
       ]),
     }))
   })
