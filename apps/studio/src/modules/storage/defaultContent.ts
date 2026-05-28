@@ -70,6 +70,33 @@ export function createDefaultEntityRecords(now: string): EntityRecord[] {
       relationshipNotes: '与玛法里奥和泰兰德的旧关系让他的选择长期带有私人裂痕。',
       now,
     }),
+    createWorldSettingRecord({
+      id: 'world-setting-eastern-kingdoms',
+      name: '东部王国',
+      category: 'geography',
+      summary: '联盟核心区域，暴风城、铁炉堡和洛丹伦遗迹共同构成主要政治舞台。',
+      detail: '适合作为联盟政治、天灾余波和王权继承线的主要发生地。',
+      links: '暴风城、铁炉堡、洛丹伦、联盟',
+      now,
+    }),
+    createWorldSettingRecord({
+      id: 'world-setting-kalimdor',
+      name: '卡利姆多',
+      category: 'geography',
+      summary: '新部落与暗夜精灵的重要舞台，迁徙、建国和自然守护冲突集中于此。',
+      detail: '可承载部落建国、自然守护、资源争夺和跨阵营停战等设定。',
+      links: '奥格瑞玛、暗夜精灵、新部落',
+      now,
+    }),
+    createWorldSettingRecord({
+      id: 'world-setting-faction-war',
+      name: '联盟与部落',
+      category: 'faction',
+      summary: '世界冲突长期围绕资源、生存、复仇和荣誉展开。',
+      detail: '共同敌人只能短暂压住阵营裂痕，角色选择常被阵营责任和个人信念共同牵引。',
+      links: '联盟、部落、第四次大战',
+      now,
+    }),
   ]
 }
 
@@ -394,6 +421,32 @@ function createCharacterRecord(input: {
       'character-personality': input.personality,
       'character-motivation': input.motivation,
       'character-relationship-notes': input.relationshipNotes,
+    },
+    createdAt: input.now,
+    updatedAt: input.now,
+  }
+}
+
+function createWorldSettingRecord(input: {
+  id: string
+  name: string
+  category: string
+  summary: string
+  detail: string
+  links: string
+  now: string
+}): EntityRecord {
+  return {
+    id: input.id,
+    workspaceId: WARCRAFT_WORKSPACE_ID,
+    kind: 'world-setting',
+    title: input.name,
+    values: {
+      'world-setting-name': input.name,
+      'world-setting-category': input.category,
+      'world-setting-summary': input.summary,
+      'world-setting-detail': input.detail,
+      'world-setting-links': input.links,
     },
     createdAt: input.now,
     updatedAt: input.now,

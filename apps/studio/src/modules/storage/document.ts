@@ -1,4 +1,4 @@
-import type { StudioDataDocument, StudioPreferences } from '@story-studio/types'
+import type { EntityRecord, PropertyDefinition, StudioDataDocument, StudioPreferences, WorkspaceWorld, WorldSettingGroup } from '@story-studio/types'
 import { defaultPropertyDefinitions } from '../properties/properties'
 import { seedWorkspaces } from '../workspaces/workspaces'
 import { createWorkspaceWorld } from '../worlds/world'
@@ -64,10 +64,10 @@ function migrateStudioDataDocument(document: StudioDataDocument): StudioDataDocu
     outlines?: StudioDataDocument['outlines']
     worlds?: StudioDataDocument['worlds']
   }
-  const propertyDefinitions = sourceDocument.propertyDefinitions ?? [...defaultPropertyDefinitions]
-  const entityRecords = sourceDocument.entityRecords ?? []
   const outlines = sourceDocument.outlines ?? []
   const worlds = sourceDocument.worlds ?? sourceDocument.workspaces.map(workspace => createWorkspaceWorld(workspace.id, sourceDocument.updatedAt))
+  const propertyDefinitions = mergeDefaultPropertyDefinitions(sourceDocument.propertyDefinitions ?? [])
+  const entityRecords = migrateWorldSettingRecords(sourceDocument.entityRecords ?? [], worlds)
 
   return {
     ...sourceDocument,
@@ -86,6 +86,108 @@ function migrateStudioDataDocument(document: StudioDataDocument): StudioDataDocu
     outlines,
     worlds,
   }
+}
+
+function mergeDefaultPropertyDefinitions(properties: PropertyDefinition[]): PropertyDefinition[] {
+  const propertyIds = new Set(properties.map(property => property.id))
+
+  return [
+    ...properties,
+    ...defaultPropertyDefinitions.filter(property => !propertyIds.has(property.id)),
+  ]
+}
+
+function migrateWorldSettingRecords(records: EntityRecord[], worlds: WorkspaceWorld[]): EntityRecord[] {
+  const nextRecords = [...records]
+  const recordIds = new Set(nextRecords.map(record => record.id))
+  const workspacesWithWorldSettings = new Set(nextRecords
+    .filter(record => String(record.kind) === 'world-setting')
+    .map(record => record.workspaceId))
+
+  for (const world of worlds) {
+    if (workspacesWithWorldSettings.has(world.workspaceId))
+      continue
+
+    for (const group of [...world.settingGroups].sort((left, right) => left.order - right.order)) {
+      const items = [...group.items].sort((left, right) => left.order - right.order)
+
+      if (!items.length) {
+        nextRecords.push(createWorldSettingRecordFromGroup(world.workspaceId, group, recordIds))
+        continue
+      }
+
+      for (const item of items) {
+        const record = createWorldSettingRecordFromGroup(world.workspaceId, group, recordIds, {
+          id: item.id,
+          title: item.title,
+          body: item.body,
+          createdAt: item.createdAt,
+          updatedAt: item.updatedAt,
+        })
+
+        nextRecords.push(record)
+      }
+    }
+  }
+
+  return nextRecords
+}
+
+function createWorldSettingRecordFromGroup(
+  workspaceId: string,
+  group: WorldSettingGroup,
+  recordIds: Set<string>,
+  item?: { id: string, title: string, body: string, createdAt: string, updatedAt: string },
+): EntityRecord {
+  const baseId = item ? item.id.replace(/^setting-item-/, 'world-setting-') : group.id.replace(/^setting-/, 'world-setting-')
+  const id = createUniqueRecordId(baseId, recordIds)
+  const title = item?.title ?? group.title
+  const body = item?.body ?? group.description
+
+  recordIds.add(id)
+
+  return {
+    id,
+    workspaceId,
+    kind: 'world-setting',
+    title,
+    values: {
+      'world-setting-name': title,
+      'world-setting-category': inferWorldSettingCategory(group),
+      'world-setting-summary': body,
+      'world-setting-detail': body,
+      'world-setting-links': group.title,
+    },
+    createdAt: item?.createdAt ?? group.createdAt,
+    updatedAt: item?.updatedAt ?? group.updatedAt,
+  }
+}
+
+function inferWorldSettingCategory(group: WorldSettingGroup): string {
+  const value = `${group.id} ${group.title}`
+
+  if (value.includes('地理'))
+    return 'geography'
+
+  if (value.includes('势力') || value.includes('阵营'))
+    return 'faction'
+
+  if (value.includes('历史'))
+    return 'history'
+
+  return 'rule'
+}
+
+function createUniqueRecordId(baseId: string, recordIds: Set<string>): string {
+  let id = baseId || 'world-setting'
+  let index = 2
+
+  while (recordIds.has(id)) {
+    id = `${baseId}-${index}`
+    index += 1
+  }
+
+  return id
 }
 
 function readLegacyLocale(): StudioPreferences['locale'] | undefined {

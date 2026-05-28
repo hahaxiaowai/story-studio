@@ -19,7 +19,7 @@ export interface StoryCharacter {
   role?: string
 }
 
-export type EntityKind = 'character' | 'outline'
+export type EntityKind = 'character' | 'outline' | 'world-setting'
 
 export type PropertyValue = string | number | boolean | string[] | null
 

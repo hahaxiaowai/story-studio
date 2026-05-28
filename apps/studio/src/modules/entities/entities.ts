@@ -72,14 +72,21 @@ export function getEntityTitle(record: EntityRecord, properties: PropertyDefinit
 }
 
 export function getTitleProperty(properties: PropertyDefinition[], kind: EntityKind): PropertyDefinition | undefined {
-  const titlePropertyId = kind === 'character' ? 'character-name' : 'outline-title'
+  const titlePropertyIdByKind = {
+    'character': 'character-name',
+    'outline': 'outline-title',
+    'world-setting': 'world-setting-name',
+  } as const satisfies Record<EntityKind, string>
 
-  return properties.find(property => property.id === titlePropertyId)
+  return properties.find(property => property.id === titlePropertyIdByKind[kind])
 }
 
 function getDefaultTitle(kind: EntityKind): string {
   if (kind === 'character')
     return '新人物'
+
+  if (kind === 'world-setting')
+    return '新设定'
 
   return '新大纲'
 }

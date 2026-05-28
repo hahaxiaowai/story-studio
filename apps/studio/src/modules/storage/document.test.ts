@@ -38,6 +38,11 @@ describe('studio data document', () => {
       'character-personality',
       'character-motivation',
       'character-relationship-notes',
+      'world-setting-name',
+      'world-setting-category',
+      'world-setting-summary',
+      'world-setting-detail',
+      'world-setting-links',
     ])
     expect(document.entityRecords.map(record => record.title)).toEqual([
       '萨尔',
@@ -45,6 +50,9 @@ describe('studio data document', () => {
       '安度因·乌瑞恩',
       '希尔瓦娜斯·风行者',
       '伊利丹·怒风',
+      '东部王国',
+      '卡利姆多',
+      '联盟与部落',
     ])
     expect(document.entityRecords.every(record => record.workspaceId === 'workspace-mo-shou-shi-jie')).toBe(true)
     expect(document.outlines).toHaveLength(1)
@@ -227,6 +235,35 @@ describe('studio data document', () => {
     expect(document.schemaVersion).toBe(4)
     expect(document.worlds.map(world => world.workspaceId)).toEqual(['workspace-mo-shou-shi-jie'])
     expect(document.worlds[0]?.maps[0]?.title).toBe('世界地图')
+  })
+
+  it('migrates legacy world setting groups into configurable records', () => {
+    const v4Document = {
+      ...createDefaultStudioDataDocument(),
+      propertyDefinitions: createDefaultStudioDataDocument().propertyDefinitions.filter(property => !String(property.kind).startsWith('world-setting')),
+      entityRecords: createDefaultStudioDataDocument().entityRecords.filter(record => String(record.kind) !== 'world-setting'),
+    } as StudioDataDocument
+
+    const document = resolveStudioDataDocument(v4Document)
+    const worldSettingProperties = document.propertyDefinitions.filter(property => property.kind === 'world-setting')
+    const worldSettingRecords = document.entityRecords.filter(record => record.kind === 'world-setting')
+
+    expect(worldSettingProperties.map(property => property.id)).toEqual([
+      'world-setting-name',
+      'world-setting-category',
+      'world-setting-summary',
+      'world-setting-detail',
+      'world-setting-links',
+    ])
+    expect(worldSettingRecords.map(record => record.title)).toEqual([
+      '东部王国',
+      '卡利姆多',
+      '联盟与部落',
+    ])
+    expect(worldSettingRecords[0]?.values).toMatchObject({
+      'world-setting-name': '东部王国',
+      'world-setting-category': 'geography',
+    })
   })
 
   it('replaces the old prototype seed document with the Warcraft sample', () => {

@@ -13,6 +13,16 @@ export const defaultPropertyDefinitions: PropertyDefinition[] = [
   createSystemProperty('character-personality', 'character', '性格', 'longText', 4),
   createSystemProperty('character-motivation', 'character', '动机', 'longText', 5),
   createSystemProperty('character-relationship-notes', 'character', '关系备注', 'longText', 6),
+  createSystemProperty('world-setting-name', 'world-setting', '名称', 'text', 0, true),
+  createSystemProperty('world-setting-category', 'world-setting', '分类', 'select', 1, false, [
+    { id: 'geography', label: '地理' },
+    { id: 'faction', label: '势力' },
+    { id: 'history', label: '历史' },
+    { id: 'rule', label: '规则' },
+  ]),
+  createSystemProperty('world-setting-summary', 'world-setting', '摘要', 'longText', 2),
+  createSystemProperty('world-setting-detail', 'world-setting', '详情', 'longText', 3),
+  createSystemProperty('world-setting-links', 'world-setting', '关联地点/势力', 'longText', 4),
 ]
 
 export interface CreateCustomPropertyInput {
@@ -242,7 +252,7 @@ function createSystemProperty(
 function normalizePropertyOrder(properties: PropertyDefinition[]): PropertyDefinition[] {
   const nextProperties = [...properties]
 
-  for (const kind of ['character', 'outline'] as const) {
+  for (const kind of ['character', 'outline', 'world-setting'] as const) {
     getPropertiesByKind(nextProperties, kind).forEach((property, index) => {
       property.order = index
     })

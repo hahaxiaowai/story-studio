@@ -15,6 +15,7 @@ const props = defineProps<{
   kind: EntityKind
   title: string
   emptyLabel: string
+  addLabel?: string
 }>()
 
 const { t } = useLocale()
@@ -25,6 +26,7 @@ const selectedRecordId = ref<string>()
 const visibleProperties = computed<PropertyDefinition[]>(() => properties.value.filter(property => property.visible))
 const selectedRecord = computed<EntityRecord | undefined>(() => records.value.find(record => record.id === selectedRecordId.value) ?? records.value[0])
 const selectedTitle = computed<string>(() => selectedRecord.value ? getEntityTitle(selectedRecord.value, properties.value) : props.title)
+const addRecordLabel = computed<string>(() => props.addLabel ?? t('character.add'))
 
 watch(records, (nextRecords) => {
   if (!nextRecords.length) {
@@ -97,7 +99,7 @@ function updateCheckbox(property: PropertyDefinition, event: Event): void {
         <PropertyConfigDialog :kind="kind" />
         <Button size="sm" @click="createRecord">
           <PlusIcon class="size-4" />
-          {{ t('character.add') }}
+          {{ addRecordLabel }}
         </Button>
       </div>
     </div>
@@ -204,7 +206,7 @@ function updateCheckbox(property: PropertyDefinition, event: Event): void {
             <p>{{ emptyLabel }}</p>
             <Button size="sm" @click="createRecord">
               <PlusIcon class="size-4" />
-              {{ t('character.add') }}
+              {{ addRecordLabel }}
             </Button>
           </div>
         </div>
