@@ -3,6 +3,7 @@ import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useLocale } from '@/composables/useLocale'
 import ContentWorkspace from '@/modules/content/ContentWorkspace.vue'
 import EntityWorkspace from '@/modules/entities/EntityWorkspace.vue'
+import MaterialWorkspace from '@/modules/materials/MaterialWorkspace.vue'
 import OutlineWorkspace from '@/modules/outlines/OutlineWorkspace.vue'
 import { useStudioData } from '@/modules/storage/useStudioData'
 import { useWorkspaces } from '@/modules/workspaces/useWorkspaces'
@@ -16,7 +17,7 @@ const workspaceSlug = computed<string>(() => activeWorkspace.value.id.replace(/^
 const outlineCount = computed<number>(() => studioData.document.value.outlines.find(outline => outline.workspaceId === activeWorkspace.value.id)?.beats.length ?? 0)
 const characterCount = computed<number>(() => studioData.document.value.entityRecords.filter(record => record.workspaceId === activeWorkspace.value.id && record.kind === 'character').length || activeWorkspace.value.moduleCounts.characters)
 const contentCount = computed<number>(() => studioData.document.value.contents.filter(entry => entry.workspaceId === activeWorkspace.value.id).length)
-const activeView = computed<'overview' | 'outline' | 'characters' | 'world-settings' | 'world-map' | 'content'>(() => {
+const activeView = computed<'overview' | 'outline' | 'characters' | 'world-settings' | 'world-map' | 'content' | 'materials'>(() => {
   if (currentHash.value === '#outline')
     return 'outline'
 
@@ -31,6 +32,9 @@ const activeView = computed<'overview' | 'outline' | 'characters' | 'world-setti
 
   if (currentHash.value === '#world-map')
     return 'world-map'
+
+  if (currentHash.value === '#materials')
+    return 'materials'
 
   return 'overview'
 })
@@ -65,6 +69,8 @@ onUnmounted(() => {
     <OutlineWorkspace v-else-if="activeView === 'outline'" />
 
     <ContentWorkspace v-else-if="activeView === 'content'" />
+
+    <MaterialWorkspace v-else-if="activeView === 'materials'" />
 
     <WorldWorkspace
       v-else-if="activeView === 'world-settings' || activeView === 'world-map'"

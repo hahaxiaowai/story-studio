@@ -7,7 +7,7 @@ import {
   PenLineIcon,
   UsersIcon,
 } from '@lucide/vue'
-import { computed } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useLocale } from '@/composables/useLocale'
 import NavMain from './NavMain.vue'
 import NavProjects from './NavProjects.vue'
@@ -22,13 +22,45 @@ import {
 } from './ui/sidebar'
 
 const { t } = useLocale()
+const currentHash = ref(readHash())
+
+const workspaceActiveHashes = {
+  content: ['#content', '#manuscript'],
+  outline: ['#outline'],
+  characters: ['#cast', '#characters'],
+  world: ['#maps', '#world-settings', '#world-map'],
+} as const
+
+function readHash(): string {
+  if (typeof window === 'undefined')
+    return '#manuscript'
+
+  return window.location.hash || '#manuscript'
+}
+
+function syncHash(): void {
+  currentHash.value = readHash()
+}
+
+function isHashActive(hashes: readonly string[]): boolean {
+  return hashes.includes(currentHash.value)
+}
+
+onMounted(() => {
+  syncHash()
+  window.addEventListener('hashchange', syncHash)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('hashchange', syncHash)
+})
 
 const navMain = computed(() => [
   {
     title: t('nav.outline'),
     url: '#outline',
     icon: BookOpenIcon,
-    isActive: true,
+    isActive: isHashActive(workspaceActiveHashes.outline),
     items: [
       {
         title: t('nav.acts'),
@@ -44,6 +76,7 @@ const navMain = computed(() => [
     title: t('nav.characters'),
     url: '#cast',
     icon: UsersIcon,
+    isActive: isHashActive(workspaceActiveHashes.characters),
     items: [
       {
         title: t('nav.characters'),
@@ -59,6 +92,7 @@ const navMain = computed(() => [
     title: t('nav.world'),
     url: '#world-settings',
     icon: MapIcon,
+    isActive: isHashActive(workspaceActiveHashes.world),
     items: [
       {
         title: t('nav.worldSettings'),
@@ -74,6 +108,7 @@ const navMain = computed(() => [
     title: t('nav.content'),
     url: '#manuscript',
     icon: PenLineIcon,
+    isActive: isHashActive(workspaceActiveHashes.content),
     items: [
       {
         title: t('nav.manuscript'),
@@ -92,11 +127,13 @@ const projects = computed(() => [
     name: t('nav.materials'),
     url: '#materials',
     icon: FolderIcon,
+    isActive: currentHash.value === '#materials',
   },
   {
     name: t('nav.assistant'),
     url: '#assistant',
     icon: BotIcon,
+    isActive: currentHash.value === '#assistant',
   },
 ])
 </script>

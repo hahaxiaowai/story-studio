@@ -5,6 +5,7 @@ export type {
   EntityKind,
   EntityRecord,
   MaterialAsset,
+  MaterialTag,
   OutlineEventTag,
   PlotLine,
   PlotLineKind,

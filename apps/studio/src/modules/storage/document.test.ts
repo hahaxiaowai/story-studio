@@ -27,9 +27,10 @@ describe('studio data document', () => {
       },
       contents: [],
       materials: [],
+      materialTags: [],
       materialRefs: [],
     })
-    expect(document.schemaVersion).toBe(5)
+    expect(document.schemaVersion).toBe(6)
     expect(document.workspaces.map(workspace => workspace.title)).toEqual(['魔兽世界'])
     expect(document.propertyDefinitions.map(property => property.id)).toEqual([
       'character-name',
@@ -203,6 +204,7 @@ describe('studio data document', () => {
       ],
       worlds: [],
       materials: [],
+      materialTags: [],
       materialRefs: [],
       createdAt: '2026-05-24T08:00:00.000Z',
       updatedAt: '2026-05-24T09:00:00.000Z',
@@ -211,7 +213,7 @@ describe('studio data document', () => {
     const document = resolveStudioDataDocument(v2Document as unknown as StudioDataDocument)
 
     expect(document).toMatchObject({
-      schemaVersion: 5,
+      schemaVersion: 6,
       activeWorkspaceId: 'workspace-mo-shou-shi-jie',
       preferences: {
         locale: 'zh-CN',
@@ -233,7 +235,7 @@ describe('studio data document', () => {
 
     const document = resolveStudioDataDocument(v3Document)
 
-    expect(document.schemaVersion).toBe(5)
+    expect(document.schemaVersion).toBe(6)
     expect(document.worlds.map(world => world.workspaceId)).toEqual(['workspace-mo-shou-shi-jie'])
     expect(document.worlds[0]?.maps[0]?.title).toBe('世界地图')
   })
@@ -254,9 +256,43 @@ describe('studio data document', () => {
 
     const document = resolveStudioDataDocument(v4Document)
 
-    expect(document.schemaVersion).toBe(5)
+    expect(document.schemaVersion).toBe(6)
     expect(document.contents).toEqual([])
     expect(document.workspaces[0]?.moduleCounts.content).toBe(0)
+  })
+
+  it('migrates v5 documents by adding material tags and normalizing materials', () => {
+    const v5Document = {
+      ...createDefaultStudioDataDocument(),
+      schemaVersion: 5,
+      materialTags: undefined,
+      materials: [
+        {
+          id: 'material-legacy',
+          title: '旧素材',
+          kind: 'reference',
+          createdAt: '2026-05-24T08:00:00.000Z',
+          updatedAt: '2026-05-24T09:00:00.000Z',
+        },
+      ],
+    } as unknown as StudioDataDocument
+
+    const document = resolveStudioDataDocument(v5Document)
+
+    expect(document.schemaVersion).toBe(6)
+    expect(document.materialTags).toEqual([])
+    expect(document.materials).toEqual([
+      {
+        id: 'material-legacy',
+        title: '旧素材',
+        url: '',
+        text: '',
+        imageUrl: '',
+        tagIds: [],
+        createdAt: '2026-05-24T08:00:00.000Z',
+        updatedAt: '2026-05-24T09:00:00.000Z',
+      },
+    ])
   })
 
   it('migrates legacy world setting groups into configurable records', () => {

@@ -1,10 +1,10 @@
-import type { EntityRecord, PropertyDefinition, StudioDataDocument, StudioPreferences, WorkspaceContentEntry, WorkspaceWorld, WorldSettingGroup } from '@story-studio/types'
+import type { EntityRecord, MaterialAsset, MaterialTag, PropertyDefinition, StudioDataDocument, StudioPreferences, WorkspaceContentEntry, WorkspaceWorld, WorldSettingGroup } from '@story-studio/types'
 import { defaultPropertyDefinitions } from '../properties/properties'
 import { seedWorkspaces } from '../workspaces/workspaces'
 import { createWorkspaceWorld } from '../worlds/world'
 import { createDefaultEntityRecords, createDefaultOutlines, createDefaultWorlds, isLegacyPrototypeSeedDocument } from './defaultContent'
 
-export const STUDIO_DATA_SCHEMA_VERSION = 5
+export const STUDIO_DATA_SCHEMA_VERSION = 6
 
 export const LEGACY_LOCALE_STORAGE_KEY = 'story-studio:locale'
 export const LEGACY_THEME_MODE_STORAGE_KEY = 'story-studio:theme-mode'
@@ -26,6 +26,7 @@ export function createDefaultStudioDataDocument(now = new Date().toISOString()):
     worlds: createDefaultWorlds(now),
     contents: [],
     materials: [],
+    materialTags: [],
     materialRefs: [],
     createdAt: now,
     updatedAt: now,
@@ -65,10 +66,15 @@ function migrateStudioDataDocument(document: StudioDataDocument): StudioDataDocu
     outlines?: StudioDataDocument['outlines']
     worlds?: StudioDataDocument['worlds']
     contents?: StudioDataDocument['contents']
+    materials?: StudioDataDocument['materials']
+    materialTags?: StudioDataDocument['materialTags']
+    materialRefs?: StudioDataDocument['materialRefs']
   }
   const outlines = sourceDocument.outlines ?? []
   const worlds = sourceDocument.worlds ?? sourceDocument.workspaces.map(workspace => createWorkspaceWorld(workspace.id, sourceDocument.updatedAt))
   const contents = normalizeContentEntries(sourceDocument.contents ?? [])
+  const materials = normalizeMaterials(sourceDocument.materials ?? [])
+  const materialTags = normalizeMaterialTags(sourceDocument.materialTags ?? [])
   const propertyDefinitions = mergeDefaultPropertyDefinitions(sourceDocument.propertyDefinitions ?? [])
   const entityRecords = migrateWorldSettingRecords(sourceDocument.entityRecords ?? [], worlds)
 
@@ -89,6 +95,9 @@ function migrateStudioDataDocument(document: StudioDataDocument): StudioDataDocu
     outlines,
     worlds,
     contents,
+    materials,
+    materialTags,
+    materialRefs: sourceDocument.materialRefs ?? [],
   }
 }
 
@@ -99,6 +108,40 @@ function normalizeContentEntries(contents: WorkspaceContentEntry[]): WorkspaceCo
     chapter: entry.chapter ?? '',
     body: entry.body ?? '',
     order: Number.isFinite(entry.order) ? entry.order : index,
+  }))
+}
+
+function normalizeMaterials(materials: MaterialAsset[]): MaterialAsset[] {
+  return materials.map((material) => {
+    const legacyMaterial = material as MaterialAsset & {
+      kind?: string
+      url?: string
+      text?: string
+      imageUrl?: string
+      tagIds?: string[]
+    }
+
+    return {
+      id: material.id,
+      title: material.title,
+      url: legacyMaterial.url ?? '',
+      text: legacyMaterial.text ?? '',
+      imageUrl: legacyMaterial.imageUrl ?? '',
+      tagIds: Array.isArray(legacyMaterial.tagIds) ? legacyMaterial.tagIds : [],
+      createdAt: material.createdAt,
+      updatedAt: material.updatedAt,
+    }
+  })
+}
+
+function normalizeMaterialTags(tags: MaterialTag[]): MaterialTag[] {
+  return tags.map((tag, index) => ({
+    id: tag.id,
+    name: tag.name,
+    color: tag.color || '#64748b',
+    order: Number.isFinite(tag.order) ? tag.order : index,
+    createdAt: tag.createdAt,
+    updatedAt: tag.updatedAt,
   }))
 }
 

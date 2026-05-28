@@ -24,6 +24,7 @@ defineProps<{
     name: string
     url: string
     icon: Component
+    isActive?: boolean
   }>
   showActions?: boolean
 }>()
@@ -37,7 +38,7 @@ const { t } = useLocale()
     <SidebarGroupLabel>{{ t('nav.group.public') }}</SidebarGroupLabel>
     <SidebarMenu>
       <SidebarMenuItem v-for="project in projects" :key="project.name">
-        <SidebarMenuButton as-child>
+        <SidebarMenuButton as-child :is-active="project.isActive">
           <a :href="project.url">
             <component :is="project.icon" />
             <span>{{ project.name }}</span>

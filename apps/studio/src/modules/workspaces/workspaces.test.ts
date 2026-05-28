@@ -4,6 +4,7 @@ import {
   getNavigationLabelKey,
   getWorkspaceById,
   getWorkspaceModuleLabelKey,
+  isPublicNavigationHash,
 } from './workspaces'
 
 describe('workspaces', () => {
@@ -99,5 +100,12 @@ describe('workspaces', () => {
     expect(getNavigationLabelKey('#manuscript')).toBe('nav.content')
     expect(getNavigationLabelKey('#materials')).toBe('nav.materials')
     expect(getNavigationLabelKey('#unknown')).toBe('nav.content')
+  })
+
+  it('detects public navigation hashes', () => {
+    expect(isPublicNavigationHash('#materials')).toBe(true)
+    expect(isPublicNavigationHash('#assistant')).toBe(true)
+    expect(isPublicNavigationHash('#outline')).toBe(false)
+    expect(isPublicNavigationHash('#manuscript')).toBe(false)
   })
 })

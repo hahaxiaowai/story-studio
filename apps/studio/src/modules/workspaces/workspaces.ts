@@ -91,6 +91,10 @@ export function getNavigationLabelKey(hash: string): MessageKey {
   return keys[normalizedHash] ?? 'nav.content'
 }
 
+export function isPublicNavigationHash(hash: string): boolean {
+  return ['#assistant', '#materials'].includes(hash)
+}
+
 export function createWorkspace(options: AppendWorkspaceOptions & Partial<Pick<Workspace, 'moduleCounts'>>): Workspace {
   const title = options.title.trim()
   const description = options.description?.trim()

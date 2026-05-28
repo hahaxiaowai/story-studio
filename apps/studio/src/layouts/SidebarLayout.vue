@@ -19,13 +19,16 @@ import {
 import { useLocale } from '@/composables/useLocale'
 import { useStudioData } from '@/modules/storage/useStudioData'
 import { useWorkspaces } from '@/modules/workspaces/useWorkspaces'
-import { getNavigationLabelKey } from '@/modules/workspaces/workspaces'
+import { getNavigationLabelKey, isPublicNavigationHash } from '@/modules/workspaces/workspaces'
 
 const { t } = useLocale()
 const { isLoaded, loadError } = useStudioData()
 const { activeWorkspace } = useWorkspaces()
 const currentHash = ref<string>(readHash())
 const currentLabel = computed<string>(() => t(getNavigationLabelKey(currentHash.value)))
+const isPublicNavigation = computed<boolean>(() => isPublicNavigationHash(currentHash.value))
+const breadcrumbRootLabel = computed<string>(() => isPublicNavigation.value ? t('nav.group.public') : activeWorkspace.value.title)
+const breadcrumbRootHref = computed<string>(() => isPublicNavigation.value ? '#materials' : '#manuscript')
 
 function readHash(): string {
   if (typeof window === 'undefined')
@@ -62,8 +65,8 @@ onUnmounted(() => {
           <Breadcrumb>
             <BreadcrumbList>
               <BreadcrumbItem class="hidden md:block">
-                <BreadcrumbLink href="#manuscript">
-                  {{ activeWorkspace.title }}
+                <BreadcrumbLink :href="breadcrumbRootHref">
+                  {{ breadcrumbRootLabel }}
                 </BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator class="hidden md:block" />

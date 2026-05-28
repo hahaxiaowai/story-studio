@@ -183,7 +183,19 @@ export interface Workspace {
 export interface MaterialAsset {
   id: string
   title: string
-  kind: 'image' | 'document' | 'note' | 'reference'
+  url: string
+  text: string
+  imageUrl: string
+  tagIds: string[]
+  createdAt: string
+  updatedAt: string
+}
+
+export interface MaterialTag {
+  id: string
+  name: string
+  color: string
+  order: number
   createdAt: string
   updatedAt: string
 }
@@ -207,7 +219,7 @@ export interface WorkspaceContentEntry {
   updatedAt: string
 }
 
-export type StudioDataSchemaVersion = 5
+export type StudioDataSchemaVersion = 6
 
 export interface StudioPreferences {
   locale: 'zh-CN' | 'en-US'
@@ -225,6 +237,7 @@ export interface StudioDataDocument {
   worlds: WorkspaceWorld[]
   contents: WorkspaceContentEntry[]
   materials: MaterialAsset[]
+  materialTags: MaterialTag[]
   materialRefs: WorkspaceMaterialRef[]
   createdAt: string
   updatedAt: string
