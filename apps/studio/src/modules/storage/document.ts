@@ -1,10 +1,10 @@
-import type { EntityRecord, PropertyDefinition, StudioDataDocument, StudioPreferences, WorkspaceWorld, WorldSettingGroup } from '@story-studio/types'
+import type { EntityRecord, PropertyDefinition, StudioDataDocument, StudioPreferences, WorkspaceContentEntry, WorkspaceWorld, WorldSettingGroup } from '@story-studio/types'
 import { defaultPropertyDefinitions } from '../properties/properties'
 import { seedWorkspaces } from '../workspaces/workspaces'
 import { createWorkspaceWorld } from '../worlds/world'
 import { createDefaultEntityRecords, createDefaultOutlines, createDefaultWorlds, isLegacyPrototypeSeedDocument } from './defaultContent'
 
-export const STUDIO_DATA_SCHEMA_VERSION = 4
+export const STUDIO_DATA_SCHEMA_VERSION = 5
 
 export const LEGACY_LOCALE_STORAGE_KEY = 'story-studio:locale'
 export const LEGACY_THEME_MODE_STORAGE_KEY = 'story-studio:theme-mode'
@@ -24,6 +24,7 @@ export function createDefaultStudioDataDocument(now = new Date().toISOString()):
     entityRecords: createDefaultEntityRecords(now),
     outlines: createDefaultOutlines(now),
     worlds: createDefaultWorlds(now),
+    contents: [],
     materials: [],
     materialRefs: [],
     createdAt: now,
@@ -63,9 +64,11 @@ function migrateStudioDataDocument(document: StudioDataDocument): StudioDataDocu
     entityRecords?: StudioDataDocument['entityRecords']
     outlines?: StudioDataDocument['outlines']
     worlds?: StudioDataDocument['worlds']
+    contents?: StudioDataDocument['contents']
   }
   const outlines = sourceDocument.outlines ?? []
   const worlds = sourceDocument.worlds ?? sourceDocument.workspaces.map(workspace => createWorkspaceWorld(workspace.id, sourceDocument.updatedAt))
+  const contents = normalizeContentEntries(sourceDocument.contents ?? [])
   const propertyDefinitions = mergeDefaultPropertyDefinitions(sourceDocument.propertyDefinitions ?? [])
   const entityRecords = migrateWorldSettingRecords(sourceDocument.entityRecords ?? [], worlds)
 
@@ -78,14 +81,25 @@ function migrateStudioDataDocument(document: StudioDataDocument): StudioDataDocu
         outline: workspace.moduleCounts.outline,
         characters: workspace.moduleCounts.characters,
         maps: workspace.moduleCounts.maps,
-        content: workspace.moduleCounts.content,
+        content: contents.filter(entry => entry.workspaceId === workspace.id).length,
       },
     })),
     propertyDefinitions: propertyDefinitions.filter(property => String(property.kind) !== 'task' && String(property.kind) !== 'outline'),
     entityRecords: entityRecords.filter(record => String(record.kind) !== 'task' && String(record.kind) !== 'outline'),
     outlines,
     worlds,
+    contents,
   }
+}
+
+function normalizeContentEntries(contents: WorkspaceContentEntry[]): WorkspaceContentEntry[] {
+  return contents.map((entry, index) => ({
+    ...entry,
+    volume: entry.volume ?? '',
+    chapter: entry.chapter ?? '',
+    body: entry.body ?? '',
+    order: Number.isFinite(entry.order) ? entry.order : index,
+  }))
 }
 
 function mergeDefaultPropertyDefinitions(properties: PropertyDefinition[]): PropertyDefinition[] {

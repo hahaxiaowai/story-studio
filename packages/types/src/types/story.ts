@@ -196,7 +196,18 @@ export interface WorkspaceMaterialRef {
   createdAt: string
 }
 
-export type StudioDataSchemaVersion = 4
+export interface WorkspaceContentEntry {
+  id: string
+  workspaceId: string
+  volume: string
+  chapter: string
+  body: string
+  order: number
+  createdAt: string
+  updatedAt: string
+}
+
+export type StudioDataSchemaVersion = 5
 
 export interface StudioPreferences {
   locale: 'zh-CN' | 'en-US'
@@ -212,6 +223,7 @@ export interface StudioDataDocument {
   entityRecords: EntityRecord[]
   outlines: WorkspaceOutline[]
   worlds: WorkspaceWorld[]
+  contents: WorkspaceContentEntry[]
   materials: MaterialAsset[]
   materialRefs: WorkspaceMaterialRef[]
   createdAt: string

@@ -1,0 +1,100 @@
+import type { StudioDataDocument } from '@story-studio/types'
+import type { StudioStorageDriver } from '../storage/types'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { nextTick } from 'vue'
+import { createDefaultStudioDataDocument } from '../storage/document'
+import { resetStudioDataForTest, useStudioData } from '../storage/useStudioData'
+import { useContent } from './useContent'
+
+describe('useContent', () => {
+  beforeEach(() => {
+    resetStudioDataForTest()
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-05-28T12:00:00.000Z'))
+  })
+
+  it('adds markdown content entries for the active workspace', async () => {
+    const driver = createDriver(createDefaultStudioDataDocument())
+    await useStudioData(driver).ready
+
+    const content = useContent()
+    const entry = content.addEntry()
+    await nextTick()
+
+    expect(entry).toMatchObject({
+      workspaceId: 'workspace-mo-shou-shi-jie',
+      volume: '第一卷',
+      chapter: '第1章',
+      body: '',
+      order: 0,
+    })
+    expect(content.entries.value).toHaveLength(1)
+    expect(driver.save).toHaveBeenLastCalledWith(expect.objectContaining({
+      contents: expect.arrayContaining([
+        expect.objectContaining({
+          id: entry.id,
+          body: '',
+        }),
+      ]),
+      workspaces: expect.arrayContaining([
+        expect.objectContaining({
+          id: 'workspace-mo-shou-shi-jie',
+          moduleCounts: expect.objectContaining({ content: 1 }),
+        }),
+      ]),
+    }))
+  })
+
+  it('updates markdown content entries', async () => {
+    const driver = createDriver(createDefaultStudioDataDocument())
+    await useStudioData(driver).ready
+
+    const content = useContent()
+    const entry = content.addEntry()
+    content.updateEntry(entry.id, {
+      volume: '第二卷',
+      chapter: '第二章',
+      body: '## 正文',
+    })
+    await nextTick()
+
+    expect(content.entries.value[0]).toMatchObject({
+      volume: '第二卷',
+      chapter: '第二章',
+      body: '## 正文',
+      updatedAt: '2026-05-28T12:00:00.000Z',
+    })
+  })
+
+  it('removes entries and updates content counts', async () => {
+    const driver = createDriver(createDefaultStudioDataDocument())
+    await useStudioData(driver).ready
+
+    const content = useContent()
+    const firstEntry = content.addEntry()
+    content.addEntry()
+    content.removeEntry(firstEntry.id)
+    await nextTick()
+
+    expect(content.entries.value).toHaveLength(1)
+    expect(content.entries.value[0]?.order).toBe(0)
+    expect(driver.save).toHaveBeenLastCalledWith(expect.objectContaining({
+      workspaces: expect.arrayContaining([
+        expect.objectContaining({
+          id: 'workspace-mo-shou-shi-jie',
+          moduleCounts: expect.objectContaining({ content: 1 }),
+        }),
+      ]),
+    }))
+  })
+})
+
+function createDriver(document: StudioDataDocument): StudioStorageDriver & {
+  load: ReturnType<typeof vi.fn>
+  save: ReturnType<typeof vi.fn>
+} {
+  return {
+    load: vi.fn().mockResolvedValue(document),
+    save: vi.fn().mockResolvedValue(undefined),
+  }
+}

@@ -21,6 +21,7 @@ export type {
   StudioPreferences,
   TimelineBeat,
   Workspace,
+  WorkspaceContentEntry,
   WorkspaceMaterialRef,
   WorkspaceModule,
   WorkspaceModuleCounts,

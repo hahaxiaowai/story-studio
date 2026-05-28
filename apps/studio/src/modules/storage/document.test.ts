@@ -25,10 +25,11 @@ describe('studio data document', () => {
         locale: 'zh-CN',
         themeMode: 'light',
       },
+      contents: [],
       materials: [],
       materialRefs: [],
     })
-    expect(document.schemaVersion).toBe(4)
+    expect(document.schemaVersion).toBe(5)
     expect(document.workspaces.map(workspace => workspace.title)).toEqual(['魔兽世界'])
     expect(document.propertyDefinitions.map(property => property.id)).toEqual([
       'character-name',
@@ -210,7 +211,7 @@ describe('studio data document', () => {
     const document = resolveStudioDataDocument(v2Document as unknown as StudioDataDocument)
 
     expect(document).toMatchObject({
-      schemaVersion: 4,
+      schemaVersion: 5,
       activeWorkspaceId: 'workspace-mo-shou-shi-jie',
       preferences: {
         locale: 'zh-CN',
@@ -232,9 +233,30 @@ describe('studio data document', () => {
 
     const document = resolveStudioDataDocument(v3Document)
 
-    expect(document.schemaVersion).toBe(4)
+    expect(document.schemaVersion).toBe(5)
     expect(document.worlds.map(world => world.workspaceId)).toEqual(['workspace-mo-shou-shi-jie'])
     expect(document.worlds[0]?.maps[0]?.title).toBe('世界地图')
+  })
+
+  it('migrates v4 documents by adding empty markdown contents', () => {
+    const v4Document = {
+      ...createDefaultStudioDataDocument(),
+      schemaVersion: 4,
+      contents: undefined,
+      workspaces: createDefaultStudioDataDocument().workspaces.map(workspace => ({
+        ...workspace,
+        moduleCounts: {
+          ...workspace.moduleCounts,
+          content: 12,
+        },
+      })),
+    } as unknown as StudioDataDocument
+
+    const document = resolveStudioDataDocument(v4Document)
+
+    expect(document.schemaVersion).toBe(5)
+    expect(document.contents).toEqual([])
+    expect(document.workspaces[0]?.moduleCounts.content).toBe(0)
   })
 
   it('migrates legacy world setting groups into configurable records', () => {

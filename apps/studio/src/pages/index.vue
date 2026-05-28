@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useLocale } from '@/composables/useLocale'
+import ContentWorkspace from '@/modules/content/ContentWorkspace.vue'
 import EntityWorkspace from '@/modules/entities/EntityWorkspace.vue'
 import OutlineWorkspace from '@/modules/outlines/OutlineWorkspace.vue'
 import { useStudioData } from '@/modules/storage/useStudioData'
@@ -14,9 +15,13 @@ const currentHash = ref(getCurrentHash())
 const workspaceSlug = computed<string>(() => activeWorkspace.value.id.replace(/^workspace-/, ''))
 const outlineCount = computed<number>(() => studioData.document.value.outlines.find(outline => outline.workspaceId === activeWorkspace.value.id)?.beats.length ?? 0)
 const characterCount = computed<number>(() => studioData.document.value.entityRecords.filter(record => record.workspaceId === activeWorkspace.value.id && record.kind === 'character').length || activeWorkspace.value.moduleCounts.characters)
-const activeView = computed<'overview' | 'outline' | 'characters' | 'world-settings' | 'world-map'>(() => {
+const contentCount = computed<number>(() => studioData.document.value.contents.filter(entry => entry.workspaceId === activeWorkspace.value.id).length)
+const activeView = computed<'overview' | 'outline' | 'characters' | 'world-settings' | 'world-map' | 'content'>(() => {
   if (currentHash.value === '#outline')
     return 'outline'
+
+  if (currentHash.value === '#manuscript' || currentHash.value === '#content')
+    return 'content'
 
   if (currentHash.value === '#cast' || currentHash.value === '#characters')
     return 'characters'
@@ -59,6 +64,8 @@ onUnmounted(() => {
 
     <OutlineWorkspace v-else-if="activeView === 'outline'" />
 
+    <ContentWorkspace v-else-if="activeView === 'content'" />
+
     <WorldWorkspace
       v-else-if="activeView === 'world-settings' || activeView === 'world-map'"
       :initial-tab="activeView === 'world-map' ? 'map' : 'settings'"
@@ -95,7 +102,7 @@ onUnmounted(() => {
             {{ t('project.content') }}
           </p>
           <p class="mt-3 text-2xl font-semibold">
-            {{ activeWorkspace.moduleCounts.content }}
+            {{ contentCount }}
           </p>
         </article>
       </section>
@@ -154,6 +161,14 @@ onUnmounted(() => {
                 </dt>
                 <dd class="font-medium">
                   {{ activeWorkspace.moduleCounts.maps }}
+                </dd>
+              </div>
+              <div id="content" class="flex items-center justify-between border-b pb-3">
+                <dt class="text-muted-foreground">
+                  {{ t('project.content') }}
+                </dt>
+                <dd class="font-medium">
+                  {{ contentCount }}
                 </dd>
               </div>
               <div class="flex items-center justify-between">
