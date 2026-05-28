@@ -1,10 +1,11 @@
 import type { EntityRecord, MaterialAsset, MaterialTag, PropertyDefinition, StudioDataDocument, StudioPreferences, WorkspaceContentEntry, WorkspaceWorld, WorldSettingGroup } from '@story-studio/types'
+import { createAssistantSettings, normalizeAssistantSettings } from '../assistant/assistant'
 import { defaultPropertyDefinitions } from '../properties/properties'
 import { seedWorkspaces } from '../workspaces/workspaces'
 import { createWorkspaceWorld } from '../worlds/world'
 import { createDefaultEntityRecords, createDefaultOutlines, createDefaultWorlds, isLegacyPrototypeSeedDocument } from './defaultContent'
 
-export const STUDIO_DATA_SCHEMA_VERSION = 6
+export const STUDIO_DATA_SCHEMA_VERSION = 7
 
 export const LEGACY_LOCALE_STORAGE_KEY = 'story-studio:locale'
 export const LEGACY_THEME_MODE_STORAGE_KEY = 'story-studio:theme-mode'
@@ -28,6 +29,7 @@ export function createDefaultStudioDataDocument(now = new Date().toISOString()):
     materials: [],
     materialTags: [],
     materialRefs: [],
+    assistantSettings: createAssistantSettings(),
     createdAt: now,
     updatedAt: now,
   }
@@ -69,12 +71,14 @@ function migrateStudioDataDocument(document: StudioDataDocument): StudioDataDocu
     materials?: StudioDataDocument['materials']
     materialTags?: StudioDataDocument['materialTags']
     materialRefs?: StudioDataDocument['materialRefs']
+    assistantSettings?: StudioDataDocument['assistantSettings']
   }
   const outlines = sourceDocument.outlines ?? []
   const worlds = sourceDocument.worlds ?? sourceDocument.workspaces.map(workspace => createWorkspaceWorld(workspace.id, sourceDocument.updatedAt))
   const contents = normalizeContentEntries(sourceDocument.contents ?? [])
   const materials = normalizeMaterials(sourceDocument.materials ?? [])
   const materialTags = normalizeMaterialTags(sourceDocument.materialTags ?? [])
+  const assistantSettings = normalizeAssistantSettings(sourceDocument.assistantSettings)
   const propertyDefinitions = mergeDefaultPropertyDefinitions(sourceDocument.propertyDefinitions ?? [])
   const entityRecords = migrateWorldSettingRecords(sourceDocument.entityRecords ?? [], worlds)
 
@@ -98,6 +102,7 @@ function migrateStudioDataDocument(document: StudioDataDocument): StudioDataDocu
     materials,
     materialTags,
     materialRefs: sourceDocument.materialRefs ?? [],
+    assistantSettings,
   }
 }
 

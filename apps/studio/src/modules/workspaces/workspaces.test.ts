@@ -99,6 +99,7 @@ describe('workspaces', () => {
     expect(getNavigationLabelKey('#world-map')).toBe('nav.worldMap')
     expect(getNavigationLabelKey('#manuscript')).toBe('nav.content')
     expect(getNavigationLabelKey('#materials')).toBe('nav.materials')
+    expect(getNavigationLabelKey('#assistant')).toBe('nav.assistant')
     expect(getNavigationLabelKey('#unknown')).toBe('nav.content')
   })
 

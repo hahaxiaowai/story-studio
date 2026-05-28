@@ -1,4 +1,9 @@
 export type {
+  AiProviderConfig,
+  AiProviderKind,
+  AssistantFeatureBinding,
+  AssistantFeatureKey,
+  AssistantSettings,
   BeatEvent,
   CharacterChange,
   CharacterChangeCategory,

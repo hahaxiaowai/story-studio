@@ -219,7 +219,37 @@ export interface WorkspaceContentEntry {
   updatedAt: string
 }
 
-export type StudioDataSchemaVersion = 6
+export type AiProviderKind = 'openai-compatible' | 'local-terminal'
+
+export interface AiProviderConfig {
+  id: string
+  kind: AiProviderKind
+  name: string
+  baseUrl: string
+  apiKey: string
+  model: string
+  terminalCommand: string
+  enabled: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export type AssistantFeatureKey = 'outline' | 'characters' | 'world' | 'content' | 'materials'
+
+export interface AssistantFeatureBinding {
+  feature: AssistantFeatureKey
+  providerId: string
+  model: string
+}
+
+export interface AssistantSettings {
+  defaultProviderId: string
+  defaultModel: string
+  providers: AiProviderConfig[]
+  featureBindings: AssistantFeatureBinding[]
+}
+
+export type StudioDataSchemaVersion = 7
 
 export interface StudioPreferences {
   locale: 'zh-CN' | 'en-US'
@@ -239,6 +269,7 @@ export interface StudioDataDocument {
   materials: MaterialAsset[]
   materialTags: MaterialTag[]
   materialRefs: WorkspaceMaterialRef[]
+  assistantSettings: AssistantSettings
   createdAt: string
   updatedAt: string
 }

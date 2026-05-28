@@ -29,8 +29,14 @@ describe('studio data document', () => {
       materials: [],
       materialTags: [],
       materialRefs: [],
+      assistantSettings: {
+        defaultProviderId: '',
+        defaultModel: '',
+        providers: [],
+        featureBindings: [],
+      },
     })
-    expect(document.schemaVersion).toBe(6)
+    expect(document.schemaVersion).toBe(7)
     expect(document.workspaces.map(workspace => workspace.title)).toEqual(['魔兽世界'])
     expect(document.propertyDefinitions.map(property => property.id)).toEqual([
       'character-name',
@@ -206,6 +212,12 @@ describe('studio data document', () => {
       materials: [],
       materialTags: [],
       materialRefs: [],
+      assistantSettings: {
+        defaultProviderId: '',
+        defaultModel: '',
+        providers: [],
+        featureBindings: [],
+      },
       createdAt: '2026-05-24T08:00:00.000Z',
       updatedAt: '2026-05-24T09:00:00.000Z',
     }
@@ -213,7 +225,7 @@ describe('studio data document', () => {
     const document = resolveStudioDataDocument(v2Document as unknown as StudioDataDocument)
 
     expect(document).toMatchObject({
-      schemaVersion: 6,
+      schemaVersion: 7,
       activeWorkspaceId: 'workspace-mo-shou-shi-jie',
       preferences: {
         locale: 'zh-CN',
@@ -235,7 +247,7 @@ describe('studio data document', () => {
 
     const document = resolveStudioDataDocument(v3Document)
 
-    expect(document.schemaVersion).toBe(6)
+    expect(document.schemaVersion).toBe(7)
     expect(document.worlds.map(world => world.workspaceId)).toEqual(['workspace-mo-shou-shi-jie'])
     expect(document.worlds[0]?.maps[0]?.title).toBe('世界地图')
   })
@@ -256,7 +268,7 @@ describe('studio data document', () => {
 
     const document = resolveStudioDataDocument(v4Document)
 
-    expect(document.schemaVersion).toBe(6)
+    expect(document.schemaVersion).toBe(7)
     expect(document.contents).toEqual([])
     expect(document.workspaces[0]?.moduleCounts.content).toBe(0)
   })
@@ -279,7 +291,7 @@ describe('studio data document', () => {
 
     const document = resolveStudioDataDocument(v5Document)
 
-    expect(document.schemaVersion).toBe(6)
+    expect(document.schemaVersion).toBe(7)
     expect(document.materialTags).toEqual([])
     expect(document.materials).toEqual([
       {
@@ -293,6 +305,24 @@ describe('studio data document', () => {
         updatedAt: '2026-05-24T09:00:00.000Z',
       },
     ])
+  })
+
+  it('migrates v6 documents by adding assistant settings', () => {
+    const v6Document = {
+      ...createDefaultStudioDataDocument(),
+      schemaVersion: 6,
+      assistantSettings: undefined,
+    } as unknown as StudioDataDocument
+
+    const document = resolveStudioDataDocument(v6Document)
+
+    expect(document.schemaVersion).toBe(7)
+    expect(document.assistantSettings).toEqual({
+      defaultProviderId: '',
+      defaultModel: '',
+      providers: [],
+      featureBindings: [],
+    })
   })
 
   it('migrates legacy world setting groups into configurable records', () => {
