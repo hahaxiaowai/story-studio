@@ -72,6 +72,7 @@ Story Studio 是一个 pnpm workspace monorepo，当前包含一个 Vue 3 + Vite
 ## Git 与 Commit
 
 - 使用 Conventional Commit。
+- 提交信息的描述部分使用中文，例如 `feat: 新增编辑器`。
 - `devmoji` 已通过 `simple-git-hooks` 接入 `prepare-commit-msg`。
 - 提交时 `feat: add editor` 会自动转换为类似 `feat: ✨ add editor`。
 - 可用 `pnpm run log` 查看带 devmoji 效果的提交日志。
