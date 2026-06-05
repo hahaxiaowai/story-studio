@@ -1,7 +1,13 @@
 <script setup lang="ts">
-import { PlusIcon } from '@lucide/vue'
+import { MoreHorizontalIcon, PlusIcon } from '@lucide/vue'
 import { ref } from 'vue'
 import { Button } from '@/components/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { useLocale } from '@/composables/useLocale'
 import OutlineChronicleMode from './OutlineChronicleMode.vue'
 import OutlineInputMode from './OutlineInputMode.vue'
@@ -19,7 +25,7 @@ const {
   addEventTag,
 } = useOutline()
 
-const mode = ref<OutlineMode>('input')
+const mode = ref<OutlineMode>('chronicle')
 const selectedBeatId = ref<string>()
 
 function createBeat(): void {
@@ -75,14 +81,23 @@ function openInputMode(): void {
             {{ t('outline.chronicleMode') }}
           </Button>
         </div>
-        <Button variant="outline" size="sm" @click="createLine">
-          <PlusIcon class="size-4" />
-          {{ t('outline.addLine') }}
-        </Button>
-        <Button variant="outline" size="sm" @click="createEventTag">
-          <PlusIcon class="size-4" />
-          {{ t('outline.addTag') }}
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger as-child>
+            <Button variant="outline" size="icon-sm" :aria-label="t('outline.moreActions')">
+              <MoreHorizontalIcon class="size-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem @click="createLine">
+              <PlusIcon class="size-4" />
+              {{ t('outline.addLine') }}
+            </DropdownMenuItem>
+            <DropdownMenuItem @click="createEventTag">
+              <PlusIcon class="size-4" />
+              {{ t('outline.addTag') }}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
         <Button size="sm" @click="createBeat">
           <PlusIcon class="size-4" />
           {{ t('outline.addBeat') }}

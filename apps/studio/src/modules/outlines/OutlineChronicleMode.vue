@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { BeatEvent, EntityRecord, TimelineBeat } from '@story-studio/types'
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useLocale } from '@/composables/useLocale'
@@ -31,10 +31,18 @@ const {
   updateBeat,
 } = useOutline()
 
+type ChronicleDensity = 'compact' | 'standard' | 'expanded'
+
 const selectedBeatIdModel = computed<string | undefined>({
   get: () => props.selectedBeatId,
   set: value => emit('update:selectedBeatId', value),
 })
+const density = ref<ChronicleDensity>('standard')
+const densityOptions = computed<Array<{ value: ChronicleDensity, label: string }>>(() => [
+  { value: 'compact', label: t('outline.densityCompact') },
+  { value: 'standard', label: t('outline.densityStandard') },
+  { value: 'expanded', label: t('outline.densityExpanded') },
+])
 const characterRecords = computed<EntityRecord[]>(() => {
   return studioData.document.value.entityRecords.filter(record => record.workspaceId === activeWorkspace.value.id && record.kind === 'character')
 })
@@ -46,8 +54,18 @@ const chronicle = computed(() => createChronicleModel({
 const selectedBeat = computed<TimelineBeat | undefined>(() => {
   return chronicle.value.columns.find(beat => beat.id === selectedBeatIdModel.value) ?? chronicle.value.columns[0]
 })
+const laneMinHeightClass = computed<string>(() => {
+  if (density.value === 'compact')
+    return 'min-h-20'
+
+  if (density.value === 'expanded')
+    return 'min-h-36'
+
+  return 'min-h-28'
+})
+const characterLaneMinHeightClass = computed<string>(() => density.value === 'compact' ? 'min-h-16' : 'min-h-24')
 const timelineGridStyle = computed(() => ({
-  gridTemplateColumns: `12rem repeat(${Math.max(chronicle.value.columns.length, 1)}, minmax(16rem, 16rem))`,
+  gridTemplateColumns: `${density.value === 'compact' ? '10rem' : '12rem'} repeat(${Math.max(chronicle.value.columns.length, 1)}, minmax(${getColumnWidth(density.value)}, ${getColumnWidth(density.value)}))`,
 }))
 
 function selectBeat(beatId: string): void {
@@ -92,12 +110,43 @@ function toggleEventTag(event: BeatEvent, tagId: string): void {
 
   updateEvent(event.id, { tagIds })
 }
+
+function getColumnWidth(value: ChronicleDensity): string {
+  if (value === 'compact')
+    return '12rem'
+
+  if (value === 'expanded')
+    return '20rem'
+
+  return '16rem'
+}
 </script>
 
 <template>
   <div class="grid min-h-[34rem] gap-0 xl:grid-cols-[minmax(0,1fr)_22rem]">
     <div class="border-border/70 min-w-0 border-b xl:border-r xl:border-b-0">
       <div v-if="hasBeats" class="overflow-x-auto">
+        <div class="border-border/70 bg-muted/20 sticky left-0 z-30 flex flex-col gap-3 border-b px-4 py-3 md:flex-row md:items-center md:justify-between">
+          <div>
+            <p class="text-sm font-medium">
+              {{ t('outline.boardView') }}
+            </p>
+            <p class="text-muted-foreground mt-1 text-xs">
+              {{ t('outline.boardViewHint') }}
+            </p>
+          </div>
+          <div class="border-border bg-background grid shrink-0 grid-cols-3 rounded-md border p-1">
+            <Button
+              v-for="option in densityOptions"
+              :key="option.value"
+              size="sm"
+              :variant="density === option.value ? 'default' : 'ghost'"
+              @click="density = option.value"
+            >
+              {{ option.label }}
+            </Button>
+          </div>
+        </div>
         <div class="grid min-w-max" :style="timelineGridStyle">
           <div class="bg-background sticky top-0 left-0 z-20 border-r border-b p-3">
             <p class="text-muted-foreground text-xs font-medium uppercase">
@@ -121,7 +170,7 @@ function toggleEventTag(event: BeatEvent, tagId: string): void {
           </div>
 
           <template v-for="lane in chronicle.plotLineLanes" :key="lane.id">
-            <div class="bg-background sticky left-0 z-10 min-h-28 border-r border-b p-3">
+            <div class="bg-background sticky left-0 z-10 border-r border-b p-3" :class="laneMinHeightClass">
               <div class="flex items-center gap-2">
                 <span class="size-2 rounded-full" :style="{ backgroundColor: lane.color }" />
                 <p class="truncate text-sm font-medium">
@@ -135,18 +184,19 @@ function toggleEventTag(event: BeatEvent, tagId: string): void {
             <div
               v-for="column in chronicle.columns"
               :key="`${lane.id}-${column.id}`"
-              class="min-h-28 border-b p-3"
+              class="border-b p-3"
+              :class="laneMinHeightClass"
             >
               <button
                 v-if="getLaneBeat(column.id, lane.beats)"
                 type="button"
-                class="border-border hover:border-primary/70 focus-visible:ring-ring/50 grid min-h-20 w-full gap-2 rounded-md border bg-background p-3 text-left shadow-xs transition focus-visible:ring-3"
-                :class="column.id === selectedBeat?.id ? 'border-primary bg-primary/5' : ''"
+                class="border-border hover:border-primary/70 focus-visible:ring-ring/50 grid w-full gap-2 rounded-md border bg-background p-3 text-left shadow-xs transition focus-visible:ring-3"
+                :class="[column.id === selectedBeat?.id ? 'border-primary bg-primary/5' : '', density === 'compact' ? 'min-h-14' : 'min-h-20']"
                 @click="selectBeat(column.id)"
               >
-                <span class="text-sm font-medium">{{ column.title }}</span>
-                <span class="text-muted-foreground line-clamp-2 text-xs">{{ column.summary || t('outline.summaryEmpty') }}</span>
-                <span class="flex flex-wrap gap-1">
+                <span class="truncate text-sm font-medium">{{ column.title }}</span>
+                <span v-if="density !== 'compact'" class="text-muted-foreground line-clamp-2 text-xs">{{ column.summary || t('outline.summaryEmpty') }}</span>
+                <span v-if="density === 'expanded'" class="flex flex-wrap gap-1">
                   <span
                     v-for="event in column.events"
                     :key="event.id"
@@ -175,7 +225,7 @@ function toggleEventTag(event: BeatEvent, tagId: string): void {
 
           <template v-if="chronicle.characterLanes.length">
             <template v-for="lane in chronicle.characterLanes" :key="lane.id">
-              <div class="bg-background sticky left-0 z-10 min-h-24 border-r border-b p-3">
+              <div class="bg-background sticky left-0 z-10 border-r border-b p-3" :class="characterLaneMinHeightClass">
                 <p class="truncate text-sm font-medium">
                   {{ lane.title }}
                 </p>
@@ -186,7 +236,8 @@ function toggleEventTag(event: BeatEvent, tagId: string): void {
               <div
                 v-for="column in chronicle.columns"
                 :key="`${lane.id}-${column.id}`"
-                class="min-h-24 border-b p-3"
+                class="border-b p-3"
+                :class="characterLaneMinHeightClass"
               >
                 <button
                   v-if="lane.changesByBeatId[column.id]?.length"
@@ -198,7 +249,7 @@ function toggleEventTag(event: BeatEvent, tagId: string): void {
                   <span
                     v-for="change in lane.changesByBeatId[column.id]"
                     :key="change.id"
-                    class="line-clamp-2"
+                    :class="density === 'expanded' ? 'line-clamp-3' : 'line-clamp-2'"
                   >
                     {{ change.summary || t('outline.characterChangeEmpty') }}
                   </span>

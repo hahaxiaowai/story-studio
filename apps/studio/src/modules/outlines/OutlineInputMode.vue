@@ -246,46 +246,60 @@ function createLocalId(prefix: string): string {
           </div>
         </div>
 
-        <div class="grid gap-4 md:grid-cols-2">
-          <label class="grid gap-1.5">
-            <span class="text-muted-foreground text-sm">{{ t('outline.beatTitle') }}</span>
-            <Input :model-value="selectedBeat.title" @update:model-value="updateSelectedBeat({ title: String($event) })" />
-          </label>
-          <label class="grid gap-1.5">
-            <span class="text-muted-foreground text-sm">{{ t('outline.timeLabel') }}</span>
-            <Input :model-value="selectedBeat.timeLabel" :placeholder="t('outline.timePlaceholder')" @update:model-value="updateSelectedBeat({ timeLabel: String($event) })" />
-          </label>
-          <label class="grid gap-1.5 md:col-span-2">
-            <span class="text-muted-foreground text-sm">{{ t('outline.summary') }}</span>
-            <Textarea :model-value="selectedBeat.summary" @update:model-value="updateSelectedBeat({ summary: String($event) })" />
-          </label>
-        </div>
-
-        <section class="grid gap-3">
-          <h3 class="text-sm font-medium">
-            {{ t('outline.lines') }}
-          </h3>
-          <div class="flex flex-wrap gap-2">
-            <label
-              v-for="plotLine in plotLines"
-              :key="plotLine.id"
-              class="border-border bg-background flex items-center gap-2 rounded-md border px-3 py-2 text-sm"
-            >
-              <input type="checkbox" :checked="selectedBeat.plotLineIds.includes(plotLine.id)" @change="togglePlotLine(plotLine.id)">
-              <span>{{ plotLine.title }}</span>
+        <section class="border-border/70 bg-muted/20 grid gap-4 rounded-lg border p-4">
+          <div>
+            <h3 class="text-sm font-medium">
+              {{ t('outline.overviewSection') }}
+            </h3>
+            <p class="text-muted-foreground mt-1 text-xs">
+              {{ t('outline.overviewSectionHint') }}
+            </p>
+          </div>
+          <div class="grid gap-4 md:grid-cols-2">
+            <label class="grid gap-1.5">
+              <span class="text-muted-foreground text-sm">{{ t('outline.beatTitle') }}</span>
+              <Input :model-value="selectedBeat.title" @update:model-value="updateSelectedBeat({ title: String($event) })" />
+            </label>
+            <label class="grid gap-1.5">
+              <span class="text-muted-foreground text-sm">{{ t('outline.timeLabel') }}</span>
+              <Input :model-value="selectedBeat.timeLabel" :placeholder="t('outline.timePlaceholder')" @update:model-value="updateSelectedBeat({ timeLabel: String($event) })" />
+            </label>
+            <label class="grid gap-1.5 md:col-span-2">
+              <span class="text-muted-foreground text-sm">{{ t('outline.summary') }}</span>
+              <Textarea :model-value="selectedBeat.summary" @update:model-value="updateSelectedBeat({ summary: String($event) })" />
             </label>
           </div>
         </section>
 
-        <section class="grid gap-3">
+        <section class="border-border/70 grid gap-4 rounded-lg border p-4">
           <div class="flex items-center justify-between gap-3">
-            <h3 class="text-sm font-medium">
-              {{ t('outline.events') }}
-            </h3>
+            <div>
+              <h3 class="text-sm font-medium">
+                {{ t('outline.eventsSection') }}
+              </h3>
+              <p class="text-muted-foreground mt-1 text-xs">
+                {{ t('outline.eventsSectionHint') }}
+              </p>
+            </div>
             <Button variant="outline" size="sm" @click="createEvent">
               <PlusIcon class="size-4" />
               {{ t('outline.addEvent') }}
             </Button>
+          </div>
+          <div class="grid gap-3">
+            <h4 class="text-muted-foreground text-xs font-medium">
+              {{ t('outline.lines') }}
+            </h4>
+            <div class="flex flex-wrap gap-2">
+              <label
+                v-for="plotLine in plotLines"
+                :key="plotLine.id"
+                class="border-border bg-background flex items-center gap-2 rounded-md border px-3 py-2 text-sm"
+              >
+                <input type="checkbox" :checked="selectedBeat.plotLineIds.includes(plotLine.id)" @change="togglePlotLine(plotLine.id)">
+                <span>{{ plotLine.title }}</span>
+              </label>
+            </div>
           </div>
           <div class="grid gap-3">
             <article v-for="event in selectedBeat.events" :key="event.id" class="border-border/70 grid gap-3 rounded-lg border p-3">
@@ -313,11 +327,16 @@ function createLocalId(prefix: string): string {
           </div>
         </section>
 
-        <section class="grid gap-3">
+        <section class="border-border/70 grid gap-4 rounded-lg border p-4">
           <div class="flex items-center justify-between gap-3">
-            <h3 class="text-sm font-medium">
-              {{ t('outline.characterChanges') }}
-            </h3>
+            <div>
+              <h3 class="text-sm font-medium">
+                {{ t('outline.characterSection') }}
+              </h3>
+              <p class="text-muted-foreground mt-1 text-xs">
+                {{ t('outline.characterSectionHint') }}
+              </p>
+            </div>
             <Button variant="outline" size="sm" :disabled="!characterRecords.length" @click="createCharacterChange">
               <PlusIcon class="size-4" />
               {{ t('outline.addCharacterChange') }}
