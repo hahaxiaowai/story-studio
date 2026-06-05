@@ -57,10 +57,10 @@ function openInputMode(): void {
   <section class="border-border/70 bg-background min-h-[calc(100svh-12rem)] rounded-lg border shadow-sm">
     <div class="border-border/70 flex flex-col gap-3 border-b px-5 py-4 xl:flex-row xl:items-center xl:justify-between">
       <div>
-        <p class="text-muted-foreground text-xs font-medium uppercase">
-          timeline
+        <p class="text-muted-foreground text-sm">
+          {{ t('outline.subtitle') }}
         </p>
-        <h1 class="mt-2 text-2xl font-semibold tracking-normal md:text-4xl">
+        <h1 class="mt-1 text-2xl font-semibold tracking-normal md:text-3xl">
           {{ t('outline.title') }}
         </h1>
       </div>

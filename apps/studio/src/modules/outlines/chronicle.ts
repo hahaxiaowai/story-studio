@@ -25,6 +25,17 @@ export interface ChronicleModel {
   characterLanes: ChronicleCharacterLane[]
 }
 
+export interface ChronicleMobileCard {
+  beat: TimelineBeat
+  plotLines: Array<{
+    id: string
+    title: string
+    color: string
+  }>
+  eventCount: number
+  characterChangeCount: number
+}
+
 export function createChronicleModel(input: ChronicleModelInput): ChronicleModel {
   const columns = [...input.outline.beats].sort((left, right) => left.order - right.order)
   const plotLineLanes = [...input.outline.plotLines]
@@ -53,4 +64,19 @@ export function createChronicleModel(input: ChronicleModelInput): ChronicleModel
     plotLineLanes,
     characterLanes,
   }
+}
+
+export function createChronicleMobileCards(model: ChronicleModel): ChronicleMobileCard[] {
+  return model.columns.map(beat => ({
+    beat,
+    plotLines: model.plotLineLanes
+      .filter(lane => lane.beats.some(laneBeat => laneBeat.id === beat.id))
+      .map(lane => ({
+        id: lane.id,
+        title: lane.title,
+        color: lane.color,
+      })),
+    eventCount: beat.events.length,
+    characterChangeCount: model.characterLanes.reduce((count, lane) => count + (lane.changesByBeatId[beat.id]?.length ?? 0), 0),
+  }))
 }

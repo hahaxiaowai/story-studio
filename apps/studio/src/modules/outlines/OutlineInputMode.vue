@@ -1,14 +1,21 @@
 <script setup lang="ts">
 import type { BeatEvent, CharacterChange, CharacterChangeCategory, EntityRecord, TimelineBeat } from '@story-studio/types'
-import { ArrowDownIcon, ArrowUpIcon, PlusIcon, Trash2Icon } from '@lucide/vue'
-import { computed, watch } from 'vue'
+import { PlusIcon } from '@lucide/vue'
+import { computed, ref, watch } from 'vue'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet'
 import { useLocale } from '@/composables/useLocale'
 import { getEntityTitle } from '../entities/entities'
 import { useStudioData } from '../storage/useStudioData'
 import { useWorkspaces } from '../workspaces/useWorkspaces'
+import { createInputModeBeatCards } from './input-mode'
+import OutlineBeatEditor from './OutlineBeatEditor.vue'
 import { useOutline } from './useOutline'
 
 const props = defineProps<{
@@ -23,6 +30,7 @@ const { t } = useLocale()
 const studioData = useStudioData()
 const { activeWorkspace } = useWorkspaces()
 const {
+  workspaceOutline,
   beats,
   plotLines,
   eventTags,
@@ -31,6 +39,7 @@ const {
   removeBeat,
   moveBeat,
 } = useOutline()
+const mobileEditorOpen = ref(false)
 
 const selectedBeatIdModel = computed<string | undefined>({
   get: () => props.selectedBeatId,
@@ -41,6 +50,13 @@ const selectedBeat = computed<TimelineBeat | undefined>(() => {
 })
 const characterRecords = computed<EntityRecord[]>(() => {
   return studioData.document.value.entityRecords.filter(record => record.workspaceId === activeWorkspace.value.id && record.kind === 'character')
+})
+const beatCards = computed(() => createInputModeBeatCards(workspaceOutline.value))
+const characterOptions = computed<Array<{ id: string, label: string }>>(() => {
+  return characterRecords.value.map(character => ({
+    id: character.id,
+    label: getCharacterLabel(character.id),
+  }))
 })
 const characterChangeCategories = computed<Array<{ value: CharacterChangeCategory, label: string }>>(() => [
   { value: 'relationship', label: t('outline.change.relationship') },
@@ -62,6 +78,13 @@ watch(beats, (nextBeats) => {
 function createBeat(): void {
   const beat = addBeat()
   selectedBeatIdModel.value = beat.id
+}
+
+function selectBeat(beatId: string): void {
+  selectedBeatIdModel.value = beatId
+
+  if (typeof window !== 'undefined' && window.matchMedia('(max-width: 1023px)').matches)
+    mobileEditorOpen.value = true
 }
 
 function updateSelectedBeat(patch: Parameters<typeof updateBeat>[1]): void {
@@ -167,10 +190,6 @@ function removeCharacterChange(changeId: string): void {
   })
 }
 
-function getPlotLineTitle(plotLineId: string): string {
-  return plotLines.value.find(line => line.id === plotLineId)?.title ?? plotLineId
-}
-
 function getCharacterLabel(characterId: string): string {
   const character = characterRecords.value.find(record => record.id === characterId)
 
@@ -183,30 +202,34 @@ function createLocalId(prefix: string): string {
 </script>
 
 <template>
-  <div class="grid min-h-[34rem] lg:grid-cols-[22rem_minmax(0,1fr)]">
-    <aside class="border-border/70 border-b p-4 lg:border-r lg:border-b-0">
-      <div v-if="beats.length" class="grid gap-3">
+  <div class="lg:grid lg:h-[calc(100svh-13rem)] lg:min-h-[34rem] lg:grid-cols-[22rem_minmax(0,1fr)] lg:overflow-hidden">
+    <aside class="border-border/70 border-b p-4 lg:h-full lg:overflow-y-auto lg:border-r lg:border-b-0">
+      <div v-if="beatCards.length" class="grid gap-3">
         <button
-          v-for="beat in beats"
-          :key="beat.id"
+          v-for="card in beatCards"
+          :key="card.beat.id"
           type="button"
           class="hover:bg-muted focus-visible:ring-ring/50 grid rounded-md border px-3 py-3 text-left transition focus-visible:ring-3"
-          :class="beat.id === selectedBeat?.id ? 'border-primary bg-muted' : 'border-border/70'"
-          @click="selectedBeatIdModel = beat.id"
+          :class="card.beat.id === selectedBeat?.id ? 'border-primary bg-muted' : 'border-border/70'"
+          :aria-label="`${t('outline.openInputEditor')} ${card.beat.title}`"
+          @click="selectBeat(card.beat.id)"
         >
-          <span class="text-muted-foreground text-xs">{{ beat.timeLabel || t('outline.timeEmpty') }}</span>
-          <span class="mt-1 truncate text-sm font-medium">{{ beat.title }}</span>
-          <span class="text-muted-foreground mt-2 line-clamp-2 text-xs">{{ beat.summary || t('outline.summaryEmpty') }}</span>
+          <span class="text-muted-foreground text-xs">{{ card.beat.timeLabel || t('outline.timeEmpty') }}</span>
+          <span class="mt-1 truncate text-sm font-medium">{{ card.beat.title }}</span>
+          <span class="text-muted-foreground mt-2 line-clamp-2 text-xs">{{ card.beat.summary || t('outline.summaryEmpty') }}</span>
           <span class="mt-3 flex flex-wrap gap-1">
             <span
-              v-for="plotLineId in beat.plotLineIds"
-              :key="plotLineId"
+              v-for="plotLine in card.plotLines"
+              :key="plotLine.id"
               class="bg-primary/10 text-primary rounded px-1.5 py-0.5 text-[11px]"
             >
-              {{ getPlotLineTitle(plotLineId) }}
+              {{ plotLine.title }}
             </span>
-            <span v-if="beat.characterChanges.length" class="bg-muted-foreground/10 text-muted-foreground rounded px-1.5 py-0.5 text-[11px]">
-              {{ beat.characterChanges.length }} {{ t('outline.characterChanges') }}
+            <span v-if="card.eventCount" class="bg-muted-foreground/10 text-muted-foreground rounded px-1.5 py-0.5 text-[11px]">
+              {{ card.eventCount }} {{ t('outline.events') }}
+            </span>
+            <span v-if="card.characterChangeCount" class="bg-muted-foreground/10 text-muted-foreground rounded px-1.5 py-0.5 text-[11px]">
+              {{ card.characterChangeCount }} {{ t('outline.characterChanges') }}
             </span>
           </span>
         </button>
@@ -222,161 +245,64 @@ function createLocalId(prefix: string): string {
       </div>
     </aside>
 
-    <div class="p-5">
-      <div v-if="selectedBeat" class="grid gap-6">
-        <div class="flex items-center justify-between gap-3">
-          <div class="min-w-0">
-            <p class="text-muted-foreground text-xs">
-              {{ t('outline.currentBeat') }}
-            </p>
-            <h2 class="truncate text-xl font-semibold">
-              {{ selectedBeat.title }}
-            </h2>
-          </div>
-          <div class="flex gap-1">
-            <Button variant="ghost" size="icon-sm" :aria-label="t('outline.moveUp')" @click="moveBeat(selectedBeat.id, 'up')">
-              <ArrowUpIcon class="size-4" />
-            </Button>
-            <Button variant="ghost" size="icon-sm" :aria-label="t('outline.moveDown')" @click="moveBeat(selectedBeat.id, 'down')">
-              <ArrowDownIcon class="size-4" />
-            </Button>
-            <Button variant="ghost" size="icon-sm" :aria-label="t('outline.deleteBeat')" @click="deleteSelectedBeat">
-              <Trash2Icon class="size-4" />
-            </Button>
-          </div>
-        </div>
-
-        <section class="border-border/70 bg-muted/20 grid gap-4 rounded-lg border p-4">
-          <div>
-            <h3 class="text-sm font-medium">
-              {{ t('outline.overviewSection') }}
-            </h3>
-            <p class="text-muted-foreground mt-1 text-xs">
-              {{ t('outline.overviewSectionHint') }}
-            </p>
-          </div>
-          <div class="grid gap-4 md:grid-cols-2">
-            <label class="grid gap-1.5">
-              <span class="text-muted-foreground text-sm">{{ t('outline.beatTitle') }}</span>
-              <Input :model-value="selectedBeat.title" @update:model-value="updateSelectedBeat({ title: String($event) })" />
-            </label>
-            <label class="grid gap-1.5">
-              <span class="text-muted-foreground text-sm">{{ t('outline.timeLabel') }}</span>
-              <Input :model-value="selectedBeat.timeLabel" :placeholder="t('outline.timePlaceholder')" @update:model-value="updateSelectedBeat({ timeLabel: String($event) })" />
-            </label>
-            <label class="grid gap-1.5 md:col-span-2">
-              <span class="text-muted-foreground text-sm">{{ t('outline.summary') }}</span>
-              <Textarea :model-value="selectedBeat.summary" @update:model-value="updateSelectedBeat({ summary: String($event) })" />
-            </label>
-          </div>
-        </section>
-
-        <section class="border-border/70 grid gap-4 rounded-lg border p-4">
-          <div class="flex items-center justify-between gap-3">
-            <div>
-              <h3 class="text-sm font-medium">
-                {{ t('outline.eventsSection') }}
-              </h3>
-              <p class="text-muted-foreground mt-1 text-xs">
-                {{ t('outline.eventsSectionHint') }}
-              </p>
-            </div>
-            <Button variant="outline" size="sm" @click="createEvent">
-              <PlusIcon class="size-4" />
-              {{ t('outline.addEvent') }}
-            </Button>
-          </div>
-          <div class="grid gap-3">
-            <h4 class="text-muted-foreground text-xs font-medium">
-              {{ t('outline.lines') }}
-            </h4>
-            <div class="flex flex-wrap gap-2">
-              <label
-                v-for="plotLine in plotLines"
-                :key="plotLine.id"
-                class="border-border bg-background flex items-center gap-2 rounded-md border px-3 py-2 text-sm"
-              >
-                <input type="checkbox" :checked="selectedBeat.plotLineIds.includes(plotLine.id)" @change="togglePlotLine(plotLine.id)">
-                <span>{{ plotLine.title }}</span>
-              </label>
-            </div>
-          </div>
-          <div class="grid gap-3">
-            <article v-for="event in selectedBeat.events" :key="event.id" class="border-border/70 grid gap-3 rounded-lg border p-3">
-              <div class="flex items-center gap-2">
-                <Input class="flex-1" :model-value="event.title" @update:model-value="updateEvent(event.id, { title: String($event) })" />
-                <Button variant="ghost" size="icon-sm" :aria-label="t('outline.deleteEvent')" @click="removeEvent(event.id)">
-                  <Trash2Icon class="size-4" />
-                </Button>
-              </div>
-              <Textarea :model-value="event.description" :placeholder="t('outline.eventDescription')" @update:model-value="updateEvent(event.id, { description: String($event) })" />
-              <div class="flex flex-wrap gap-2">
-                <label
-                  v-for="tag in eventTags"
-                  :key="tag.id"
-                  class="bg-muted flex items-center gap-1.5 rounded px-2 py-1 text-xs"
-                >
-                  <input type="checkbox" :checked="event.tagIds.includes(tag.id)" @change="toggleEventTag(event, tag.id)">
-                  <span>{{ tag.label }}</span>
-                </label>
-              </div>
-            </article>
-            <p v-if="!selectedBeat.events.length" class="text-muted-foreground rounded-md border border-dashed p-4 text-sm">
-              {{ t('outline.eventsEmpty') }}
-            </p>
-          </div>
-        </section>
-
-        <section class="border-border/70 grid gap-4 rounded-lg border p-4">
-          <div class="flex items-center justify-between gap-3">
-            <div>
-              <h3 class="text-sm font-medium">
-                {{ t('outline.characterSection') }}
-              </h3>
-              <p class="text-muted-foreground mt-1 text-xs">
-                {{ t('outline.characterSectionHint') }}
-              </p>
-            </div>
-            <Button variant="outline" size="sm" :disabled="!characterRecords.length" @click="createCharacterChange">
-              <PlusIcon class="size-4" />
-              {{ t('outline.addCharacterChange') }}
-            </Button>
-          </div>
-          <div class="grid gap-3">
-            <article v-for="change in selectedBeat.characterChanges" :key="change.id" class="border-border/70 grid gap-3 rounded-lg border p-3 md:grid-cols-[minmax(0,1fr)_11rem_auto]">
-              <select
-                class="border-input bg-background h-9 rounded-md border px-2 text-sm"
-                :value="change.characterId"
-                @change="updateCharacterChange(change.id, { characterId: ($event.target as HTMLSelectElement).value })"
-              >
-                <option v-for="character in characterRecords" :key="character.id" :value="character.id">
-                  {{ getCharacterLabel(character.id) }}
-                </option>
-              </select>
-              <select
-                class="border-input bg-background h-9 rounded-md border px-2 text-sm"
-                :value="change.category"
-                @change="updateCharacterChange(change.id, { category: ($event.target as HTMLSelectElement).value as CharacterChangeCategory })"
-              >
-                <option v-for="category in characterChangeCategories" :key="category.value" :value="category.value">
-                  {{ category.label }}
-                </option>
-              </select>
-              <Button variant="ghost" size="icon-sm" :aria-label="t('outline.deleteCharacterChange')" @click="removeCharacterChange(change.id)">
-                <Trash2Icon class="size-4" />
-              </Button>
-              <Textarea class="md:col-span-3" :model-value="change.summary" :placeholder="t('outline.characterChangeSummary')" @update:model-value="updateCharacterChange(change.id, { summary: String($event) })" />
-            </article>
-            <p v-if="!selectedBeat.characterChanges.length" class="text-muted-foreground rounded-md border border-dashed p-4 text-sm">
-              {{ characterRecords.length ? t('outline.characterChangesEmpty') : t('outline.characterRequired') }}
-            </p>
-          </div>
-        </section>
-      </div>
+    <div class="hidden h-full overflow-y-auto p-5 lg:block">
+      <OutlineBeatEditor
+        v-if="selectedBeat"
+        :beat="selectedBeat"
+        :plot-lines="plotLines"
+        :event-tags="eventTags"
+        :character-options="characterOptions"
+        :character-change-categories="characterChangeCategories"
+        sticky-header
+        @update-beat="updateSelectedBeat"
+        @create-event="createEvent"
+        @update-event="updateEvent"
+        @remove-event="removeEvent"
+        @toggle-plot-line="togglePlotLine"
+        @toggle-event-tag="toggleEventTag"
+        @create-character-change="createCharacterChange"
+        @update-character-change="updateCharacterChange"
+        @remove-character-change="removeCharacterChange"
+        @move-beat="moveBeat"
+        @delete-beat="deleteSelectedBeat"
+      />
 
       <div v-else class="text-muted-foreground grid min-h-80 place-items-center rounded-md border border-dashed text-sm">
         {{ t('outline.empty') }}
       </div>
     </div>
+
+    <Sheet v-model:open="mobileEditorOpen">
+      <SheetContent side="bottom" class="max-h-[88svh] overflow-y-auto rounded-t-lg p-0 lg:hidden">
+        <SheetHeader class="border-border/70 border-b pr-12">
+          <SheetTitle>{{ selectedBeat?.title ?? t('outline.inputMode') }}</SheetTitle>
+          <SheetDescription>{{ t('outline.inputEditorSheet') }}</SheetDescription>
+        </SheetHeader>
+        <div class="p-4">
+          <OutlineBeatEditor
+            v-if="selectedBeat"
+            :beat="selectedBeat"
+            :plot-lines="plotLines"
+            :event-tags="eventTags"
+            :character-options="characterOptions"
+            :character-change-categories="characterChangeCategories"
+            @update-beat="updateSelectedBeat"
+            @create-event="createEvent"
+            @update-event="updateEvent"
+            @remove-event="removeEvent"
+            @toggle-plot-line="togglePlotLine"
+            @toggle-event-tag="toggleEventTag"
+            @create-character-change="createCharacterChange"
+            @update-character-change="updateCharacterChange"
+            @remove-character-change="removeCharacterChange"
+            @move-beat="moveBeat"
+            @delete-beat="deleteSelectedBeat"
+          />
+          <div v-else class="text-muted-foreground grid min-h-64 place-items-center rounded-md border border-dashed text-sm">
+            {{ t('outline.empty') }}
+          </div>
+        </div>
+      </SheetContent>
+    </Sheet>
   </div>
 </template>

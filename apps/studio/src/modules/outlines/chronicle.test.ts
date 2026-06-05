@@ -1,6 +1,6 @@
 import type { EntityRecord, TimelineBeat, WorkspaceOutline } from '@story-studio/types'
 import { describe, expect, it } from 'vitest'
-import { createChronicleModel } from './chronicle'
+import { createChronicleMobileCards, createChronicleModel } from './chronicle'
 import { createWorkspaceOutline } from './outline'
 
 describe('chronicle model', () => {
@@ -63,6 +63,47 @@ describe('chronicle model', () => {
         changesByBeatId: {
           'beat-b': [outline.beats[1]!.characterChanges[1]],
         },
+      },
+    ])
+  })
+
+  it('derives mobile cards with plot lines, event count, and character change count', () => {
+    const outline = createOutline([
+      {
+        ...createBeat('beat-a', 0, ['plot-main', 'plot-branch'], ['change-lin-a']),
+        events: [
+          { id: 'event-a', title: '事件 A', description: '', tagIds: [] },
+          { id: 'event-b', title: '事件 B', description: '', tagIds: [] },
+        ],
+      },
+      createBeat('beat-b', 1, ['plot-main'], ['change-lin-b', 'change-qiao']),
+    ])
+    const model = createChronicleModel({
+      outline,
+      characters: [
+        createCharacter('character-lin', '林澈'),
+        createCharacter('character-qiao', '乔安'),
+      ],
+      getCharacterTitle: record => String(record.values['character-name']),
+    })
+
+    expect(createChronicleMobileCards(model)).toEqual([
+      {
+        beat: outline.beats[0],
+        plotLines: [
+          { id: 'plot-main', title: '主线', color: '#2563eb' },
+          { id: 'plot-branch', title: '感情线', color: '#db2777' },
+        ],
+        eventCount: 2,
+        characterChangeCount: 1,
+      },
+      {
+        beat: outline.beats[1],
+        plotLines: [
+          { id: 'plot-main', title: '主线', color: '#2563eb' },
+        ],
+        eventCount: 0,
+        characterChangeCount: 2,
       },
     ])
   })

@@ -61,16 +61,6 @@ const navMain = computed(() => [
     url: '#outline',
     icon: BookOpenIcon,
     isActive: isHashActive(workspaceActiveHashes.outline),
-    items: [
-      {
-        title: t('nav.acts'),
-        url: '#outline',
-      },
-      {
-        title: t('nav.chapters'),
-        url: '#outline',
-      },
-    ],
   },
   {
     title: t('nav.characters'),

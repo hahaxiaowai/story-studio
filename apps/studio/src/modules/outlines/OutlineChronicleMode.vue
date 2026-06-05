@@ -3,11 +3,18 @@ import type { BeatEvent, EntityRecord, TimelineBeat } from '@story-studio/types'
 import { computed, ref } from 'vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet'
 import { useLocale } from '@/composables/useLocale'
 import { getEntityTitle } from '../entities/entities'
 import { useStudioData } from '../storage/useStudioData'
 import { useWorkspaces } from '../workspaces/useWorkspaces'
-import { createChronicleModel } from './chronicle'
+import { createChronicleMobileCards, createChronicleModel } from './chronicle'
 import { useOutline } from './useOutline'
 
 const props = defineProps<{
@@ -38,6 +45,7 @@ const selectedBeatIdModel = computed<string | undefined>({
   set: value => emit('update:selectedBeatId', value),
 })
 const density = ref<ChronicleDensity>('standard')
+const mobileInspectorOpen = ref(false)
 const densityOptions = computed<Array<{ value: ChronicleDensity, label: string }>>(() => [
   { value: 'compact', label: t('outline.densityCompact') },
   { value: 'standard', label: t('outline.densityStandard') },
@@ -51,6 +59,7 @@ const chronicle = computed(() => createChronicleModel({
   characters: characterRecords.value,
   getCharacterTitle: character => getEntityTitle(character, studioData.document.value.propertyDefinitions),
 }))
+const mobileCards = computed(() => createChronicleMobileCards(chronicle.value))
 const selectedBeat = computed<TimelineBeat | undefined>(() => {
   return chronicle.value.columns.find(beat => beat.id === selectedBeatIdModel.value) ?? chronicle.value.columns[0]
 })
@@ -70,6 +79,11 @@ const timelineGridStyle = computed(() => ({
 
 function selectBeat(beatId: string): void {
   selectedBeatIdModel.value = beatId
+}
+
+function openMobileInspector(beatId: string): void {
+  selectBeat(beatId)
+  mobileInspectorOpen.value = true
 }
 
 function updateSelectedBeat(patch: Parameters<typeof updateBeat>[1]): void {
@@ -123,10 +137,52 @@ function getColumnWidth(value: ChronicleDensity): string {
 </script>
 
 <template>
-  <div class="grid min-h-[34rem] gap-0 xl:grid-cols-[minmax(0,1fr)_22rem]">
-    <div class="border-border/70 min-w-0 border-b xl:border-r xl:border-b-0">
-      <div v-if="hasBeats" class="overflow-x-auto">
-        <div class="border-border/70 bg-muted/20 sticky left-0 z-30 flex flex-col gap-3 border-b px-4 py-3 md:flex-row md:items-center md:justify-between">
+  <div class="min-h-[34rem] xl:grid xl:h-[calc(100svh-13rem)] xl:grid-cols-[minmax(0,1fr)_22rem]">
+    <div class="border-border/70 min-w-0 border-b xl:h-full xl:overflow-hidden xl:border-r xl:border-b-0">
+      <div v-if="hasBeats" class="xl:hidden">
+        <div class="border-border/70 bg-muted/20 border-b px-4 py-3">
+          <p class="text-sm font-medium">
+            {{ t('outline.cardList') }}
+          </p>
+          <p class="text-muted-foreground mt-1 text-xs">
+            {{ t('outline.cardListHint') }}
+          </p>
+        </div>
+        <div class="grid gap-3 p-4">
+          <button
+            v-for="card in mobileCards"
+            :key="card.beat.id"
+            type="button"
+            class="border-border bg-background focus-visible:ring-ring/50 grid gap-3 rounded-lg border p-4 text-left shadow-xs transition focus-visible:ring-3"
+            :class="card.beat.id === selectedBeat?.id ? 'border-primary bg-primary/5' : 'hover:border-primary/60'"
+            :aria-label="`${t('outline.inspectBeat')} ${card.beat.title}`"
+            @click="openMobileInspector(card.beat.id)"
+          >
+            <div class="grid gap-1">
+              <span class="text-muted-foreground text-xs">{{ card.beat.timeLabel || t('outline.timeEmpty') }}</span>
+              <span class="text-base font-semibold">{{ card.beat.title }}</span>
+              <span class="text-muted-foreground line-clamp-2 text-sm">{{ card.beat.summary || t('outline.summaryEmpty') }}</span>
+            </div>
+            <div class="flex flex-wrap gap-1.5">
+              <span
+                v-for="plotLine in card.plotLines"
+                :key="plotLine.id"
+                class="rounded px-2 py-0.5 text-xs"
+                :style="{ backgroundColor: `${plotLine.color}1f`, color: plotLine.color }"
+              >
+                {{ plotLine.title }}
+              </span>
+            </div>
+            <div class="text-muted-foreground flex flex-wrap gap-3 text-xs">
+              <span>{{ card.eventCount }} {{ t('outline.events') }}</span>
+              <span>{{ card.characterChangeCount }} {{ t('outline.characterChanges') }}</span>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      <div v-if="hasBeats" class="hidden h-full overflow-auto xl:block">
+        <div class="border-border/70 bg-muted/20 sticky top-0 left-0 z-30 flex min-w-max items-center justify-between gap-6 border-b px-4 py-3">
           <div>
             <p class="text-sm font-medium">
               {{ t('outline.boardView') }}
@@ -157,6 +213,7 @@ function getColumnWidth(value: ChronicleDensity): string {
             v-for="beat in chronicle.columns"
             :key="beat.id"
             class="bg-background sticky top-0 z-10 border-b p-3"
+            :class="beat.id === selectedBeat?.id ? 'bg-primary/5' : ''"
           >
             <button
               type="button"
@@ -185,7 +242,7 @@ function getColumnWidth(value: ChronicleDensity): string {
               v-for="column in chronicle.columns"
               :key="`${lane.id}-${column.id}`"
               class="border-b p-3"
-              :class="laneMinHeightClass"
+              :class="[laneMinHeightClass, column.id === selectedBeat?.id ? 'bg-primary/5' : 'bg-background/60']"
             >
               <button
                 v-if="getLaneBeat(column.id, lane.beats)"
@@ -220,7 +277,8 @@ function getColumnWidth(value: ChronicleDensity): string {
           <div
             v-for="column in chronicle.columns"
             :key="`character-header-${column.id}`"
-            class="bg-muted/20 border-b p-3"
+            class="border-b p-3"
+            :class="column.id === selectedBeat?.id ? 'bg-primary/5' : 'bg-muted/20'"
           />
 
           <template v-if="chronicle.characterLanes.length">
@@ -237,7 +295,7 @@ function getColumnWidth(value: ChronicleDensity): string {
                 v-for="column in chronicle.columns"
                 :key="`${lane.id}-${column.id}`"
                 class="border-b p-3"
-                :class="characterLaneMinHeightClass"
+                :class="[characterLaneMinHeightClass, column.id === selectedBeat?.id ? 'bg-primary/5' : 'bg-background/60']"
               >
                 <button
                   v-if="lane.changesByBeatId[column.id]?.length"
@@ -278,7 +336,7 @@ function getColumnWidth(value: ChronicleDensity): string {
       </div>
     </div>
 
-    <aside class="bg-muted/20 p-5">
+    <aside class="bg-muted/20 hidden h-full overflow-y-auto p-5 xl:block">
       <div v-if="selectedBeat" class="grid gap-4">
         <div>
           <p class="text-muted-foreground text-xs">
@@ -342,5 +400,65 @@ function getColumnWidth(value: ChronicleDensity): string {
         {{ t('outline.chronicleSelectBeat') }}
       </p>
     </aside>
+
+    <Sheet v-model:open="mobileInspectorOpen">
+      <SheetContent side="bottom" class="max-h-[82svh] overflow-y-auto rounded-t-lg p-0 xl:hidden">
+        <SheetHeader class="border-border/70 border-b pr-12">
+          <SheetTitle>{{ selectedBeat?.title ?? t('outline.chronicleInspector') }}</SheetTitle>
+          <SheetDescription>{{ t('outline.chronicleInspector') }}</SheetDescription>
+        </SheetHeader>
+        <div v-if="selectedBeat" class="grid gap-4 p-4">
+          <label class="grid gap-1.5">
+            <span class="text-muted-foreground text-sm">{{ t('outline.beatTitle') }}</span>
+            <Input :model-value="selectedBeat.title" @update:model-value="updateSelectedBeat({ title: String($event) })" />
+          </label>
+          <label class="grid gap-1.5">
+            <span class="text-muted-foreground text-sm">{{ t('outline.timeLabel') }}</span>
+            <Input :model-value="selectedBeat.timeLabel" :placeholder="t('outline.timePlaceholder')" @update:model-value="updateSelectedBeat({ timeLabel: String($event) })" />
+          </label>
+          <section class="grid gap-2">
+            <h3 class="text-sm font-medium">
+              {{ t('outline.lines') }}
+            </h3>
+            <label
+              v-for="plotLine in plotLines"
+              :key="plotLine.id"
+              class="border-border bg-background flex items-center gap-2 rounded-md border px-3 py-2 text-sm"
+            >
+              <input type="checkbox" :checked="selectedBeat.plotLineIds.includes(plotLine.id)" @change="togglePlotLine(plotLine.id)">
+              <span>{{ plotLine.title }}</span>
+            </label>
+          </section>
+          <section class="grid gap-2">
+            <h3 class="text-sm font-medium">
+              {{ t('outline.eventTags') }}
+            </h3>
+            <div v-if="selectedBeat.events.length" class="grid gap-3">
+              <article v-for="event in selectedBeat.events" :key="event.id" class="border-border bg-background rounded-md border p-3">
+                <p class="truncate text-sm font-medium">
+                  {{ event.title }}
+                </p>
+                <div class="mt-2 flex flex-wrap gap-2">
+                  <label
+                    v-for="tag in eventTags"
+                    :key="tag.id"
+                    class="bg-muted flex items-center gap-1.5 rounded px-2 py-1 text-xs"
+                  >
+                    <input type="checkbox" :checked="event.tagIds.includes(tag.id)" @change="toggleEventTag(event, tag.id)">
+                    <span>{{ tag.label }}</span>
+                  </label>
+                </div>
+              </article>
+            </div>
+            <p v-else class="text-muted-foreground rounded-md border border-dashed p-3 text-sm">
+              {{ t('outline.eventsEmpty') }}
+            </p>
+          </section>
+          <Button variant="outline" @click="emit('editDetails')">
+            {{ t('outline.editDetailsInInput') }}
+          </Button>
+        </div>
+      </SheetContent>
+    </Sheet>
   </div>
 </template>
