@@ -12,6 +12,19 @@ const { settings, providers } = useAssistant()
 const chat = useAssistantChat({ settings, providers })
 const messageList = ref<HTMLElement>()
 const canRetry = computed(() => Boolean(chat.activeThread.value?.messages.some(message => message.role === 'user')))
+const providerSummary = computed(() => {
+  const provider = chat.provider.value
+
+  if (!provider)
+    return t('assistant.providerUnset')
+
+  const kind = provider.kind === 'openai-compatible'
+    ? t('assistant.apiProvider')
+    : t('assistant.terminalProvider')
+  const model = provider.model || t('assistant.modelUnset')
+
+  return `${provider.name} · ${kind} · ${model}`
+})
 
 watch(() => chat.activeThread.value?.messages.map(message => `${message.id}:${message.content}:${message.status}`).join('|'), () => {
   void nextTick(() => {
@@ -150,7 +163,7 @@ function handleComposerKeydown(event: KeyboardEvent): void {
 
           <div class="flex flex-wrap items-center justify-between gap-2">
             <span class="text-muted-foreground text-xs">
-              {{ chat.provider.value?.name || t('assistant.providerUnset') }}
+              {{ providerSummary }}
             </span>
 
             <div class="flex gap-2">

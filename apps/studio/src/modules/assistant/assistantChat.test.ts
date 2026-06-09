@@ -8,7 +8,9 @@ import {
   failAssistantMessage,
   filterAssistantThreadsByWorkspace,
   getAssistantChatDisabledReason,
+  normalizeOpenAiCompatibleBaseUrl,
   prepareLocalTerminalPrompt,
+  toAssistantChatRequestMessages,
 } from './assistantChat'
 
 describe('assistant chat state', () => {
@@ -102,7 +104,7 @@ describe('assistant chat state', () => {
     expect(prompt).toContain('用户输入：\n写一个开头')
   })
 
-  it('disables send for web, empty input, running state, and non-terminal providers', () => {
+  it('disables send for web, empty input, running state, and invalid local terminal providers', () => {
     expect(getAssistantChatDisabledReason({
       isTauri: false,
       loading: false,
@@ -120,13 +122,62 @@ describe('assistant chat state', () => {
       loading: false,
       provider: createProvider({ kind: 'openai-compatible' }),
       prompt: '你好',
-    })).toBe('请选择本地 Terminal Provider。')
+    })).toBe('请先填写 API Base URL。')
     expect(getAssistantChatDisabledReason({
       isTauri: true,
       loading: false,
       provider: createProvider(),
       prompt: '   ',
     })).toBe('请先输入消息。')
+  })
+
+  it('disables api providers when desktop-only or required fields are missing', () => {
+    expect(getAssistantChatDisabledReason({
+      isTauri: false,
+      loading: false,
+      provider: createApiProvider(),
+      prompt: '你好',
+    })).toBe('API 对话仅 Tauri 可用。')
+    expect(getAssistantChatDisabledReason({
+      isTauri: true,
+      loading: false,
+      provider: createApiProvider({ baseUrl: '   ' }),
+      prompt: '你好',
+    })).toBe('请先填写 API Base URL。')
+    expect(getAssistantChatDisabledReason({
+      isTauri: true,
+      loading: false,
+      provider: createApiProvider({ apiKey: '   ' }),
+      prompt: '你好',
+    })).toBe('请先填写 API Key。')
+    expect(getAssistantChatDisabledReason({
+      isTauri: true,
+      loading: false,
+      provider: createApiProvider({ model: '   ' }),
+      prompt: '你好',
+    })).toBe('请先填写模型名称。')
+  })
+
+  it('normalizes OpenAI-compatible base urls', () => {
+    expect(normalizeOpenAiCompatibleBaseUrl(' https://api.example.com/v1/// ')).toBe('https://api.example.com/v1')
+  })
+
+  it('converts thread history to API request messages and filters incomplete assistant placeholders', () => {
+    const thread = createThread({
+      messages: [
+        createMessage({ id: 'system-1', role: 'system', content: '你是小说助手。' }),
+        createMessage({ id: 'user-1', role: 'user', content: '写一个开头' }),
+        createMessage({ id: 'assistant-1', role: 'assistant', content: '开头内容', status: 'complete' }),
+        createMessage({ id: 'assistant-2', role: 'assistant', content: '', status: 'streaming' }),
+        createMessage({ id: 'assistant-3', role: 'assistant', content: '失败内容', status: 'error' }),
+      ],
+    })
+
+    expect(toAssistantChatRequestMessages(thread)).toEqual([
+      { role: 'system', content: '你是小说助手。' },
+      { role: 'user', content: '写一个开头' },
+      { role: 'assistant', content: '开头内容' },
+    ])
   })
 })
 
@@ -148,13 +199,38 @@ function createProvider(input: Partial<AiProviderConfig> = {}): AiProviderConfig
     id: input.id ?? 'provider-local',
     kind: input.kind ?? 'local-terminal',
     name: input.name ?? 'Codex',
-    baseUrl: '',
-    apiKey: '',
+    baseUrl: input.baseUrl ?? '',
+    apiKey: input.apiKey ?? '',
     model: input.model ?? 'gpt-5-codex',
     terminalCommand: input.terminalCommand ?? 'cat',
     enabled: true,
     createdAt: '2026-06-09T08:00:00.000Z',
     updatedAt: '2026-06-09T08:00:00.000Z',
+  }
+}
+
+function createApiProvider(input: Partial<AiProviderConfig> = {}): AiProviderConfig {
+  return createProvider({
+    id: 'provider-api',
+    kind: 'openai-compatible',
+    name: 'API 模型',
+    baseUrl: 'https://api.example.com/v1',
+    apiKey: 'sk-test',
+    model: 'gpt-4.1-mini',
+    terminalCommand: '',
+    ...input,
+  })
+}
+
+function createMessage(input: Partial<AssistantChatThread['messages'][number]>): AssistantChatThread['messages'][number] {
+  return {
+    id: input.id ?? 'message-1',
+    role: input.role ?? 'user',
+    content: input.content ?? '',
+    status: input.status ?? 'complete',
+    error: input.error,
+    createdAt: input.createdAt ?? '2026-06-09T08:00:00.000Z',
+    updatedAt: input.updatedAt ?? '2026-06-09T08:00:00.000Z',
   }
 }
 

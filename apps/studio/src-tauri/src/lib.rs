@@ -16,6 +16,7 @@ use tauri::{Emitter, Manager};
 
 const STUDIO_DATA_FILE_NAME: &str = "story-studio-data.json";
 const LOCAL_TERMINAL_MODEL_TIMEOUT_MS: u64 = 60_000;
+const OPENAI_COMPATIBLE_CHAT_TIMEOUT_MS: u64 = 60_000;
 const ASSISTANT_CHAT_STREAM_EVENT: &str = "assistant-chat-stream";
 
 static LOCAL_TERMINAL_CHAT_CANCEL_FLAGS: OnceLock<Mutex<HashMap<String, Arc<AtomicBool>>>> =
@@ -56,6 +57,19 @@ struct LocalTerminalChatStreamStartResult {
     started: bool,
 }
 
+#[derive(Debug, Clone, PartialEq, serde::Deserialize, serde::Serialize)]
+struct OpenAiCompatibleChatMessage {
+    role: String,
+    content: String,
+}
+
+#[derive(Debug, serde::Serialize)]
+struct OpenAiCompatibleChatRequest {
+    model: String,
+    messages: Vec<OpenAiCompatibleChatMessage>,
+    stream: bool,
+}
+
 enum StreamReaderEvent {
     Chunk { stream: &'static str, chunk: String },
     Error { stream: &'static str, error: String },
@@ -70,6 +84,8 @@ pub fn run() {
             run_local_terminal_model,
             run_local_terminal_chat_stream,
             cancel_local_terminal_chat_stream,
+            run_openai_compatible_chat_stream,
+            cancel_openai_compatible_chat_stream,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
@@ -154,9 +170,70 @@ fn run_local_terminal_chat_stream(
 
 #[tauri::command]
 fn cancel_local_terminal_chat_stream(run_id: String) -> Result<bool, String> {
+    cancel_chat_stream(run_id)
+}
+
+#[tauri::command]
+fn run_openai_compatible_chat_stream(
+    app: tauri::AppHandle,
+    run_id: String,
+    provider_id: String,
+    base_url: String,
+    api_key: String,
+    model: String,
+    messages: Vec<OpenAiCompatibleChatMessage>,
+) -> Result<LocalTerminalChatStreamStartResult, String> {
+    validate_openai_compatible_chat_stream_input(&base_url, &api_key, &model, &messages)?;
+
+    let cancel_flag = Arc::new(AtomicBool::new(false));
+    cancel_flags()
+        .lock()
+        .map_err(|_| "无法注册 API 请求取消状态。".to_string())?
+        .insert(run_id.clone(), Arc::clone(&cancel_flag));
+
+    let thread_run_id = run_id.clone();
+    thread::spawn(move || {
+        let started_at = Instant::now();
+        let result = run_openai_compatible_chat_stream_process(
+            &thread_run_id,
+            &provider_id,
+            &base_url,
+            &api_key,
+            &model,
+            messages,
+            || cancel_flag.load(Ordering::SeqCst),
+            |event| {
+                let _ = app.emit(ASSISTANT_CHAT_STREAM_EVENT, event);
+            },
+        );
+
+        if let Err(error) = result {
+            let _ = app.emit(
+                ASSISTANT_CHAT_STREAM_EVENT,
+                stream_error_event(&thread_run_id, error, started_at.elapsed().as_millis()),
+            );
+        }
+
+        if let Ok(mut flags) = cancel_flags().lock() {
+            flags.remove(&thread_run_id);
+        }
+    });
+
+    Ok(LocalTerminalChatStreamStartResult {
+        run_id,
+        started: true,
+    })
+}
+
+#[tauri::command]
+fn cancel_openai_compatible_chat_stream(run_id: String) -> Result<bool, String> {
+    cancel_chat_stream(run_id)
+}
+
+fn cancel_chat_stream(run_id: String) -> Result<bool, String> {
     let flags = cancel_flags()
         .lock()
-        .map_err(|_| "无法读取本地命令取消状态。".to_string())?;
+        .map_err(|_| "无法读取生成取消状态。".to_string())?;
 
     if let Some(flag) = flags.get(&run_id) {
         flag.store(true, Ordering::SeqCst);
@@ -401,6 +478,227 @@ fn validate_local_terminal_chat_stream_input(command: &str, prompt: &str) -> Res
     }
 
     Ok(())
+}
+
+fn validate_openai_compatible_chat_stream_input(
+    base_url: &str,
+    api_key: &str,
+    model: &str,
+    messages: &[OpenAiCompatibleChatMessage],
+) -> Result<(), String> {
+    openai_compatible_chat_completions_url(base_url)?;
+
+    if api_key.trim().is_empty() {
+        return Err("API Key 不能为空。".to_string());
+    }
+
+    if model.trim().is_empty() {
+        return Err("模型名称不能为空。".to_string());
+    }
+
+    if messages.is_empty() {
+        return Err("对话消息不能为空。".to_string());
+    }
+
+    Ok(())
+}
+
+fn run_openai_compatible_chat_stream_process<C, E>(
+    run_id: &str,
+    _provider_id: &str,
+    base_url: &str,
+    api_key: &str,
+    model: &str,
+    messages: Vec<OpenAiCompatibleChatMessage>,
+    is_cancelled: C,
+    mut emit_event: E,
+) -> Result<LocalTerminalChatStreamResult, String>
+where
+    C: Fn() -> bool,
+    E: FnMut(LocalTerminalChatStreamEvent),
+{
+    validate_openai_compatible_chat_stream_input(base_url, api_key, model, &messages)?;
+
+    let started_at = Instant::now();
+    let url = openai_compatible_chat_completions_url(base_url)?;
+    let client = reqwest::blocking::Client::builder()
+        .timeout(Duration::from_millis(OPENAI_COMPATIBLE_CHAT_TIMEOUT_MS))
+        .build()
+        .map_err(|error| format!("API 客户端初始化失败：{error}"))?;
+    let request = OpenAiCompatibleChatRequest {
+        model: model.trim().to_string(),
+        messages,
+        stream: true,
+    };
+    let mut response = client
+        .post(url)
+        .bearer_auth(api_key.trim())
+        .header(reqwest::header::CONTENT_TYPE, "application/json")
+        .json(&request)
+        .send()
+        .map_err(|error| format!("API 请求失败：{error}"))?;
+    let status = response.status();
+
+    if !status.is_success() {
+        let body = response.text().unwrap_or_default();
+        return Err(openai_compatible_error_message(status.as_u16(), &body));
+    }
+
+    let mut buffer = [0; 4096];
+    let mut pending = String::new();
+
+    loop {
+        if is_cancelled() {
+            let message = "生成已停止。".to_string();
+            emit_event(stream_error_event(run_id, message.clone(), started_at.elapsed().as_millis()));
+            return Err(message);
+        }
+
+        let size = response
+            .read(&mut buffer)
+            .map_err(|error| format!("读取 API 流式响应失败：{error}"))?;
+
+        if size == 0 {
+            break;
+        }
+
+        let chunk = String::from_utf8(buffer[..size].to_vec())
+            .map_err(|_| "API 流式响应不是有效 UTF-8。".to_string())?;
+        pending.push_str(&chunk);
+        drain_openai_compatible_sse_lines(&mut pending, run_id, &started_at, &mut emit_event)?;
+    }
+
+    if !pending.trim().is_empty() {
+        drain_openai_compatible_sse_line(pending.trim(), run_id, &started_at, &mut emit_event)?;
+    }
+
+    let result = LocalTerminalChatStreamResult {
+        exit_code: Some(0),
+        duration_ms: started_at.elapsed().as_millis(),
+    };
+
+    emit_event(LocalTerminalChatStreamEvent {
+        run_id: run_id.to_string(),
+        event: "done".to_string(),
+        stream: None,
+        chunk: None,
+        exit_code: result.exit_code,
+        duration_ms: Some(result.duration_ms),
+        error: None,
+    });
+
+    Ok(result)
+}
+
+fn drain_openai_compatible_sse_lines<E>(
+    pending: &mut String,
+    run_id: &str,
+    started_at: &Instant,
+    emit_event: &mut E,
+) -> Result<(), String>
+where
+    E: FnMut(LocalTerminalChatStreamEvent),
+{
+    while let Some(index) = pending.find('\n') {
+        let line = pending[..index].trim_end_matches('\r').to_string();
+        pending.drain(..=index);
+        drain_openai_compatible_sse_line(&line, run_id, started_at, emit_event)?;
+    }
+
+    Ok(())
+}
+
+fn drain_openai_compatible_sse_line<E>(
+    line: &str,
+    run_id: &str,
+    _started_at: &Instant,
+    emit_event: &mut E,
+) -> Result<(), String>
+where
+    E: FnMut(LocalTerminalChatStreamEvent),
+{
+    let line = line.trim();
+
+    if !line.starts_with("data:") {
+        return Ok(());
+    }
+
+    let data = line.trim_start_matches("data:").trim();
+
+    if let Some(chunk) = parse_openai_compatible_sse_data(data)? {
+        emit_event(stream_chunk_event(run_id, "stdout", chunk));
+    }
+
+    Ok(())
+}
+
+fn openai_compatible_chat_completions_url(base_url: &str) -> Result<String, String> {
+    let normalized = base_url.trim().trim_end_matches('/');
+
+    if normalized.is_empty() {
+        return Err("API Base URL 不能为空。".to_string());
+    }
+
+    Ok(format!("{normalized}/chat/completions"))
+}
+
+fn parse_openai_compatible_sse_data(data: &str) -> Result<Option<String>, String> {
+    let data = data.trim();
+
+    if data.is_empty() || data == "[DONE]" {
+        return Ok(None);
+    }
+
+    let event: OpenAiCompatibleStreamResponse = serde_json::from_str(data)
+        .map_err(|error| format!("API 流式响应不是有效 JSON：{error}"))?;
+
+    Ok(event
+        .choices
+        .into_iter()
+        .find_map(|choice| choice.delta.content))
+}
+
+fn openai_compatible_error_message(status: u16, body: &str) -> String {
+    let message = serde_json::from_str::<OpenAiCompatibleErrorResponse>(body)
+        .ok()
+        .and_then(|response| response.error.message)
+        .filter(|message| !message.trim().is_empty())
+        .unwrap_or_else(|| {
+            let body = body.trim();
+
+            if body.is_empty() {
+                "服务端未返回错误详情。".to_string()
+            } else {
+                body.to_string()
+            }
+        });
+
+    format!("API 请求失败（{status}）：{message}")
+}
+
+#[derive(Debug, serde::Deserialize)]
+struct OpenAiCompatibleStreamResponse {
+    choices: Vec<OpenAiCompatibleStreamChoice>,
+}
+
+#[derive(Debug, serde::Deserialize)]
+struct OpenAiCompatibleStreamChoice {
+    delta: OpenAiCompatibleStreamDelta,
+}
+
+#[derive(Debug, serde::Deserialize)]
+struct OpenAiCompatibleStreamDelta {
+    content: Option<String>,
+}
+
+#[derive(Debug, serde::Deserialize)]
+struct OpenAiCompatibleErrorResponse {
+    error: OpenAiCompatibleError,
+}
+
+#[derive(Debug, serde::Deserialize)]
+struct OpenAiCompatibleError {
+    message: Option<String>,
 }
 
 fn drain_stream_events<E>(
@@ -707,6 +1005,40 @@ mod tests {
 
         assert!(result.unwrap_err().contains("本地命令执行超时"));
         assert!(events.iter().any(|event| event.event == "error" && event.error.as_deref().is_some_and(|error| error.contains("本地命令执行超时"))));
+    }
+
+    #[test]
+    fn openai_compatible_base_url_is_normalized_to_chat_completions_url() {
+        let url = openai_compatible_chat_completions_url(" https://api.example.com/v1/// ").unwrap();
+
+        assert_eq!(url, "https://api.example.com/v1/chat/completions");
+    }
+
+    #[test]
+    fn openai_compatible_sse_chunk_reads_delta_content() {
+        let chunk = parse_openai_compatible_sse_data(
+            r#"{"choices":[{"delta":{"content":"第一段"}}]}"#,
+        )
+        .unwrap();
+
+        assert_eq!(chunk, Some("第一段".to_string()));
+    }
+
+    #[test]
+    fn openai_compatible_sse_done_is_ignored() {
+        let chunk = parse_openai_compatible_sse_data("[DONE]").unwrap();
+
+        assert_eq!(chunk, None);
+    }
+
+    #[test]
+    fn openai_compatible_error_body_prefers_server_message() {
+        let message = openai_compatible_error_message(
+            401,
+            r#"{"error":{"message":"invalid api key"}}"#,
+        );
+
+        assert_eq!(message, "API 请求失败（401）：invalid api key");
     }
 
     fn test_data_path(name: &str) -> PathBuf {

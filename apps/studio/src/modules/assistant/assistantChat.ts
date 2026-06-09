@@ -1,6 +1,14 @@
 import type { AiProviderConfig, AssistantChatMessage, AssistantChatThread, Workspace } from '@story-studio/types'
 
 export const ASSISTANT_CHAT_TAURI_UNAVAILABLE = '本地 Terminal 仅 Tauri 可用。'
+export const ASSISTANT_API_CHAT_TAURI_UNAVAILABLE = 'API 对话仅 Tauri 可用。'
+
+export interface AssistantChatRequestMessage {
+  role: 'system' | 'user' | 'assistant'
+  content: string
+}
+
+export type AssistantChatTransportKind = 'local-terminal' | 'openai-compatible'
 
 export interface CreateAssistantThreadInput {
   workspaceId: string
@@ -109,6 +117,31 @@ export function prepareLocalTerminalPrompt(input: PrepareLocalTerminalPromptInpu
   ].join('\n')
 }
 
+export function normalizeOpenAiCompatibleBaseUrl(baseUrl: string): string {
+  return baseUrl.trim().replace(/\/+$/, '')
+}
+
+export function toAssistantChatRequestMessages(thread: AssistantChatThread): AssistantChatRequestMessage[] {
+  return thread.messages.flatMap((message) => {
+    const content = message.content.trim()
+
+    if (!content)
+      return []
+
+    if (message.role === 'assistant' && message.status !== 'complete')
+      return []
+
+    if (message.role === 'system' || message.role === 'user' || message.role === 'assistant') {
+      return [{
+        role: message.role,
+        content,
+      }]
+    }
+
+    return []
+  })
+}
+
 export function getAssistantChatDisabledReason(input: {
   isTauri: boolean
   loading: boolean
@@ -118,14 +151,30 @@ export function getAssistantChatDisabledReason(input: {
   if (input.loading)
     return '正在生成回复。'
 
-  if (!input.isTauri)
-    return ASSISTANT_CHAT_TAURI_UNAVAILABLE
-
   if (!input.provider)
     return '请先选择 Provider。'
 
-  if (input.provider.kind !== 'local-terminal')
-    return '请选择本地 Terminal Provider。'
+  if (input.provider.kind === 'openai-compatible') {
+    if (!input.isTauri)
+      return ASSISTANT_API_CHAT_TAURI_UNAVAILABLE
+
+    if (!normalizeOpenAiCompatibleBaseUrl(input.provider.baseUrl))
+      return '请先填写 API Base URL。'
+
+    if (!input.provider.apiKey.trim())
+      return '请先填写 API Key。'
+
+    if (!input.provider.model.trim())
+      return '请先填写模型名称。'
+
+    if (!input.prompt.trim())
+      return '请先输入消息。'
+
+    return ''
+  }
+
+  if (!input.isTauri)
+    return ASSISTANT_CHAT_TAURI_UNAVAILABLE
 
   if (!input.provider.terminalCommand.trim())
     return '请先填写 Terminal 命令。'

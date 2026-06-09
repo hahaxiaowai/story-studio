@@ -1,5 +1,6 @@
 import type { AiProviderConfig, AssistantChatThread, AssistantSettings, Workspace } from '@story-studio/types'
 import type { ComputedRef, Ref } from 'vue'
+import type { AssistantChatRequestMessage, AssistantChatTransportKind } from './assistantChat'
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useStudioData } from '../storage/useStudioData'
 import {
@@ -11,11 +12,13 @@ import {
   failAssistantMessage,
   filterAssistantThreadsByWorkspace,
   getAssistantChatDisabledReason,
+  normalizeOpenAiCompatibleBaseUrl,
   prepareLocalTerminalPrompt,
+  toAssistantChatRequestMessages,
 } from './assistantChat'
 import { resolveAssistantRunnerProvider } from './assistantRunner'
 
-export interface LocalTerminalChatStreamEvent {
+export interface AssistantChatStreamEvent {
   runId: string
   event: 'chunk' | 'done' | 'error'
   stream?: 'stdout' | 'stderr'
@@ -57,6 +60,7 @@ export function useAssistantChat(input: {
   const stderr = ref('')
   const activeRunId = ref('')
   const activeAssistantMessageId = ref('')
+  const activeTransportKind = ref<AssistantChatTransportKind>()
   const unlisten = ref<UnlistenFn>()
   const currentWorkspace = computed<Workspace | undefined>(() => {
     return studioData.document.value.workspaces.find(workspace => workspace.id === studioData.document.value.activeWorkspaceId)
@@ -159,20 +163,13 @@ export function useAssistantChat(input: {
     activeAssistantMessageId.value = assistantMessageId
 
     try {
+      activeTransportKind.value = selectedProvider.kind
       await ensureListener()
-      const { invoke } = await import('@tauri-apps/api/core')
-
-      await invoke('run_local_terminal_chat_stream', {
+      await runChatStream({
         runId,
-        providerId: selectedProvider.id,
-        command: selectedProvider.terminalCommand,
-        model: selectedProvider.model,
-        prompt: prepareLocalTerminalPrompt({
-          workspace: currentWorkspace.value,
-          provider: selectedProvider,
-          moduleName: '助手',
-          userMessage,
-        }),
+        provider: selectedProvider,
+        thread: nextThread,
+        userMessage,
       })
     }
     catch (runError) {
@@ -201,8 +198,11 @@ export function useAssistantChat(input: {
 
     try {
       const { invoke } = await import('@tauri-apps/api/core')
+      const command = activeTransportKind.value === 'openai-compatible'
+        ? 'cancel_openai_compatible_chat_stream'
+        : 'cancel_local_terminal_chat_stream'
 
-      await invoke('cancel_local_terminal_chat_stream', { runId: activeRunId.value })
+      await invoke(command, { runId: activeRunId.value })
     }
     catch (stopError) {
       error.value = getErrorMessage(stopError)
@@ -222,7 +222,7 @@ export function useAssistantChat(input: {
 
     const { listen } = await import('@tauri-apps/api/event')
 
-    unlisten.value = await listen<LocalTerminalChatStreamEvent>('assistant-chat-stream', (event) => {
+    unlisten.value = await listen<AssistantChatStreamEvent>('assistant-chat-stream', (event) => {
       handleStreamEvent(event.payload)
     })
   }
@@ -232,7 +232,41 @@ export function useAssistantChat(input: {
     unlisten.value = undefined
   }
 
-  function handleStreamEvent(event: LocalTerminalChatStreamEvent): void {
+  async function runChatStream(input: {
+    runId: string
+    provider: AiProviderConfig
+    thread: AssistantChatThread
+    userMessage: string
+  }): Promise<void> {
+    const { invoke } = await import('@tauri-apps/api/core')
+
+    if (input.provider.kind === 'openai-compatible') {
+      await invoke('run_openai_compatible_chat_stream', {
+        runId: input.runId,
+        providerId: input.provider.id,
+        baseUrl: normalizeOpenAiCompatibleBaseUrl(input.provider.baseUrl),
+        apiKey: input.provider.apiKey,
+        model: input.provider.model,
+        messages: toAssistantChatRequestMessages(input.thread) satisfies AssistantChatRequestMessage[],
+      })
+      return
+    }
+
+    await invoke('run_local_terminal_chat_stream', {
+      runId: input.runId,
+      providerId: input.provider.id,
+      command: input.provider.terminalCommand,
+      model: input.provider.model,
+      prompt: prepareLocalTerminalPrompt({
+        workspace: currentWorkspace.value,
+        provider: input.provider,
+        moduleName: '助手',
+        userMessage: input.userMessage,
+      }),
+    })
+  }
+
+  function handleStreamEvent(event: AssistantChatStreamEvent): void {
     if (event.runId !== activeRunId.value)
       return
 
@@ -273,6 +307,7 @@ export function useAssistantChat(input: {
     loading.value = false
     activeRunId.value = ''
     activeAssistantMessageId.value = ''
+    activeTransportKind.value = undefined
     void cleanupListener()
   }
 
