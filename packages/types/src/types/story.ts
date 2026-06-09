@@ -249,7 +249,32 @@ export interface AssistantSettings {
   featureBindings: AssistantFeatureBinding[]
 }
 
-export type StudioDataSchemaVersion = 7
+export type AssistantChatMessageRole = 'user' | 'assistant' | 'system'
+
+export type AssistantChatMessageStatus = 'complete' | 'streaming' | 'error'
+
+export interface AssistantChatMessage {
+  id: string
+  role: AssistantChatMessageRole
+  content: string
+  status: AssistantChatMessageStatus
+  error?: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface AssistantChatThread {
+  id: string
+  workspaceId: string
+  title: string
+  providerId: string
+  model: string
+  messages: AssistantChatMessage[]
+  createdAt: string
+  updatedAt: string
+}
+
+export type StudioDataSchemaVersion = 8
 
 export interface StudioPreferences {
   locale: 'zh-CN' | 'en-US'
@@ -270,6 +295,7 @@ export interface StudioDataDocument {
   materialTags: MaterialTag[]
   materialRefs: WorkspaceMaterialRef[]
   assistantSettings: AssistantSettings
+  assistantChatThreads: AssistantChatThread[]
   createdAt: string
   updatedAt: string
 }

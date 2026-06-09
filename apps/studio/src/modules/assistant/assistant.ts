@@ -37,12 +37,17 @@ export interface ResolvedFeatureBinding {
 }
 
 const ASSISTANT_FEATURES = ['outline', 'characters', 'world', 'content', 'materials'] as const satisfies readonly AssistantFeatureKey[]
+const DEFAULT_CODEX_PROVIDER_ID = 'provider-codex-terminal'
+const DEFAULT_CODEX_PROVIDER_CREATED_AT = '2026-01-01T00:00:00.000Z'
+const DEFAULT_CODEX_TERMINAL_COMMAND = 'if [ -n "$STORY_STUDIO_MODEL" ]; then codex exec -m "$STORY_STUDIO_MODEL" -; else codex exec -; fi'
 
 export function createAssistantSettings(): AssistantSettings {
+  const defaultProvider = createDefaultCodexProvider()
+
   return {
-    defaultProviderId: '',
+    defaultProviderId: defaultProvider.id,
     defaultModel: '',
-    providers: [],
+    providers: [defaultProvider],
     featureBindings: [],
   }
 }
@@ -76,14 +81,20 @@ export function normalizeAssistantSettings(settings: Partial<AssistantSettings> 
 }
 
 export function createProvider(input: CreateProviderInput): AiProviderConfig {
+  const defaultLocalTerminalProvider = input.kind === 'local-terminal'
+    ? createDefaultCodexProvider(input.now)
+    : undefined
+
   return {
     id: createId('ai-provider', input.now),
     kind: input.kind,
-    name: normalizeName(input.name, input.kind === 'openai-compatible' ? 'API 模型' : '本地 Terminal'),
+    name: normalizeName(input.name, defaultLocalTerminalProvider?.name ?? 'API 模型'),
     baseUrl: input.kind === 'openai-compatible' ? normalizeText(input.baseUrl) : '',
     apiKey: input.kind === 'openai-compatible' ? normalizeText(input.apiKey) : '',
-    model: normalizeText(input.model),
-    terminalCommand: input.kind === 'local-terminal' ? normalizeText(input.terminalCommand) : '',
+    model: normalizeText(input.model) || defaultLocalTerminalProvider?.model || '',
+    terminalCommand: input.kind === 'local-terminal'
+      ? normalizeText(input.terminalCommand) || DEFAULT_CODEX_TERMINAL_COMMAND
+      : '',
     enabled: true,
     createdAt: input.now,
     updatedAt: input.now,
@@ -190,6 +201,21 @@ function normalizeProvider(provider: AiProviderConfig): AiProviderConfig {
     enabled: provider.enabled !== false,
     createdAt: provider.createdAt,
     updatedAt: provider.updatedAt,
+  }
+}
+
+function createDefaultCodexProvider(now = DEFAULT_CODEX_PROVIDER_CREATED_AT): AiProviderConfig {
+  return {
+    id: DEFAULT_CODEX_PROVIDER_ID,
+    kind: 'local-terminal',
+    name: 'Codex',
+    baseUrl: '',
+    apiKey: '',
+    model: '',
+    terminalCommand: DEFAULT_CODEX_TERMINAL_COMMAND,
+    enabled: true,
+    createdAt: now,
+    updatedAt: now,
   }
 }
 

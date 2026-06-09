@@ -1,11 +1,11 @@
-import type { EntityRecord, MaterialAsset, MaterialTag, PropertyDefinition, StudioDataDocument, StudioPreferences, WorkspaceContentEntry, WorkspaceWorld, WorldSettingGroup } from '@story-studio/types'
+import type { AssistantChatMessage, AssistantChatThread, EntityRecord, MaterialAsset, MaterialTag, PropertyDefinition, StudioDataDocument, StudioPreferences, WorkspaceContentEntry, WorkspaceWorld, WorldSettingGroup } from '@story-studio/types'
 import { createAssistantSettings, normalizeAssistantSettings } from '../assistant/assistant'
 import { defaultPropertyDefinitions } from '../properties/properties'
 import { seedWorkspaces } from '../workspaces/workspaces'
 import { createWorkspaceWorld } from '../worlds/world'
 import { createDefaultEntityRecords, createDefaultOutlines, createDefaultWorlds, isLegacyPrototypeSeedDocument } from './defaultContent'
 
-export const STUDIO_DATA_SCHEMA_VERSION = 7
+export const STUDIO_DATA_SCHEMA_VERSION = 8
 
 export const LEGACY_LOCALE_STORAGE_KEY = 'story-studio:locale'
 export const LEGACY_THEME_MODE_STORAGE_KEY = 'story-studio:theme-mode'
@@ -30,6 +30,7 @@ export function createDefaultStudioDataDocument(now = new Date().toISOString()):
     materialTags: [],
     materialRefs: [],
     assistantSettings: createAssistantSettings(),
+    assistantChatThreads: [],
     createdAt: now,
     updatedAt: now,
   }
@@ -72,6 +73,7 @@ function migrateStudioDataDocument(document: StudioDataDocument): StudioDataDocu
     materialTags?: StudioDataDocument['materialTags']
     materialRefs?: StudioDataDocument['materialRefs']
     assistantSettings?: StudioDataDocument['assistantSettings']
+    assistantChatThreads?: StudioDataDocument['assistantChatThreads']
   }
   const outlines = sourceDocument.outlines ?? []
   const worlds = sourceDocument.worlds ?? sourceDocument.workspaces.map(workspace => createWorkspaceWorld(workspace.id, sourceDocument.updatedAt))
@@ -79,6 +81,8 @@ function migrateStudioDataDocument(document: StudioDataDocument): StudioDataDocu
   const materials = normalizeMaterials(sourceDocument.materials ?? [])
   const materialTags = normalizeMaterialTags(sourceDocument.materialTags ?? [])
   const assistantSettings = normalizeAssistantSettings(sourceDocument.assistantSettings)
+  const workspaceIds = new Set(sourceDocument.workspaces.map(workspace => workspace.id))
+  const assistantChatThreads = normalizeAssistantChatThreads(sourceDocument.assistantChatThreads ?? [], workspaceIds, sourceDocument.updatedAt)
   const propertyDefinitions = mergeDefaultPropertyDefinitions(sourceDocument.propertyDefinitions ?? [])
   const entityRecords = migrateWorldSettingRecords(sourceDocument.entityRecords ?? [], worlds)
 
@@ -103,7 +107,50 @@ function migrateStudioDataDocument(document: StudioDataDocument): StudioDataDocu
     materialTags,
     materialRefs: sourceDocument.materialRefs ?? [],
     assistantSettings,
+    assistantChatThreads,
   }
+}
+
+function normalizeAssistantChatThreads(threads: AssistantChatThread[], workspaceIds: Set<string>, fallbackUpdatedAt: string): AssistantChatThread[] {
+  return threads
+    .filter(thread => workspaceIds.has(thread.workspaceId))
+    .map(thread => ({
+      id: normalizeStorageText(thread.id),
+      workspaceId: thread.workspaceId,
+      title: normalizeStorageText(thread.title) || '新对话',
+      providerId: normalizeStorageText(thread.providerId),
+      model: normalizeStorageText(thread.model),
+      messages: Array.isArray(thread.messages)
+        ? thread.messages.map(message => normalizeAssistantChatMessage(message, fallbackUpdatedAt))
+        : [],
+      createdAt: thread.createdAt || fallbackUpdatedAt,
+      updatedAt: thread.updatedAt || fallbackUpdatedAt,
+    }))
+    .filter(thread => thread.id)
+}
+
+function normalizeAssistantChatMessage(message: AssistantChatMessage, fallbackUpdatedAt: string): AssistantChatMessage {
+  const role = message.role === 'assistant' || message.role === 'system' ? message.role : 'user'
+  const interrupted = message.status === 'streaming'
+  const status = interrupted
+    ? 'error'
+    : message.status === 'error'
+      ? 'error'
+      : 'complete'
+
+  return {
+    id: normalizeStorageText(message.id),
+    role,
+    content: normalizeStorageText(message.content),
+    status,
+    ...(status === 'error' ? { error: normalizeStorageText(message.error) || (interrupted ? '上次生成已中断。' : '') } : {}),
+    createdAt: message.createdAt || fallbackUpdatedAt,
+    updatedAt: message.updatedAt || fallbackUpdatedAt,
+  }
+}
+
+function normalizeStorageText(value: string | undefined): string {
+  return value?.trim() ?? ''
 }
 
 function normalizeContentEntries(contents: WorkspaceContentEntry[]): WorkspaceContentEntry[] {

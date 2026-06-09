@@ -5,10 +5,9 @@ import { BotIcon, PlusIcon, TerminalIcon, Trash2Icon } from '@lucide/vue'
 import { computed, ref, watch } from 'vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
 import { useLocale } from '@/composables/useLocale'
+import AssistantChatPanel from './AssistantChatPanel.vue'
 import { useAssistant } from './useAssistant'
-import { useAssistantRunner } from './useAssistantRunner'
 
 const { t } = useLocale()
 const {
@@ -23,7 +22,6 @@ const {
   clearFeatureBinding,
   resolveFeatureBinding,
 } = useAssistant()
-const assistantRunner = useAssistantRunner(settings)
 
 const selectedProviderId = ref<string>()
 const selectedProvider = computed<AiProviderConfig | undefined>(() => {
@@ -35,13 +33,6 @@ const featureRows = computed(() => features.map(feature => ({
   override: settings.value.featureBindings.find(binding => binding.feature === feature),
   resolved: resolveFeatureBinding(feature),
 })))
-const runnerProviderLabel = computed(() => {
-  if (!assistantRunner.provider.value)
-    return t('assistant.providerUnset')
-
-  return `${assistantRunner.provider.value.name} · ${getProviderKindLabel(assistantRunner.provider.value)}`
-})
-
 watch(providers, (nextProviders) => {
   if (!nextProviders.length) {
     selectedProviderId.value = undefined
@@ -287,7 +278,7 @@ function readEventValue(event: Event): string {
               <span class="text-muted-foreground text-sm">{{ t('assistant.terminalCommand') }}</span>
               <Input
                 :model-value="selectedProvider.terminalCommand"
-                placeholder="codex --model gpt-5-codex"
+                placeholder="codex exec -m &quot;$STORY_STUDIO_MODEL&quot; -"
                 @update:model-value="updateSelectedProvider({ terminalCommand: String($event) })"
               />
             </label>
@@ -351,92 +342,7 @@ function readEventValue(event: Event): string {
           </div>
         </section>
 
-        <section class="grid gap-4 rounded-lg border p-4">
-          <div>
-            <h2 class="text-lg font-semibold">
-              {{ t('assistant.runnerTitle') }}
-            </h2>
-            <p class="text-muted-foreground mt-1 text-sm">
-              {{ t('assistant.runnerHint') }}
-            </p>
-          </div>
-
-          <div class="grid gap-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
-            <label class="grid gap-1.5">
-              <span class="text-muted-foreground text-sm">{{ t('assistant.runnerProvider') }}</span>
-              <select
-                v-model="assistantRunner.selectedProviderId.value"
-                class="border-input bg-background ring-offset-background focus-visible:ring-ring h-9 rounded-md border px-3 text-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
-              >
-                <option value="">
-                  {{ t('assistant.useGlobalDefault') }}
-                </option>
-                <option v-for="provider in providers" :key="provider.id" :value="provider.id">
-                  {{ provider.name }}
-                </option>
-              </select>
-              <span class="text-muted-foreground text-xs">{{ runnerProviderLabel }}</span>
-            </label>
-
-            <Button :disabled="Boolean(assistantRunner.disabledReason.value)" @click="assistantRunner.run">
-              <TerminalIcon class="size-4" />
-              {{ assistantRunner.loading.value ? t('assistant.runnerRunning') : t('assistant.runnerRun') }}
-            </Button>
-          </div>
-
-          <label class="grid gap-1.5">
-            <span class="text-muted-foreground text-sm">{{ t('assistant.runnerPrompt') }}</span>
-            <Textarea
-              :model-value="assistantRunner.prompt.value"
-              class="min-h-28"
-              :placeholder="t('assistant.runnerPromptPlaceholder')"
-              @update:model-value="assistantRunner.prompt.value = String($event)"
-            />
-          </label>
-
-          <p
-            v-if="assistantRunner.error.value || assistantRunner.disabledReason.value"
-            class="text-sm"
-            :class="assistantRunner.error.value ? 'text-destructive' : 'text-muted-foreground'"
-          >
-            {{ assistantRunner.error.value || assistantRunner.disabledReason.value }}
-          </p>
-
-          <div v-if="assistantRunner.result.value" class="grid gap-3">
-            <div class="grid gap-3 md:grid-cols-2">
-              <div class="rounded-md border p-3">
-                <p class="text-muted-foreground text-xs font-medium uppercase">
-                  {{ t('assistant.runnerExitCode') }}
-                </p>
-                <p class="mt-1 text-sm font-medium">
-                  {{ assistantRunner.result.value.exitCode ?? t('assistant.runnerExitUnknown') }}
-                </p>
-              </div>
-              <div class="rounded-md border p-3">
-                <p class="text-muted-foreground text-xs font-medium uppercase">
-                  {{ t('assistant.runnerDuration') }}
-                </p>
-                <p class="mt-1 text-sm font-medium">
-                  {{ assistantRunner.result.value.durationMs }}ms
-                </p>
-              </div>
-            </div>
-
-            <div class="grid gap-1.5">
-              <p class="text-muted-foreground text-sm">
-                stdout
-              </p>
-              <pre class="bg-muted max-h-80 overflow-auto rounded-md p-3 text-sm whitespace-pre-wrap">{{ assistantRunner.result.value.stdout || t('assistant.runnerEmptyOutput') }}</pre>
-            </div>
-
-            <div class="grid gap-1.5">
-              <p class="text-muted-foreground text-sm">
-                stderr
-              </p>
-              <pre class="bg-muted max-h-64 overflow-auto rounded-md p-3 text-sm whitespace-pre-wrap">{{ assistantRunner.result.value.stderr || t('assistant.runnerEmptyOutput') }}</pre>
-            </div>
-          </div>
-        </section>
+        <AssistantChatPanel />
       </div>
     </div>
   </section>

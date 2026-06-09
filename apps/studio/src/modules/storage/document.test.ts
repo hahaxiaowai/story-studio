@@ -29,14 +29,28 @@ describe('studio data document', () => {
       materials: [],
       materialTags: [],
       materialRefs: [],
+      assistantChatThreads: [],
       assistantSettings: {
-        defaultProviderId: '',
+        defaultProviderId: 'provider-codex-terminal',
         defaultModel: '',
-        providers: [],
+        providers: [
+          {
+            id: 'provider-codex-terminal',
+            kind: 'local-terminal',
+            name: 'Codex',
+            baseUrl: '',
+            apiKey: '',
+            model: '',
+            terminalCommand: 'if [ -n "$STORY_STUDIO_MODEL" ]; then codex exec -m "$STORY_STUDIO_MODEL" -; else codex exec -; fi',
+            enabled: true,
+            createdAt: '2026-01-01T00:00:00.000Z',
+            updatedAt: '2026-01-01T00:00:00.000Z',
+          },
+        ],
         featureBindings: [],
       },
     })
-    expect(document.schemaVersion).toBe(7)
+    expect(document.schemaVersion).toBe(8)
     expect(document.workspaces.map(workspace => workspace.title)).toEqual(['魔兽世界'])
     expect(document.propertyDefinitions.map(property => property.id)).toEqual([
       'character-name',
@@ -225,7 +239,7 @@ describe('studio data document', () => {
     const document = resolveStudioDataDocument(v2Document as unknown as StudioDataDocument)
 
     expect(document).toMatchObject({
-      schemaVersion: 7,
+      schemaVersion: 8,
       activeWorkspaceId: 'workspace-mo-shou-shi-jie',
       preferences: {
         locale: 'zh-CN',
@@ -247,7 +261,7 @@ describe('studio data document', () => {
 
     const document = resolveStudioDataDocument(v3Document)
 
-    expect(document.schemaVersion).toBe(7)
+    expect(document.schemaVersion).toBe(8)
     expect(document.worlds.map(world => world.workspaceId)).toEqual(['workspace-mo-shou-shi-jie'])
     expect(document.worlds[0]?.maps[0]?.title).toBe('世界地图')
   })
@@ -268,7 +282,7 @@ describe('studio data document', () => {
 
     const document = resolveStudioDataDocument(v4Document)
 
-    expect(document.schemaVersion).toBe(7)
+    expect(document.schemaVersion).toBe(8)
     expect(document.contents).toEqual([])
     expect(document.workspaces[0]?.moduleCounts.content).toBe(0)
   })
@@ -291,7 +305,7 @@ describe('studio data document', () => {
 
     const document = resolveStudioDataDocument(v5Document)
 
-    expect(document.schemaVersion).toBe(7)
+    expect(document.schemaVersion).toBe(8)
     expect(document.materialTags).toEqual([])
     expect(document.materials).toEqual([
       {
@@ -307,21 +321,72 @@ describe('studio data document', () => {
     ])
   })
 
-  it('migrates v6 documents by adding assistant settings', () => {
+  it('migrates v6 documents by adding assistant settings and chat threads', () => {
     const v6Document = {
       ...createDefaultStudioDataDocument(),
       schemaVersion: 6,
       assistantSettings: undefined,
+      assistantChatThreads: undefined,
     } as unknown as StudioDataDocument
 
     const document = resolveStudioDataDocument(v6Document)
 
-    expect(document.schemaVersion).toBe(7)
+    expect(document.schemaVersion).toBe(8)
     expect(document.assistantSettings).toEqual({
-      defaultProviderId: '',
+      defaultProviderId: 'provider-codex-terminal',
       defaultModel: '',
-      providers: [],
+      providers: [
+        {
+          id: 'provider-codex-terminal',
+          kind: 'local-terminal',
+          name: 'Codex',
+          baseUrl: '',
+          apiKey: '',
+          model: '',
+          terminalCommand: 'if [ -n "$STORY_STUDIO_MODEL" ]; then codex exec -m "$STORY_STUDIO_MODEL" -; else codex exec -; fi',
+          enabled: true,
+          createdAt: '2026-01-01T00:00:00.000Z',
+          updatedAt: '2026-01-01T00:00:00.000Z',
+        },
+      ],
       featureBindings: [],
+    })
+    expect(document.assistantChatThreads).toEqual([])
+  })
+
+  it('migrates v7 documents by adding assistant chat threads and normalizing interrupted messages', () => {
+    const v7Document = {
+      ...createDefaultStudioDataDocument(),
+      schemaVersion: 7,
+      assistantChatThreads: [
+        {
+          id: 'thread-1',
+          workspaceId: 'workspace-mo-shou-shi-jie',
+          title: '测试对话',
+          providerId: 'provider-codex-terminal',
+          model: '',
+          messages: [
+            {
+              id: 'message-1',
+              role: 'assistant',
+              content: '半截回复',
+              status: 'streaming',
+              createdAt: '2026-05-24T08:00:00.000Z',
+              updatedAt: '2026-05-24T08:00:00.000Z',
+            },
+          ],
+          createdAt: '2026-05-24T08:00:00.000Z',
+          updatedAt: '2026-05-24T08:00:00.000Z',
+        },
+      ],
+    } as unknown as StudioDataDocument
+
+    const document = resolveStudioDataDocument(v7Document)
+
+    expect(document.schemaVersion).toBe(8)
+    expect(document.assistantChatThreads[0]?.messages[0]).toMatchObject({
+      status: 'error',
+      error: '上次生成已中断。',
     })
   })
 

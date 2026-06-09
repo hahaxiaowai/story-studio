@@ -1,6 +1,10 @@
 export type {
   AiProviderConfig,
   AiProviderKind,
+  AssistantChatMessage,
+  AssistantChatMessageRole,
+  AssistantChatMessageStatus,
+  AssistantChatThread,
   AssistantFeatureBinding,
   AssistantFeatureKey,
   AssistantSettings,

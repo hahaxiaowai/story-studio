@@ -12,11 +12,24 @@ import {
 } from './assistant'
 
 describe('assistant settings', () => {
-  it('creates empty assistant settings by default', () => {
+  it('creates Codex terminal settings by default', () => {
     expect(createAssistantSettings()).toEqual({
-      defaultProviderId: '',
+      defaultProviderId: 'provider-codex-terminal',
       defaultModel: '',
-      providers: [],
+      providers: [
+        {
+          id: 'provider-codex-terminal',
+          kind: 'local-terminal',
+          name: 'Codex',
+          baseUrl: '',
+          apiKey: '',
+          model: '',
+          terminalCommand: 'if [ -n "$STORY_STUDIO_MODEL" ]; then codex exec -m "$STORY_STUDIO_MODEL" -; else codex exec -; fi',
+          enabled: true,
+          createdAt: '2026-01-01T00:00:00.000Z',
+          updatedAt: '2026-01-01T00:00:00.000Z',
+        },
+      ],
       featureBindings: [],
     })
   })
@@ -82,6 +95,21 @@ describe('assistant settings', () => {
       apiKey: '',
       model: 'gpt-5-codex',
       terminalCommand: 'codex --model gpt-5-codex',
+      enabled: true,
+    })
+  })
+
+  it('prefills new local terminal providers with Codex', () => {
+    const provider = createProvider({
+      kind: 'local-terminal',
+      now: '2026-05-28T10:00:00.000Z',
+    })
+
+    expect(provider).toMatchObject({
+      kind: 'local-terminal',
+      name: 'Codex',
+      model: '',
+      terminalCommand: 'if [ -n "$STORY_STUDIO_MODEL" ]; then codex exec -m "$STORY_STUDIO_MODEL" -; else codex exec -; fi',
       enabled: true,
     })
   })

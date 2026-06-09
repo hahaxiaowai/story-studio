@@ -1,0 +1,163 @@
+import type { AiProviderConfig, AssistantChatMessage, AssistantChatThread, Workspace } from '@story-studio/types'
+
+export const ASSISTANT_CHAT_TAURI_UNAVAILABLE = '本地 Terminal 仅 Tauri 可用。'
+
+export interface CreateAssistantThreadInput {
+  workspaceId: string
+  providerId: string
+  model: string
+  now: string
+  titleSeed?: string
+  idFactory?: (prefix: string) => string
+}
+
+export interface CreateUserAssistantTurnInput {
+  userContent: string
+  userMessageId: string
+  assistantMessageId: string
+  now: string
+}
+
+export interface PrepareLocalTerminalPromptInput {
+  workspace: Workspace | undefined
+  provider: AiProviderConfig | undefined
+  moduleName: string
+  userMessage: string
+}
+
+export function filterAssistantThreadsByWorkspace(threads: AssistantChatThread[], workspaceId: string): AssistantChatThread[] {
+  return threads
+    .filter(thread => thread.workspaceId === workspaceId)
+    .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt))
+}
+
+export function createAssistantThread(input: CreateAssistantThreadInput): AssistantChatThread {
+  const title = normalizeTitle(input.titleSeed)
+
+  return {
+    id: createId(input.idFactory, 'assistant-thread'),
+    workspaceId: input.workspaceId,
+    title,
+    providerId: input.providerId,
+    model: input.model,
+    messages: [],
+    createdAt: input.now,
+    updatedAt: input.now,
+  }
+}
+
+export function createUserAssistantTurn(thread: AssistantChatThread, input: CreateUserAssistantTurnInput): AssistantChatThread {
+  const userMessage: AssistantChatMessage = {
+    id: input.userMessageId,
+    role: 'user',
+    content: input.userContent.trim(),
+    status: 'complete',
+    createdAt: input.now,
+    updatedAt: input.now,
+  }
+  const assistantMessage: AssistantChatMessage = {
+    id: input.assistantMessageId,
+    role: 'assistant',
+    content: '',
+    status: 'streaming',
+    createdAt: input.now,
+    updatedAt: input.now,
+  }
+
+  return {
+    ...thread,
+    title: thread.messages.length ? thread.title : normalizeTitle(input.userContent),
+    messages: [...thread.messages, userMessage, assistantMessage],
+    updatedAt: input.now,
+  }
+}
+
+export function appendAssistantChunk(thread: AssistantChatThread, assistantMessageId: string, chunk: string): AssistantChatThread {
+  return updateAssistantMessage(thread, assistantMessageId, message => ({
+    ...message,
+    content: `${message.content}${chunk}`,
+  }))
+}
+
+export function completeAssistantMessage(thread: AssistantChatThread, assistantMessageId: string, now: string): AssistantChatThread {
+  return updateAssistantMessage(thread, assistantMessageId, message => ({
+    ...message,
+    status: 'complete',
+    error: undefined,
+    updatedAt: now,
+  }), now)
+}
+
+export function failAssistantMessage(thread: AssistantChatThread, assistantMessageId: string, error: string, now: string): AssistantChatThread {
+  return updateAssistantMessage(thread, assistantMessageId, message => ({
+    ...message,
+    status: 'error',
+    error,
+    updatedAt: now,
+  }), now)
+}
+
+export function prepareLocalTerminalPrompt(input: PrepareLocalTerminalPromptInput): string {
+  return [
+    'Story Studio 本地 AI 对话上下文',
+    `当前作品：${input.workspace?.title || '未选择作品'}`,
+    `当前模块：${input.moduleName}`,
+    `当前 Provider：${input.provider?.name || '未选择 Provider'}`,
+    `当前模型：${input.provider?.model || '默认模型'}`,
+    '',
+    `用户输入：\n${input.userMessage.trim()}`,
+  ].join('\n')
+}
+
+export function getAssistantChatDisabledReason(input: {
+  isTauri: boolean
+  loading: boolean
+  provider: AiProviderConfig | undefined
+  prompt: string
+}): string {
+  if (input.loading)
+    return '正在生成回复。'
+
+  if (!input.isTauri)
+    return ASSISTANT_CHAT_TAURI_UNAVAILABLE
+
+  if (!input.provider)
+    return '请先选择 Provider。'
+
+  if (input.provider.kind !== 'local-terminal')
+    return '请选择本地 Terminal Provider。'
+
+  if (!input.provider.terminalCommand.trim())
+    return '请先填写 Terminal 命令。'
+
+  if (!input.prompt.trim())
+    return '请先输入消息。'
+
+  return ''
+}
+
+function updateAssistantMessage(
+  thread: AssistantChatThread,
+  assistantMessageId: string,
+  updater: (message: AssistantChatMessage) => AssistantChatMessage,
+  updatedAt = thread.updatedAt,
+): AssistantChatThread {
+  return {
+    ...thread,
+    messages: thread.messages.map(message => message.id === assistantMessageId ? updater(message) : message),
+    updatedAt,
+  }
+}
+
+function normalizeTitle(value: string | undefined): string {
+  const title = value?.trim().replace(/\s+/g, ' ').slice(0, 24)
+
+  return title || '新对话'
+}
+
+function createId(idFactory: ((prefix: string) => string) | undefined, prefix: string): string {
+  if (idFactory)
+    return idFactory(prefix)
+
+  return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
+}
