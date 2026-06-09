@@ -5,7 +5,7 @@
   "license": "SEE LICENSE IN ../../LICENSE.md",
   "scripts": {
     "build": "vue-tsc -b && vite build",
-    "dev": "vite",
+    "dev": "vite --host",
     "lint": "eslint .",
     "mobile:info": "node ./scripts/mobile-info.mjs",
     "tauri:build": "node ./scripts/tauri-build.mjs",

@@ -5,7 +5,7 @@
   "identifier": "com.storystudio.desktop",
   "build": {
     "beforeDevCommand": "pnpm dev",
-    "devUrl": "http://127.0.0.1:1420",
+    "devUrl": "http://127.0.0.1:3322",
     "beforeBuildCommand": "pnpm build",
     "frontendDist": "../dist"
   },
@@ -26,6 +26,8 @@
   "bundle": {
     "active": true,
     "targets": "all",
-    "icon": ["icons/icon.ico"]
+    "icon": [
+      "icons/icon.ico"
+    ]
   }
 }
