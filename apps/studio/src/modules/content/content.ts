@@ -20,6 +20,12 @@ export interface AssignOutlineBeatToContentEntryInput {
   now: string
 }
 
+export interface MoveContentEntryInput {
+  entryId: string
+  direction: 'up' | 'down'
+  now: string
+}
+
 export function createContentEntry(input: CreateContentEntryInput): WorkspaceContentEntry {
   return {
     id: createContentEntryId(input.now),
@@ -74,6 +80,26 @@ export function removeContentEntry(entries: WorkspaceContentEntry[], entryId: st
   return sortContentEntries(entries)
     .filter(entry => entry.id !== entryId)
     .map((entry, order) => ({ ...entry, order }))
+}
+
+export function moveContentEntry(entries: WorkspaceContentEntry[], input: MoveContentEntryInput): WorkspaceContentEntry[] {
+  const sortedEntries = sortContentEntries(entries)
+  const currentIndex = sortedEntries.findIndex(entry => entry.id === input.entryId)
+  const nextIndex = input.direction === 'up' ? currentIndex - 1 : currentIndex + 1
+
+  if (currentIndex < 0 || nextIndex < 0 || nextIndex >= sortedEntries.length)
+    return sortedEntries.map((entry, order) => ({ ...entry, order }))
+
+  const reorderedEntries = [...sortedEntries]
+  const [currentEntry] = reorderedEntries.splice(currentIndex, 1)
+
+  reorderedEntries.splice(nextIndex, 0, currentEntry!)
+
+  return reorderedEntries.map((entry, order) => ({
+    ...entry,
+    order,
+    updatedAt: entry.id === input.entryId || entry.id === sortedEntries[nextIndex]?.id ? input.now : entry.updatedAt,
+  }))
 }
 
 export function getContentEntriesByWorkspace(entries: WorkspaceContentEntry[], workspaceId: string): WorkspaceContentEntry[] {

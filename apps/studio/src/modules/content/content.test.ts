@@ -4,6 +4,7 @@ import {
   assignOutlineBeatToContentEntry,
   createContentEntry,
   getContentEntriesByWorkspace,
+  moveContentEntry,
   removeContentEntry,
   updateContentEntry,
 } from './content'
@@ -64,6 +65,69 @@ describe('content entries', () => {
     }))).toEqual([
       { id: 'content-1', order: 0 },
       { id: 'content-3', order: 1 },
+    ])
+  })
+
+  it('moves an entry up and normalizes order', () => {
+    const entries = [
+      createEntry({ id: 'content-1', order: 0 }),
+      createEntry({ id: 'content-2', order: 1 }),
+      createEntry({ id: 'content-3', order: 2 }),
+    ]
+
+    expect(moveContentEntry(entries, {
+      entryId: 'content-2',
+      direction: 'up',
+      now: '2026-05-28T12:00:00.000Z',
+    }).map(entry => ({
+      id: entry.id,
+      order: entry.order,
+      updatedAt: entry.updatedAt,
+    }))).toEqual([
+      { id: 'content-2', order: 0, updatedAt: '2026-05-28T12:00:00.000Z' },
+      { id: 'content-1', order: 1, updatedAt: '2026-05-28T12:00:00.000Z' },
+      { id: 'content-3', order: 2, updatedAt: '2026-05-28T10:00:00.000Z' },
+    ])
+  })
+
+  it('moves an entry down and normalizes order', () => {
+    const entries = [
+      createEntry({ id: 'content-1', order: 0 }),
+      createEntry({ id: 'content-2', order: 1 }),
+      createEntry({ id: 'content-3', order: 2 }),
+    ]
+
+    expect(moveContentEntry(entries, {
+      entryId: 'content-2',
+      direction: 'down',
+      now: '2026-05-28T12:00:00.000Z',
+    }).map(entry => ({
+      id: entry.id,
+      order: entry.order,
+    }))).toEqual([
+      { id: 'content-1', order: 0 },
+      { id: 'content-3', order: 1 },
+      { id: 'content-2', order: 2 },
+    ])
+  })
+
+  it('keeps boundary moves unchanged', () => {
+    const entries = [
+      createEntry({ id: 'content-1', order: 0 }),
+      createEntry({ id: 'content-2', order: 1 }),
+    ]
+
+    expect(moveContentEntry(entries, {
+      entryId: 'content-1',
+      direction: 'up',
+      now: '2026-05-28T12:00:00.000Z',
+    }).map(entry => ({
+      id: entry.id,
+      order: entry.order,
+      updatedAt: entry.updatedAt,
+    }))).toEqual([
+      { id: 'content-1', order: 0, updatedAt: '2026-05-28T10:00:00.000Z' },
+      { id: 'content-2', order: 1, updatedAt: '2026-05-28T10:00:00.000Z' },
     ])
   })
 

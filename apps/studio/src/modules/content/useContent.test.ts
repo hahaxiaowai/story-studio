@@ -94,6 +94,45 @@ describe('useContent', () => {
     }))
   })
 
+  it('moves entries inside the active workspace only', async () => {
+    const sourceDocument = createDefaultStudioDataDocument()
+    sourceDocument.contents = [
+      {
+        id: 'other-content',
+        workspaceId: 'workspace-other',
+        volume: '第一卷',
+        chapter: '外部章节',
+        body: '',
+        order: 0,
+        createdAt: '2026-05-28T10:00:00.000Z',
+        updatedAt: '2026-05-28T10:00:00.000Z',
+      },
+    ]
+    const driver = createDriver(sourceDocument)
+    await useStudioData(driver).ready
+
+    const content = useContent()
+    const firstEntry = content.addEntry()
+    const secondEntry = content.addEntry()
+    const thirdEntry = content.addEntry()
+    content.moveEntry(secondEntry.id, 'up')
+    await nextTick()
+
+    expect(content.entries.value.map(entry => entry.id)).toEqual([
+      secondEntry.id,
+      firstEntry.id,
+      thirdEntry.id,
+    ])
+    expect(driver.save).toHaveBeenLastCalledWith(expect.objectContaining({
+      contents: expect.arrayContaining([
+        expect.objectContaining({ id: 'other-content', workspaceId: 'workspace-other', order: 0 }),
+        expect.objectContaining({ id: secondEntry.id, order: 0 }),
+        expect.objectContaining({ id: firstEntry.id, order: 1 }),
+        expect.objectContaining({ id: thirdEntry.id, order: 2 }),
+      ]),
+    }))
+  })
+
   it('removes entries and updates content counts', async () => {
     const driver = createDriver(createDefaultStudioDataDocument())
     await useStudioData(driver).ready

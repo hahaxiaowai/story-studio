@@ -7,17 +7,20 @@ import {
   assignOutlineBeatToContentEntry,
   createContentEntry,
   getContentEntriesByWorkspace,
+  moveContentEntry,
   removeContentEntry,
   updateContentEntry,
 } from './content'
 
 export type UpdateContentInput = Omit<Parameters<typeof updateContentEntry>[1], 'now'>
+export type MoveContentDirection = Parameters<typeof moveContentEntry>[1]['direction']
 
 export function useContent(): {
   entries: ComputedRef<WorkspaceContentEntry[]>
   addEntry: () => WorkspaceContentEntry
   updateEntry: (entryId: string, input: UpdateContentInput) => void
   linkEntryToBeat: (entryId: string, outlineBeatId: string) => void
+  moveEntry: (entryId: string, direction: MoveContentDirection) => void
   removeEntry: (entryId: string) => void
 } {
   const studioData = useStudioData()
@@ -75,6 +78,26 @@ export function useContent(): {
     })
   }
 
+  function moveEntry(entryId: string, direction: MoveContentDirection): void {
+    const workspaceId = activeWorkspace.value.id
+
+    studioData.updateDocument((document) => {
+      const nextWorkspaceEntries = moveContentEntry(
+        document.contents.filter(entry => entry.workspaceId === workspaceId),
+        {
+          entryId,
+          direction,
+          now: new Date().toISOString(),
+        },
+      )
+
+      document.contents = [
+        ...document.contents.filter(entry => entry.workspaceId !== workspaceId),
+        ...nextWorkspaceEntries,
+      ]
+    })
+  }
+
   function removeEntry(entryId: string): void {
     const workspaceId = activeWorkspace.value.id
 
@@ -98,6 +121,7 @@ export function useContent(): {
     addEntry,
     updateEntry,
     linkEntryToBeat,
+    moveEntry,
     removeEntry,
   }
 }

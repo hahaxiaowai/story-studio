@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { WorkspaceContentEntry } from '@story-studio/types'
 import type { AssistantDraftInsertMode, ContentAssistantAction } from './contentAssistant'
-import { PenLineIcon, PlusIcon, ShieldCheckIcon, SparklesIcon, Trash2Icon } from '@lucide/vue'
+import { ArrowDownIcon, ArrowUpIcon, PenLineIcon, PlusIcon, ShieldCheckIcon, SparklesIcon, Trash2Icon } from '@lucide/vue'
 import { computed, onMounted, ref, watch } from 'vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -15,7 +15,7 @@ import { buildContentAssistantPrompt, countContentWords, insertAssistantDraftInt
 import { useContent } from './useContent'
 
 const { t } = useLocale()
-const { entries, addEntry, updateEntry, linkEntryToBeat, removeEntry } = useContent()
+const { entries, addEntry, updateEntry, linkEntryToBeat, moveEntry, removeEntry } = useContent()
 const { activeWorkspace } = useWorkspaces()
 const { beats } = useOutline()
 const selectedEntryId = ref<string>()
@@ -23,6 +23,9 @@ const pendingAssistantContent = ref('')
 const assistantDraftTargetEntryId = ref('')
 
 const selectedEntry = computed<WorkspaceContentEntry | undefined>(() => entries.value.find(entry => entry.id === selectedEntryId.value) ?? entries.value[0])
+const selectedEntryIndex = computed<number>(() => selectedEntry.value ? entries.value.findIndex(entry => entry.id === selectedEntry.value?.id) : -1)
+const canMoveSelectedEntryUp = computed<boolean>(() => selectedEntryIndex.value > 0)
+const canMoveSelectedEntryDown = computed<boolean>(() => selectedEntryIndex.value >= 0 && selectedEntryIndex.value < entries.value.length - 1)
 const selectedTitle = computed<string>(() => {
   if (!selectedEntry.value)
     return t('content.title')
@@ -89,6 +92,16 @@ function deleteSelectedEntry(): void {
     return
 
   removeEntry(selectedEntry.value.id)
+}
+
+function moveSelectedEntry(direction: 'up' | 'down'): void {
+  if (!selectedEntry.value)
+    return
+
+  const entryId = selectedEntry.value.id
+
+  moveEntry(entryId, direction)
+  selectedEntryId.value = entryId
 }
 
 function insertAssistantContent(mode: AssistantDraftInsertMode): void {
@@ -217,9 +230,17 @@ function getDefaultAssistantDraftTargetEntryId(suggestedEntryId: string | undefi
                 {{ selectedWordCount }} {{ t('content.wordCount') }} · {{ t('content.updatedAt') }} {{ selectedUpdatedAt }}
               </p>
             </div>
-            <Button variant="ghost" size="icon-sm" :aria-label="t('content.delete')" @click="deleteSelectedEntry">
-              <Trash2Icon class="size-4" />
-            </Button>
+            <div class="flex shrink-0 items-center gap-1">
+              <Button variant="ghost" size="icon-sm" :aria-label="t('content.moveUp')" :disabled="!canMoveSelectedEntryUp" @click="moveSelectedEntry('up')">
+                <ArrowUpIcon class="size-4" />
+              </Button>
+              <Button variant="ghost" size="icon-sm" :aria-label="t('content.moveDown')" :disabled="!canMoveSelectedEntryDown" @click="moveSelectedEntry('down')">
+                <ArrowDownIcon class="size-4" />
+              </Button>
+              <Button variant="ghost" size="icon-sm" :aria-label="t('content.delete')" @click="deleteSelectedEntry">
+                <Trash2Icon class="size-4" />
+              </Button>
+            </div>
           </div>
 
           <form class="grid gap-4 md:grid-cols-2">
