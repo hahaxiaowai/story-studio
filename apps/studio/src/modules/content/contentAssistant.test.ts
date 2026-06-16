@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import {
   buildContentAssistantPrompt,
   countContentWords,
+  insertAssistantDraftIntoContentEntries,
   mergeAssistantDraftIntoContent,
 } from './contentAssistant'
 
@@ -98,6 +99,40 @@ describe('content assistant helpers', () => {
       draft: '新草稿',
       mode: 'replace',
     })).toBe('新草稿')
+  })
+
+  it('inserts assistant draft into the selected target entry only', () => {
+    const entries = [
+      createEntry({ id: 'content-1', body: '第一章旧正文' }),
+      createEntry({ id: 'content-2', body: '第二章旧正文' }),
+    ]
+
+    const nextEntries = insertAssistantDraftIntoContentEntries(entries, {
+      entryId: 'content-2',
+      draft: '第二章新草稿',
+      mode: 'append',
+      now: '2026-06-16T09:00:00.000Z',
+    })
+
+    expect(nextEntries[0]).toEqual(entries[0])
+    expect(nextEntries[1]).toMatchObject({
+      id: 'content-2',
+      body: '第二章旧正文\n\n第二章新草稿',
+      updatedAt: '2026-06-16T09:00:00.000Z',
+    })
+  })
+
+  it('keeps entries unchanged when target entry is missing', () => {
+    const entries = [
+      createEntry({ id: 'content-1', body: '第一章旧正文' }),
+    ]
+
+    expect(insertAssistantDraftIntoContentEntries(entries, {
+      entryId: 'missing-content',
+      draft: '不会写入',
+      mode: 'replace',
+      now: '2026-06-16T09:00:00.000Z',
+    })).toEqual(entries)
   })
 })
 

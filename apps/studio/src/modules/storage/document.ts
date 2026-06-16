@@ -5,7 +5,7 @@ import { seedWorkspaces } from '../workspaces/workspaces'
 import { createWorkspaceWorld } from '../worlds/world'
 import { createDefaultEntityRecords, createDefaultOutlines, createDefaultWorlds, isLegacyPrototypeSeedDocument } from './defaultContent'
 
-export const STUDIO_DATA_SCHEMA_VERSION = 10
+export const STUDIO_DATA_SCHEMA_VERSION = 11
 
 export const LEGACY_LOCALE_STORAGE_KEY = 'story-studio:locale'
 export const LEGACY_THEME_MODE_STORAGE_KEY = 'story-studio:theme-mode'
@@ -149,12 +149,14 @@ function normalizeAssistantChatMessage(message: AssistantChatMessage, fallbackUp
     : message.status === 'error'
       ? 'error'
       : 'complete'
+  const sourceContentEntryId = normalizeStorageText(message.sourceContentEntryId)
 
   return {
     id: normalizeStorageText(message.id),
     role,
     content: normalizeStorageText(message.content),
     status,
+    ...(sourceContentEntryId ? { sourceContentEntryId } : {}),
     ...(status === 'error' ? { error: normalizeStorageText(message.error) || (interrupted ? '上次生成已中断。' : '') } : {}),
     createdAt: message.createdAt || fallbackUpdatedAt,
     updatedAt: message.updatedAt || fallbackUpdatedAt,

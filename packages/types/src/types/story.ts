@@ -271,6 +271,7 @@ export interface AssistantChatMessage {
   role: AssistantChatMessageRole
   content: string
   status: AssistantChatMessageStatus
+  sourceContentEntryId?: string
   error?: string
   createdAt: string
   updatedAt: string
@@ -287,7 +288,7 @@ export interface AssistantChatThread {
   updatedAt: string
 }
 
-export type StudioDataSchemaVersion = 10
+export type StudioDataSchemaVersion = 11
 
 export interface StudioPreferences {
   locale: 'zh-CN' | 'en-US'

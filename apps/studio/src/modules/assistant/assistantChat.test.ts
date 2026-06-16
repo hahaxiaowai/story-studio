@@ -7,6 +7,7 @@ import {
   createUserAssistantTurn,
   failAssistantMessage,
   filterAssistantThreadsByWorkspace,
+  formatAssistantMessageSourceLabel,
   getAssistantChatDisabledReason,
   normalizeOpenAiCompatibleBaseUrl,
   prepareLocalTerminalPrompt,
@@ -56,6 +57,47 @@ describe('assistant chat state', () => {
       { id: 'user-1', role: 'user', content: '写一个开头', status: 'complete' },
       { id: 'assistant-1', role: 'assistant', content: '', status: 'streaming' },
     ])
+  })
+
+  it('stores source content entry id on the assistant reply placeholder', () => {
+    const thread = createThread({ messages: [] })
+    const nextThread = createUserAssistantTurn(thread, {
+      userContent: '润色第二章',
+      assistantMessageId: 'assistant-1',
+      userMessageId: 'user-1',
+      sourceContentEntryId: 'content-2',
+      now: '2026-06-09T08:00:00.000Z',
+    })
+
+    expect(nextThread.messages[1]).toMatchObject({
+      id: 'assistant-1',
+      role: 'assistant',
+      sourceContentEntryId: 'content-2',
+    })
+  })
+
+  it('formats source content labels for assistant messages', () => {
+    expect(formatAssistantMessageSourceLabel(
+      createMessage({ role: 'assistant', sourceContentEntryId: 'content-2' }),
+      [
+        { id: 'content-1', volume: '第一卷', chapter: '第一章' },
+        { id: 'content-2', volume: '第二卷', chapter: '第三章' },
+      ],
+    )).toBe('第二卷 / 第三章')
+  })
+
+  it('omits source label when message has no source content entry', () => {
+    expect(formatAssistantMessageSourceLabel(
+      createMessage({ role: 'assistant' }),
+      [{ id: 'content-1', volume: '第一卷', chapter: '第一章' }],
+    )).toBe('')
+  })
+
+  it('marks source label as missing when source content entry was deleted', () => {
+    expect(formatAssistantMessageSourceLabel(
+      createMessage({ role: 'assistant', sourceContentEntryId: 'missing-content' }),
+      [{ id: 'content-1', volume: '第一卷', chapter: '第一章' }],
+    )).toBe('missing')
   })
 
   it('appends stdout chunks and completes assistant message', () => {
@@ -274,6 +316,7 @@ function createMessage(input: Partial<AssistantChatThread['messages'][number]>):
     role: input.role ?? 'user',
     content: input.content ?? '',
     status: input.status ?? 'complete',
+    sourceContentEntryId: input.sourceContentEntryId,
     error: input.error,
     createdAt: input.createdAt ?? '2026-06-09T08:00:00.000Z',
     updatedAt: input.updatedAt ?? '2026-06-09T08:00:00.000Z',

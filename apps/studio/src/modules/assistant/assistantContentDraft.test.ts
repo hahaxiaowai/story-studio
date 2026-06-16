@@ -3,6 +3,7 @@ import {
   assistantContentDraft,
   clearAssistantContentDraft,
   consumeAssistantContentDraft,
+  consumeAssistantContentDraftPayload,
   queueAssistantContentDraft,
 } from './assistantContentDraft'
 
@@ -27,5 +28,14 @@ describe('assistant content draft queue', () => {
     clearAssistantContentDraft()
 
     expect(assistantContentDraft.value).toBe('')
+  })
+
+  it('queues suggested target entry metadata with content draft', () => {
+    queueAssistantContentDraft('第二章草稿', { suggestedEntryId: 'content-2' })
+
+    expect(consumeAssistantContentDraftPayload()).toEqual({
+      content: '第二章草稿',
+      suggestedEntryId: 'content-2',
+    })
   })
 })

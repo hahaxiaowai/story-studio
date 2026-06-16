@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   assistantDraftPrompt,
   consumeAssistantDraftPrompt,
+  consumeAssistantDraftPromptPayload,
   queueAssistantDraftPrompt,
 } from './assistantDraft'
 
@@ -19,5 +20,14 @@ describe('assistant draft prompt queue', () => {
     queueAssistantDraftPrompt('   ')
 
     expect(consumeAssistantDraftPrompt()).toBe('检查一致性')
+  })
+
+  it('queues source content entry metadata with the draft prompt', () => {
+    queueAssistantDraftPrompt('请续写第二章', { sourceContentEntryId: 'content-2' })
+
+    expect(consumeAssistantDraftPromptPayload()).toEqual({
+      prompt: '请续写第二章',
+      sourceContentEntryId: 'content-2',
+    })
   })
 })

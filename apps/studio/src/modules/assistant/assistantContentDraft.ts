@@ -1,26 +1,47 @@
-import { readonly, ref } from 'vue'
+import { computed, readonly, ref } from 'vue'
 
-const pendingAssistantContentDraft = ref('')
+export interface AssistantContentDraftPayload {
+  content: string
+  suggestedEntryId?: string
+}
 
-export const assistantContentDraft = readonly(pendingAssistantContentDraft)
+const pendingAssistantContentDraft = ref<AssistantContentDraftPayload>({
+  content: '',
+})
 
-export function queueAssistantContentDraft(content: string): void {
+export const assistantContentDraft = readonly(computed(() => pendingAssistantContentDraft.value.content))
+
+export function queueAssistantContentDraft(
+  content: string,
+  options: Pick<AssistantContentDraftPayload, 'suggestedEntryId'> = {},
+): void {
   const nextContent = content.trim()
 
   if (!nextContent)
     return
 
-  pendingAssistantContentDraft.value = nextContent
+  pendingAssistantContentDraft.value = {
+    content: nextContent,
+    ...(options.suggestedEntryId ? { suggestedEntryId: options.suggestedEntryId } : {}),
+  }
 }
 
 export function consumeAssistantContentDraft(): string {
-  const content = pendingAssistantContentDraft.value
+  return consumeAssistantContentDraftPayload().content
+}
 
-  pendingAssistantContentDraft.value = ''
+export function consumeAssistantContentDraftPayload(): AssistantContentDraftPayload {
+  const payload = pendingAssistantContentDraft.value
 
-  return content
+  pendingAssistantContentDraft.value = {
+    content: '',
+  }
+
+  return payload
 }
 
 export function clearAssistantContentDraft(): void {
-  pendingAssistantContentDraft.value = ''
+  pendingAssistantContentDraft.value = {
+    content: '',
+  }
 }

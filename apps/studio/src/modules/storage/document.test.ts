@@ -57,7 +57,7 @@ describe('studio data document', () => {
         ],
       },
     })
-    expect(document.schemaVersion).toBe(10)
+    expect(document.schemaVersion).toBe(11)
     expect(document.workspaces.map(workspace => workspace.title)).toEqual(['魔兽世界'])
     expect(document.propertyDefinitions.map(property => property.id)).toEqual([
       'character-name',
@@ -246,7 +246,7 @@ describe('studio data document', () => {
     const document = resolveStudioDataDocument(v2Document as unknown as StudioDataDocument)
 
     expect(document).toMatchObject({
-      schemaVersion: 10,
+      schemaVersion: 11,
       activeWorkspaceId: 'workspace-mo-shou-shi-jie',
       preferences: {
         locale: 'zh-CN',
@@ -268,7 +268,7 @@ describe('studio data document', () => {
 
     const document = resolveStudioDataDocument(v3Document)
 
-    expect(document.schemaVersion).toBe(10)
+    expect(document.schemaVersion).toBe(11)
     expect(document.worlds.map(world => world.workspaceId)).toEqual(['workspace-mo-shou-shi-jie'])
     expect(document.worlds[0]?.maps[0]?.title).toBe('世界地图')
   })
@@ -289,7 +289,7 @@ describe('studio data document', () => {
 
     const document = resolveStudioDataDocument(v4Document)
 
-    expect(document.schemaVersion).toBe(10)
+    expect(document.schemaVersion).toBe(11)
     expect(document.contents).toEqual([])
     expect(document.workspaces[0]?.moduleCounts.content).toBe(0)
   })
@@ -312,7 +312,7 @@ describe('studio data document', () => {
 
     const document = resolveStudioDataDocument(v5Document)
 
-    expect(document.schemaVersion).toBe(10)
+    expect(document.schemaVersion).toBe(11)
     expect(document.materialTags).toEqual([])
     expect(document.materials).toEqual([
       {
@@ -338,7 +338,7 @@ describe('studio data document', () => {
 
     const document = resolveStudioDataDocument(v6Document)
 
-    expect(document.schemaVersion).toBe(10)
+    expect(document.schemaVersion).toBe(11)
     expect(document.assistantSettings).toEqual({
       defaultProviderId: 'provider-codex-terminal',
       defaultModel: '',
@@ -397,7 +397,7 @@ describe('studio data document', () => {
 
     const document = resolveStudioDataDocument(v7Document)
 
-    expect(document.schemaVersion).toBe(10)
+    expect(document.schemaVersion).toBe(11)
     expect(document.assistantChatThreads[0]?.messages[0]).toMatchObject({
       status: 'error',
       error: '上次生成已中断。',
@@ -428,7 +428,7 @@ describe('studio data document', () => {
 
     const document = resolveStudioDataDocument(v8Document)
 
-    expect(document.schemaVersion).toBe(10)
+    expect(document.schemaVersion).toBe(11)
     expect(document.assistantSettings.storyStyles.map(style => style.id)).toContain('story-style-general')
     expect(document.workspaces[0]?.storyStyleId).toBe('story-style-epic-fantasy')
     expect(document.workspaces[1]?.storyStyleId).toBeUndefined()
@@ -496,13 +496,63 @@ describe('studio data document', () => {
 
     const document = resolveStudioDataDocument(v9Document)
 
-    expect(document.schemaVersion).toBe(10)
+    expect(document.schemaVersion).toBe(11)
     expect(document.contents.map(entry => ({
       id: entry.id,
       outlineBeatId: entry.outlineBeatId,
     }))).toEqual([
       { id: 'content-valid', outlineBeatId: 'beat-dark-portal' },
       { id: 'content-invalid', outlineBeatId: undefined },
+    ])
+  })
+
+  it('migrates v10 documents by preserving assistant message source content entry links', () => {
+    const defaultDocument = createDefaultStudioDataDocument()
+    const v10Document = {
+      ...defaultDocument,
+      schemaVersion: 10,
+      assistantChatThreads: [
+        {
+          id: 'thread-1',
+          workspaceId: 'workspace-mo-shou-shi-jie',
+          title: '测试对话',
+          providerId: 'provider-codex-terminal',
+          model: '',
+          messages: [
+            {
+              id: 'message-with-source',
+              role: 'assistant',
+              content: '第二章草稿',
+              status: 'complete',
+              sourceContentEntryId: ' content-2 ',
+              createdAt: '2026-06-16T08:00:00.000Z',
+              updatedAt: '2026-06-16T08:00:00.000Z',
+            },
+            {
+              id: 'message-without-source',
+              role: 'assistant',
+              content: '无来源草稿',
+              status: 'complete',
+              sourceContentEntryId: '   ',
+              createdAt: '2026-06-16T08:00:00.000Z',
+              updatedAt: '2026-06-16T08:00:00.000Z',
+            },
+          ],
+          createdAt: '2026-06-16T08:00:00.000Z',
+          updatedAt: '2026-06-16T08:00:00.000Z',
+        },
+      ],
+    } as unknown as StudioDataDocument
+
+    const document = resolveStudioDataDocument(v10Document)
+
+    expect(document.schemaVersion).toBe(11)
+    expect(document.assistantChatThreads[0]?.messages.map(message => ({
+      id: message.id,
+      sourceContentEntryId: message.sourceContentEntryId,
+    }))).toEqual([
+      { id: 'message-with-source', sourceContentEntryId: 'content-2' },
+      { id: 'message-without-source', sourceContentEntryId: undefined },
     ])
   })
 

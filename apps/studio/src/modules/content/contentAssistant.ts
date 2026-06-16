@@ -16,6 +16,13 @@ export interface MergeAssistantDraftInput {
   mode: AssistantDraftInsertMode
 }
 
+export interface InsertAssistantDraftIntoContentEntriesInput {
+  entryId: string
+  draft: string
+  mode: AssistantDraftInsertMode
+  now: string
+}
+
 const ACTION_GOALS = {
   'check-consistency': '检查一致性',
   'continue': '续写当前章节',
@@ -53,6 +60,26 @@ export function mergeAssistantDraftIntoContent(input: MergeAssistantDraftInput):
   const body = input.body.trim()
 
   return body ? `${body}\n\n${draft}` : draft
+}
+
+export function insertAssistantDraftIntoContentEntries(
+  entries: WorkspaceContentEntry[],
+  input: InsertAssistantDraftIntoContentEntriesInput,
+): WorkspaceContentEntry[] {
+  if (!entries.some(entry => entry.id === input.entryId))
+    return entries
+
+  return entries.map(entry => entry.id === input.entryId
+    ? {
+        ...entry,
+        body: mergeAssistantDraftIntoContent({
+          body: entry.body,
+          draft: input.draft,
+          mode: input.mode,
+        }),
+        updatedAt: input.now,
+      }
+    : entry)
 }
 
 export function buildContentAssistantPrompt(input: BuildContentAssistantPromptInput): string {

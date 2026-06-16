@@ -8,10 +8,10 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { useLocale } from '@/composables/useLocale'
 import { useWorkspaces } from '@/modules/workspaces/useWorkspaces'
-import { consumeAssistantContentDraft } from '../assistant/assistantContentDraft'
+import { consumeAssistantContentDraftPayload } from '../assistant/assistantContentDraft'
 import { queueAssistantDraftPrompt } from '../assistant/assistantDraft'
 import { useOutline } from '../outlines/useOutline'
-import { buildContentAssistantPrompt, countContentWords, mergeAssistantDraftIntoContent } from './contentAssistant'
+import { buildContentAssistantPrompt, countContentWords, insertAssistantDraftIntoContentEntries } from './contentAssistant'
 import { useContent } from './useContent'
 
 const { t } = useLocale()
@@ -20,6 +20,7 @@ const { activeWorkspace } = useWorkspaces()
 const { beats } = useOutline()
 const selectedEntryId = ref<string>()
 const pendingAssistantContent = ref('')
+const assistantDraftTargetEntryId = ref('')
 
 const selectedEntry = computed<WorkspaceContentEntry | undefined>(() => entries.value.find(entry => entry.id === selectedEntryId.value) ?? entries.value[0])
 const selectedTitle = computed<string>(() => {
@@ -41,6 +42,9 @@ const selectedLinkedBeat = computed(() => {
 
   return beats.value.find(beat => beat.id === selectedEntry.value?.outlineBeatId)
 })
+const assistantDraftTargetEntry = computed(() => {
+  return entries.value.find(entry => entry.id === assistantDraftTargetEntryId.value)
+})
 
 watch(entries, (nextEntries) => {
   if (!nextEntries.length) {
@@ -53,7 +57,12 @@ watch(entries, (nextEntries) => {
 }, { immediate: true })
 
 onMounted(() => {
-  pendingAssistantContent.value = consumeAssistantContentDraft()
+  const contentDraft = consumeAssistantContentDraftPayload()
+
+  pendingAssistantContent.value = contentDraft.content
+
+  if (pendingAssistantContent.value)
+    assistantDraftTargetEntryId.value = getDefaultAssistantDraftTargetEntryId(contentDraft.suggestedEntryId)
 })
 
 function createEntry(): void {
@@ -83,21 +92,48 @@ function deleteSelectedEntry(): void {
 }
 
 function insertAssistantContent(mode: AssistantDraftInsertMode): void {
-  if (!selectedEntry.value || !pendingAssistantContent.value)
+  if (!assistantDraftTargetEntry.value || !pendingAssistantContent.value)
     return
 
-  updateEntry(selectedEntry.value.id, {
-    body: mergeAssistantDraftIntoContent({
-      body: selectedEntry.value.body,
-      draft: pendingAssistantContent.value,
-      mode,
-    }),
+  const [nextTargetEntry] = insertAssistantDraftIntoContentEntries([assistantDraftTargetEntry.value], {
+    entryId: assistantDraftTargetEntry.value.id,
+    draft: pendingAssistantContent.value,
+    mode,
+    now: new Date().toISOString(),
   })
+
+  if (!nextTargetEntry)
+    return
+
+  updateEntry(nextTargetEntry.id, {
+    body: nextTargetEntry.body,
+  })
+  selectedEntryId.value = nextTargetEntry.id
   pendingAssistantContent.value = ''
+  assistantDraftTargetEntryId.value = ''
+}
+
+function updateAssistantDraftTarget(event: Event): void {
+  assistantDraftTargetEntryId.value = readEventValue(event)
+}
+
+function previewAssistantDraft(mode: AssistantDraftInsertMode): string {
+  if (!assistantDraftTargetEntry.value || !pendingAssistantContent.value)
+    return ''
+
+  const [nextTargetEntry] = insertAssistantDraftIntoContentEntries([assistantDraftTargetEntry.value], {
+    entryId: assistantDraftTargetEntry.value.id,
+    draft: pendingAssistantContent.value,
+    mode,
+    now: assistantDraftTargetEntry.value.updatedAt,
+  })
+
+  return nextTargetEntry?.body ?? ''
 }
 
 function dismissAssistantContent(): void {
   pendingAssistantContent.value = ''
+  assistantDraftTargetEntryId.value = ''
 }
 
 function sendSelectedEntryToAssistant(action: ContentAssistantAction): void {
@@ -109,7 +145,9 @@ function sendSelectedEntryToAssistant(action: ContentAssistantAction): void {
     workspaceTitle: activeWorkspace.value.title,
     entry: selectedEntry.value,
     linkedBeat: selectedLinkedBeat.value,
-  }))
+  }), {
+    sourceContentEntryId: selectedEntry.value.id,
+  })
 
   if (typeof window !== 'undefined')
     window.location.hash = '#assistant'
@@ -117,6 +155,13 @@ function sendSelectedEntryToAssistant(action: ContentAssistantAction): void {
 
 function readEventValue(event: Event): string {
   return event.target instanceof HTMLSelectElement ? event.target.value : ''
+}
+
+function getDefaultAssistantDraftTargetEntryId(suggestedEntryId: string | undefined): string {
+  if (suggestedEntryId && entries.value.some(entry => entry.id === suggestedEntryId))
+    return suggestedEntryId
+
+  return selectedEntry.value?.id ?? entries.value[0]?.id ?? ''
 }
 </script>
 
@@ -233,18 +278,33 @@ function readEventValue(event: Event): string {
                 {{ t('content.pendingAssistantDraftHint') }}
               </p>
             </div>
+            <label class="grid gap-1.5">
+              <span class="text-muted-foreground text-sm">{{ t('content.assistantDraftTarget') }}</span>
+              <select
+                class="border-input bg-background ring-offset-background focus-visible:ring-ring h-9 rounded-md border px-3 text-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+                :value="assistantDraftTargetEntryId"
+                @change="updateAssistantDraftTarget"
+              >
+                <option v-for="entry in entries" :key="entry.id" :value="entry.id">
+                  {{ `${entry.volume || t('content.volume')} / ${entry.chapter || t('content.chapter')}` }}
+                </option>
+              </select>
+            </label>
             <pre class="bg-muted/50 max-h-48 overflow-auto rounded-md p-3 text-sm whitespace-pre-wrap">{{ pendingAssistantContent }}</pre>
             <div class="flex flex-wrap gap-2">
-              <Button size="sm" @click="insertAssistantContent('append')">
+              <Button size="sm" :disabled="!assistantDraftTargetEntry" @click="insertAssistantContent('append')">
                 {{ t('content.appendAssistantDraft') }}
               </Button>
-              <Button size="sm" variant="outline" @click="insertAssistantContent('replace')">
+              <Button size="sm" variant="outline" :disabled="!assistantDraftTargetEntry" @click="insertAssistantContent('replace')">
                 {{ t('content.replaceWithAssistantDraft') }}
               </Button>
               <Button size="sm" variant="ghost" @click="dismissAssistantContent">
                 {{ t('content.dismissAssistantDraft') }}
               </Button>
             </div>
+            <p v-if="assistantDraftTargetEntry" class="text-muted-foreground text-xs">
+              {{ t('content.assistantDraftTargetPreview') }} {{ countContentWords(previewAssistantDraft('append')) }} {{ t('content.wordCount') }}
+            </p>
           </section>
 
           <section class="grid gap-3 rounded-lg border p-4">

@@ -4,15 +4,19 @@ import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { useLocale } from '@/composables/useLocale'
+import { useContent } from '../content/useContent'
+import { formatAssistantMessageSourceLabel } from './assistantChat'
 import { queueAssistantContentDraft } from './assistantContentDraft'
-import { consumeAssistantDraftPrompt } from './assistantDraft'
+import { consumeAssistantDraftPromptPayload } from './assistantDraft'
 import { useAssistant } from './useAssistant'
 import { useAssistantChat } from './useAssistantChat'
 
 const { t } = useLocale()
 const { settings, providers } = useAssistant()
+const { entries: contentEntries } = useContent()
 const chat = useAssistantChat({ settings, providers })
 const messageList = ref<HTMLElement>()
+const sourceContentEntryId = ref('')
 const canRetry = computed(() => Boolean(chat.activeThread.value?.messages.some(message => message.role === 'user')))
 const providerSummary = computed(() => {
   const provider = chat.provider.value
@@ -38,10 +42,12 @@ watch(() => chat.activeThread.value?.messages.map(message => `${message.id}:${me
 })
 
 onMounted(() => {
-  const draftPrompt = consumeAssistantDraftPrompt()
+  const draftPrompt = consumeAssistantDraftPromptPayload()
 
-  if (draftPrompt)
-    chat.inputMessage.value = draftPrompt
+  if (draftPrompt.prompt) {
+    chat.inputMessage.value = draftPrompt.prompt
+    sourceContentEntryId.value = draftPrompt.sourceContentEntryId ?? ''
+  }
 })
 
 function handleComposerKeydown(event: KeyboardEvent): void {
@@ -49,14 +55,51 @@ function handleComposerKeydown(event: KeyboardEvent): void {
     return
 
   event.preventDefault()
-  void chat.send()
+  void sendCurrentMessage()
 }
 
-function sendMessageToContent(content: string): void {
-  queueAssistantContentDraft(content)
+async function sendCurrentMessage(): Promise<void> {
+  const sourceEntryId = sourceContentEntryId.value
+
+  await chat.send({
+    sourceContentEntryId: sourceEntryId,
+  })
+}
+
+function sendMessageToContent(sourceContentEntryId: string | undefined, content: string): void {
+  queueAssistantContentDraft(content, {
+    suggestedEntryId: sourceContentEntryId,
+  })
 
   if (typeof window !== 'undefined')
     window.location.hash = '#content'
+}
+
+function getSourceContentLabel(sourceContentEntryId: string | undefined): string {
+  if (!sourceContentEntryId)
+    return ''
+
+  return formatAssistantMessageSourceLabel(
+    {
+      id: 'source-preview',
+      role: 'assistant',
+      content: '',
+      status: 'complete',
+      sourceContentEntryId,
+      createdAt: '',
+      updatedAt: '',
+    },
+    contentEntries.value,
+  )
+}
+
+function formatSourceContentLabel(sourceContentEntryId: string | undefined): string {
+  const label = getSourceContentLabel(sourceContentEntryId)
+
+  if (!label)
+    return ''
+
+  return label === 'missing' ? t('assistant.sourceContentMissing') : label
 }
 </script>
 
@@ -145,6 +188,12 @@ function sendMessageToContent(content: string): void {
             </div>
 
             <div class="flex items-center gap-1 opacity-70 transition group-hover:opacity-100">
+              <span
+                v-if="message.role === 'assistant' && message.sourceContentEntryId"
+                class="text-muted-foreground text-xs"
+              >
+                {{ t('assistant.sourceContent') }} {{ formatSourceContentLabel(message.sourceContentEntryId) }}
+              </span>
               <span v-if="message.status === 'streaming'" class="text-muted-foreground text-xs">
                 {{ t('assistant.chatStreaming') }}
               </span>
@@ -159,7 +208,7 @@ function sendMessageToContent(content: string): void {
                 size="icon-xs"
                 variant="ghost"
                 :aria-label="t('assistant.insertToContent')"
-                @click="sendMessageToContent(message.content)"
+                @click="sendMessageToContent(message.sourceContentEntryId, message.content)"
               >
                 <FileInputIcon class="size-3" />
               </Button>
@@ -200,7 +249,7 @@ function sendMessageToContent(content: string): void {
                 <SquareIcon class="size-4" />
                 {{ t('assistant.stopChat') }}
               </Button>
-              <Button v-else size="sm" :disabled="Boolean(chat.disabledReason.value)" @click="chat.send">
+              <Button v-else size="sm" :disabled="Boolean(chat.disabledReason.value)" @click="sendCurrentMessage">
                 <SendIcon class="size-4" />
                 {{ t('assistant.sendMessage') }}
               </Button>

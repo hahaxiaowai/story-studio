@@ -1,22 +1,41 @@
-import { readonly, ref } from 'vue'
+import { computed, readonly, ref } from 'vue'
 
-const pendingAssistantDraftPrompt = ref('')
+export interface AssistantDraftPromptPayload {
+  prompt: string
+  sourceContentEntryId?: string
+}
 
-export const assistantDraftPrompt = readonly(pendingAssistantDraftPrompt)
+const pendingAssistantDraftPrompt = ref<AssistantDraftPromptPayload>({
+  prompt: '',
+})
 
-export function queueAssistantDraftPrompt(prompt: string): void {
+export const assistantDraftPrompt = readonly(computed(() => pendingAssistantDraftPrompt.value.prompt))
+
+export function queueAssistantDraftPrompt(
+  prompt: string,
+  options: Pick<AssistantDraftPromptPayload, 'sourceContentEntryId'> = {},
+): void {
   const nextPrompt = prompt.trim()
 
   if (!nextPrompt)
     return
 
-  pendingAssistantDraftPrompt.value = nextPrompt
+  pendingAssistantDraftPrompt.value = {
+    prompt: nextPrompt,
+    ...(options.sourceContentEntryId ? { sourceContentEntryId: options.sourceContentEntryId } : {}),
+  }
 }
 
 export function consumeAssistantDraftPrompt(): string {
-  const prompt = pendingAssistantDraftPrompt.value
+  return consumeAssistantDraftPromptPayload().prompt
+}
 
-  pendingAssistantDraftPrompt.value = ''
+export function consumeAssistantDraftPromptPayload(): AssistantDraftPromptPayload {
+  const payload = pendingAssistantDraftPrompt.value
 
-  return prompt
+  pendingAssistantDraftPrompt.value = {
+    prompt: '',
+  }
+
+  return payload
 }

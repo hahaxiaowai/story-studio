@@ -23,6 +23,7 @@ export interface CreateUserAssistantTurnInput {
   userContent: string
   userMessageId: string
   assistantMessageId: string
+  sourceContentEntryId?: string
   now: string
 }
 
@@ -40,10 +41,31 @@ export interface AssistantChatContextInput {
   storyStyle: AssistantStoryStyle | undefined
 }
 
+export interface AssistantMessageSourceContentEntry {
+  id: string
+  volume: string
+  chapter: string
+}
+
 export function filterAssistantThreadsByWorkspace(threads: AssistantChatThread[], workspaceId: string): AssistantChatThread[] {
   return threads
     .filter(thread => thread.workspaceId === workspaceId)
     .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt))
+}
+
+export function formatAssistantMessageSourceLabel(
+  message: AssistantChatMessage,
+  entries: AssistantMessageSourceContentEntry[],
+): string {
+  if (!message.sourceContentEntryId)
+    return ''
+
+  const entry = entries.find(entry => entry.id === message.sourceContentEntryId)
+
+  if (!entry)
+    return 'missing'
+
+  return `${entry.volume || '未命名卷'} / ${entry.chapter || '未命名章'}`
 }
 
 export function createAssistantThread(input: CreateAssistantThreadInput): AssistantChatThread {
@@ -75,6 +97,7 @@ export function createUserAssistantTurn(thread: AssistantChatThread, input: Crea
     role: 'assistant',
     content: '',
     status: 'streaming',
+    ...(input.sourceContentEntryId ? { sourceContentEntryId: input.sourceContentEntryId } : {}),
     createdAt: input.now,
     updatedAt: input.now,
   }

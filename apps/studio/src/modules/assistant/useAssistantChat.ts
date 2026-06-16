@@ -31,6 +31,10 @@ export interface AssistantChatStreamEvent {
 
 type UnlistenFn = () => void
 
+export interface SendAssistantChatInput {
+  sourceContentEntryId?: string
+}
+
 export function useAssistantChat(input: {
   settings: ComputedRef<AssistantSettings>
   providers: ComputedRef<AiProviderConfig[]>
@@ -47,7 +51,7 @@ export function useAssistantChat(input: {
   disabledReason: ComputedRef<string>
   createThread: (titleSeed?: string) => AssistantChatThread
   clearThread: () => void
-  send: () => Promise<void>
+  send: (input?: SendAssistantChatInput) => Promise<void>
   retryLast: () => Promise<void>
   stop: () => Promise<void>
   copyMessage: (content: string) => Promise<void>
@@ -126,7 +130,7 @@ export function useAssistantChat(input: {
     })
   }
 
-  async function send(): Promise<void> {
+  async function send(input: SendAssistantChatInput = {}): Promise<void> {
     const reason = disabledReason.value
 
     if (reason) {
@@ -153,6 +157,7 @@ export function useAssistantChat(input: {
       userContent: userMessage,
       userMessageId,
       assistantMessageId,
+      sourceContentEntryId: input.sourceContentEntryId,
       now,
     })
 
