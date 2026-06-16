@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { useLocale } from '@/composables/useLocale'
 import PropertyConfigDialog from '../properties/PropertyConfigDialog.vue'
 import { useProperties } from '../properties/useProperties'
-import { getEntityTitle } from './entities'
+import { getEntityTitle, getMissingRequiredProperties } from './entities'
 import { useEntities } from './useEntities'
 
 const props = defineProps<{
@@ -27,6 +27,10 @@ const visibleProperties = computed<PropertyDefinition[]>(() => properties.value.
 const selectedRecord = computed<EntityRecord | undefined>(() => records.value.find(record => record.id === selectedRecordId.value) ?? records.value[0])
 const selectedTitle = computed<string>(() => selectedRecord.value ? getEntityTitle(selectedRecord.value, properties.value) : props.title)
 const addRecordLabel = computed<string>(() => props.addLabel ?? t('character.add'))
+const missingRequiredProperties = computed<PropertyDefinition[]>(() =>
+  selectedRecord.value ? getMissingRequiredProperties(selectedRecord.value, visibleProperties.value) : [],
+)
+const missingRequiredPropertyIds = computed<Set<string>>(() => new Set(missingRequiredProperties.value.map(property => property.id)))
 
 watch(records, (nextRecords) => {
   if (!nextRecords.length) {
@@ -134,6 +138,9 @@ function updateCheckbox(property: PropertyDefinition, event: Event): void {
               <h2 class="truncate text-xl font-semibold">
                 {{ selectedTitle }}
               </h2>
+              <p v-if="missingRequiredProperties.length" class="text-destructive mt-1 text-xs">
+                缺少必填字段：{{ missingRequiredProperties.map(property => property.name).join('、') }}
+              </p>
             </div>
             <Button variant="ghost" size="icon-sm" aria-label="删除记录" @click="deleteSelectedRecord">
               <Trash2Icon class="size-4" />
@@ -155,12 +162,14 @@ function updateCheckbox(property: PropertyDefinition, event: Event): void {
               <Textarea
                 v-if="property.valueType === 'longText'"
                 :model-value="formatValue(selectedRecord.values[property.id])"
+                :class="missingRequiredPropertyIds.has(property.id) ? 'border-destructive' : ''"
                 @update:model-value="updateValue(property, $event)"
               />
 
               <select
                 v-else-if="property.valueType === 'select'"
                 class="border-input bg-background h-9 rounded-md border px-2 text-sm"
+                :class="missingRequiredPropertyIds.has(property.id) ? 'border-destructive' : ''"
                 :value="formatValue(selectedRecord.values[property.id])"
                 @change="updateSelect(property, $event)"
               >
@@ -172,6 +181,7 @@ function updateCheckbox(property: PropertyDefinition, event: Event): void {
               <select
                 v-else-if="property.valueType === 'multiSelect'"
                 class="border-input bg-background min-h-24 rounded-md border px-2 py-2 text-sm"
+                :class="missingRequiredPropertyIds.has(property.id) ? 'border-destructive' : ''"
                 multiple
                 :value="selectedRecord.values[property.id]"
                 @change="updateMultiSelect(property, $event)"
@@ -194,8 +204,12 @@ function updateCheckbox(property: PropertyDefinition, event: Event): void {
                 v-else
                 :type="property.valueType === 'date' ? 'date' : property.valueType === 'number' ? 'number' : 'text'"
                 :model-value="formatValue(selectedRecord.values[property.id])"
+                :class="missingRequiredPropertyIds.has(property.id) ? 'border-destructive' : ''"
                 @update:model-value="updateValue(property, $event)"
               />
+              <span v-if="missingRequiredPropertyIds.has(property.id)" class="text-destructive text-xs">
+                请填写必填字段
+              </span>
             </label>
           </form>
         </div>

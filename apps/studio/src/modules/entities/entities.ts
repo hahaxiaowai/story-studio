@@ -71,6 +71,28 @@ export function getEntityTitle(record: EntityRecord, properties: PropertyDefinit
   return typeof titleValue === 'string' && titleValue.trim() ? titleValue.trim() : record.title
 }
 
+export function getMissingRequiredProperties(record: EntityRecord, properties: PropertyDefinition[]): PropertyDefinition[] {
+  return properties.filter(property =>
+    property.required && isMissingRequiredPropertyValue(property, record.values[property.id]),
+  )
+}
+
+export function isMissingRequiredPropertyValue(property: PropertyDefinition, value: PropertyValue | undefined): boolean {
+  if (!property.required)
+    return false
+
+  if (property.valueType === 'boolean')
+    return false
+
+  if (property.valueType === 'number')
+    return typeof value !== 'number' || !Number.isFinite(value)
+
+  if (property.valueType === 'multiSelect')
+    return !Array.isArray(value) || value.length === 0
+
+  return typeof value !== 'string' || value.trim() === ''
+}
+
 export function getTitleProperty(properties: PropertyDefinition[], kind: EntityKind): PropertyDefinition | undefined {
   const titlePropertyIdByKind = {
     'character': 'character-name',
