@@ -827,6 +827,8 @@ fn join_reader(
 mod tests {
     use super::*;
     use serde_json::json;
+    use std::io::{BufRead, BufReader};
+    use std::net::TcpListener;
     use std::time::{SystemTime, UNIX_EPOCH};
 
     #[test]
@@ -1041,6 +1043,85 @@ mod tests {
         assert_eq!(message, "API 请求失败（401）：invalid api key");
     }
 
+    #[test]
+    fn openai_compatible_chat_stream_emits_api_chunks() {
+        let base_url = serve_openai_stream_response(
+            [
+                "data: {\"choices\":[{\"delta\":{\"content\":\"第一段\"}}]}\n\n",
+                "data: {\"choices\":[{\"delta\":{\"content\":\"第二段\"}}]}\n\n",
+                "data: [DONE]\n\n",
+            ],
+            Duration::from_millis(0),
+        );
+        let mut events = Vec::new();
+        let result = run_openai_compatible_chat_stream_process(
+            "run-api",
+            "provider-api",
+            &base_url,
+            "sk-test",
+            "gpt-test",
+            vec![OpenAiCompatibleChatMessage {
+                role: "user".to_string(),
+                content: "续写".to_string(),
+            }],
+            || false,
+            |event| events.push(event),
+        )
+        .unwrap();
+
+        let content = events
+            .iter()
+            .filter(|event| event.run_id == "run-api" && event.event == "chunk" && event.stream.as_deref() == Some("stdout"))
+            .filter_map(|event| event.chunk.as_deref())
+            .collect::<String>();
+
+        assert_eq!(result.exit_code, Some(0));
+        assert_eq!(content, "第一段第二段");
+        assert!(events.iter().any(|event| event.event == "done"));
+    }
+
+    #[test]
+    fn openai_compatible_chat_stream_stops_writing_after_cancel() {
+        let base_url = serve_openai_stream_response(
+            [
+                "data: {\"choices\":[{\"delta\":{\"content\":\"第一段\"}}]}\n\n",
+                "data: {\"choices\":[{\"delta\":{\"content\":\"第二段\"}}]}\n\n",
+            ],
+            Duration::from_millis(20),
+        );
+        let mut events = Vec::new();
+        let should_cancel = AtomicBool::new(false);
+        let result = run_openai_compatible_chat_stream_process(
+            "run-api",
+            "provider-api",
+            &base_url,
+            "sk-test",
+            "gpt-test",
+            vec![OpenAiCompatibleChatMessage {
+                role: "user".to_string(),
+                content: "续写".to_string(),
+            }],
+            || should_cancel.load(Ordering::SeqCst),
+            |event| {
+                if event.event == "chunk" {
+                    should_cancel.store(true, Ordering::SeqCst);
+                }
+
+                events.push(event);
+            },
+        );
+
+        assert!(result.unwrap_err().contains("已停止"));
+        let content = events
+            .iter()
+            .filter(|event| event.event == "chunk")
+            .filter_map(|event| event.chunk.as_deref())
+            .collect::<String>();
+
+        assert_eq!(content, "第一段");
+        assert!(events.iter().any(|event| event.event == "error" && event.error.as_deref() == Some("生成已停止。")));
+    }
+
     fn test_data_path(name: &str) -> PathBuf {
         let nonce = SystemTime::now()
             .duration_since(UNIX_EPOCH)
@@ -1050,5 +1131,45 @@ mod tests {
         std::env::temp_dir()
             .join("story-studio-tests")
             .join(format!("{name}-{nonce}.json"))
+    }
+
+    fn serve_openai_stream_response<const N: usize>(
+        chunks: [&'static str; N],
+        chunk_delay: Duration,
+    ) -> String {
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let address = listener.local_addr().unwrap();
+
+        thread::spawn(move || {
+            let (mut stream, _) = listener.accept().unwrap();
+            let mut reader = BufReader::new(stream.try_clone().unwrap());
+            let mut line = String::new();
+
+            loop {
+                line.clear();
+                reader.read_line(&mut line).unwrap();
+
+                if line == "\r\n" || line.is_empty() {
+                    break;
+                }
+            }
+
+            stream
+                .write_all(b"HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nConnection: close\r\n\r\n")
+                .unwrap();
+
+            for chunk in chunks {
+                if chunk_delay > Duration::from_millis(0) {
+                    thread::sleep(chunk_delay);
+                }
+
+                if stream.write_all(chunk.as_bytes()).is_err() {
+                    break;
+                }
+                let _ = stream.flush();
+            }
+        });
+
+        format!("http://{address}")
     }
 }
