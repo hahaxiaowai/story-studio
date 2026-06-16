@@ -60,6 +60,54 @@ describe('useAssistantChat', () => {
     expect(sent).toBe(false)
     expect(studioData.document.value.assistantChatThreads).toHaveLength(0)
   })
+
+  it('keeps the source content entry when retrying a sourced assistant turn', async () => {
+    const document = createDefaultStudioDataDocument()
+    document.assistantChatThreads = [
+      {
+        id: 'thread-1',
+        workspaceId: document.activeWorkspaceId,
+        title: '润色第二章',
+        providerId: document.assistantSettings.defaultProviderId,
+        model: '',
+        messages: [
+          {
+            id: 'user-1',
+            role: 'user',
+            content: '润色第二章',
+            status: 'complete',
+            createdAt: '2026-06-16T08:00:00.000Z',
+            updatedAt: '2026-06-16T08:00:00.000Z',
+          },
+          {
+            id: 'assistant-1',
+            role: 'assistant',
+            content: '润色结果',
+            status: 'complete',
+            sourceContentEntryId: 'content-2',
+            createdAt: '2026-06-16T08:00:00.000Z',
+            updatedAt: '2026-06-16T08:00:00.000Z',
+          },
+        ],
+        createdAt: '2026-06-16T08:00:00.000Z',
+        updatedAt: '2026-06-16T08:00:00.000Z',
+      },
+    ]
+    const driver = createDriver(document)
+    const studioData = useStudioData(driver)
+    await studioData.ready
+    const chat = useAssistantChat({
+      settings: computed(() => studioData.document.value.assistantSettings),
+      providers: computed(() => studioData.document.value.assistantSettings.providers),
+    })
+
+    await chat.retryLast()
+
+    expect(studioData.document.value.assistantChatThreads[0]?.messages.at(-1)).toMatchObject({
+      role: 'assistant',
+      sourceContentEntryId: 'content-2',
+    })
+  })
 })
 
 function createDriver(document: StudioDataDocument | undefined): StudioStorageDriver & {

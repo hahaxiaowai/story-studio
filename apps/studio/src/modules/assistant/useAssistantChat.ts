@@ -194,13 +194,19 @@ export function useAssistantChat(input: {
 
   async function retryLast(): Promise<void> {
     const messages = activeThread.value?.messages ?? []
-    const lastUserMessage = [...messages].reverse().find(message => message.role === 'user')
+    const lastUserMessageIndex = messages.findLastIndex(message => message.role === 'user')
+    const lastUserMessage = lastUserMessageIndex >= 0 ? messages[lastUserMessageIndex] : undefined
 
     if (!lastUserMessage)
       return
 
+    const sourceContentEntryId = messages
+      .slice(lastUserMessageIndex + 1)
+      .find(message => message.role === 'assistant' && message.sourceContentEntryId)
+      ?.sourceContentEntryId
+
     inputMessage.value = lastUserMessage.content
-    await send()
+    await send({ sourceContentEntryId })
   }
 
   async function stop(): Promise<void> {
