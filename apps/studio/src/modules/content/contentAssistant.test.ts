@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import {
   buildContentAssistantPrompt,
   countContentWords,
+  mergeAssistantDraftIntoContent,
 } from './contentAssistant'
 
 describe('content assistant helpers', () => {
@@ -73,6 +74,30 @@ describe('content assistant helpers', () => {
 
     expect(prompt).toContain('目标：基于关联情节点生成章节初稿')
     expect(prompt).toContain('请根据关联情节点生成当前章节初稿')
+  })
+
+  it('appends assistant draft after existing body with a blank line', () => {
+    expect(mergeAssistantDraftIntoContent({
+      body: '旧正文',
+      draft: '新草稿',
+      mode: 'append',
+    })).toBe('旧正文\n\n新草稿')
+  })
+
+  it('uses assistant draft directly when appending to an empty body', () => {
+    expect(mergeAssistantDraftIntoContent({
+      body: '   ',
+      draft: '新草稿',
+      mode: 'append',
+    })).toBe('新草稿')
+  })
+
+  it('replaces body with assistant draft', () => {
+    expect(mergeAssistantDraftIntoContent({
+      body: '旧正文',
+      draft: '新草稿',
+      mode: 'replace',
+    })).toBe('新草稿')
   })
 })
 

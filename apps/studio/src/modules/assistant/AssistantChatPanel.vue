@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { CopyIcon, MessageSquarePlusIcon, RotateCcwIcon, SendIcon, SquareIcon, Trash2Icon } from '@lucide/vue'
+import { CopyIcon, FileInputIcon, MessageSquarePlusIcon, RotateCcwIcon, SendIcon, SquareIcon, Trash2Icon } from '@lucide/vue'
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { useLocale } from '@/composables/useLocale'
+import { queueAssistantContentDraft } from './assistantContentDraft'
 import { consumeAssistantDraftPrompt } from './assistantDraft'
 import { useAssistant } from './useAssistant'
 import { useAssistantChat } from './useAssistantChat'
@@ -49,6 +50,13 @@ function handleComposerKeydown(event: KeyboardEvent): void {
 
   event.preventDefault()
   void chat.send()
+}
+
+function sendMessageToContent(content: string): void {
+  queueAssistantContentDraft(content)
+
+  if (typeof window !== 'undefined')
+    window.location.hash = '#content'
 }
 </script>
 
@@ -145,6 +153,15 @@ function handleComposerKeydown(event: KeyboardEvent): void {
               </span>
               <Button v-if="message.content" size="icon-xs" variant="ghost" :aria-label="t('assistant.copyMessage')" @click="chat.copyMessage(message.content)">
                 <CopyIcon class="size-3" />
+              </Button>
+              <Button
+                v-if="message.role === 'assistant' && message.status === 'complete' && message.content"
+                size="icon-xs"
+                variant="ghost"
+                :aria-label="t('assistant.insertToContent')"
+                @click="sendMessageToContent(message.content)"
+              >
+                <FileInputIcon class="size-3" />
               </Button>
             </div>
           </article>

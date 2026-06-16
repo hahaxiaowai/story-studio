@@ -1,16 +1,17 @@
 <script setup lang="ts">
 import type { WorkspaceContentEntry } from '@story-studio/types'
-import type { ContentAssistantAction } from './contentAssistant'
+import type { AssistantDraftInsertMode, ContentAssistantAction } from './contentAssistant'
 import { PenLineIcon, PlusIcon, ShieldCheckIcon, SparklesIcon, Trash2Icon } from '@lucide/vue'
-import { computed, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { useLocale } from '@/composables/useLocale'
 import { useWorkspaces } from '@/modules/workspaces/useWorkspaces'
+import { consumeAssistantContentDraft } from '../assistant/assistantContentDraft'
 import { queueAssistantDraftPrompt } from '../assistant/assistantDraft'
 import { useOutline } from '../outlines/useOutline'
-import { buildContentAssistantPrompt, countContentWords } from './contentAssistant'
+import { buildContentAssistantPrompt, countContentWords, mergeAssistantDraftIntoContent } from './contentAssistant'
 import { useContent } from './useContent'
 
 const { t } = useLocale()
@@ -18,6 +19,7 @@ const { entries, addEntry, updateEntry, linkEntryToBeat, removeEntry } = useCont
 const { activeWorkspace } = useWorkspaces()
 const { beats } = useOutline()
 const selectedEntryId = ref<string>()
+const pendingAssistantContent = ref('')
 
 const selectedEntry = computed<WorkspaceContentEntry | undefined>(() => entries.value.find(entry => entry.id === selectedEntryId.value) ?? entries.value[0])
 const selectedTitle = computed<string>(() => {
@@ -50,6 +52,10 @@ watch(entries, (nextEntries) => {
     selectedEntryId.value = nextEntries[0]?.id
 }, { immediate: true })
 
+onMounted(() => {
+  pendingAssistantContent.value = consumeAssistantContentDraft()
+})
+
 function createEntry(): void {
   const entry = addEntry()
   selectedEntryId.value = entry.id
@@ -74,6 +80,24 @@ function deleteSelectedEntry(): void {
     return
 
   removeEntry(selectedEntry.value.id)
+}
+
+function insertAssistantContent(mode: AssistantDraftInsertMode): void {
+  if (!selectedEntry.value || !pendingAssistantContent.value)
+    return
+
+  updateEntry(selectedEntry.value.id, {
+    body: mergeAssistantDraftIntoContent({
+      body: selectedEntry.value.body,
+      draft: pendingAssistantContent.value,
+      mode,
+    }),
+  })
+  pendingAssistantContent.value = ''
+}
+
+function dismissAssistantContent(): void {
+  pendingAssistantContent.value = ''
 }
 
 function sendSelectedEntryToAssistant(action: ContentAssistantAction): void {
@@ -199,6 +223,29 @@ function readEventValue(event: Event): string {
               />
             </label>
           </form>
+
+          <section v-if="pendingAssistantContent" class="grid gap-3 rounded-lg border p-4">
+            <div>
+              <h3 class="text-base font-semibold">
+                {{ t('content.pendingAssistantDraft') }}
+              </h3>
+              <p class="text-muted-foreground mt-1 text-sm">
+                {{ t('content.pendingAssistantDraftHint') }}
+              </p>
+            </div>
+            <pre class="bg-muted/50 max-h-48 overflow-auto rounded-md p-3 text-sm whitespace-pre-wrap">{{ pendingAssistantContent }}</pre>
+            <div class="flex flex-wrap gap-2">
+              <Button size="sm" @click="insertAssistantContent('append')">
+                {{ t('content.appendAssistantDraft') }}
+              </Button>
+              <Button size="sm" variant="outline" @click="insertAssistantContent('replace')">
+                {{ t('content.replaceWithAssistantDraft') }}
+              </Button>
+              <Button size="sm" variant="ghost" @click="dismissAssistantContent">
+                {{ t('content.dismissAssistantDraft') }}
+              </Button>
+            </div>
+          </section>
 
           <section class="grid gap-3 rounded-lg border p-4">
             <div>

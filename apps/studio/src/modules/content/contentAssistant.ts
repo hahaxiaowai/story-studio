@@ -1,12 +1,19 @@
 import type { TimelineBeat, WorkspaceContentEntry } from '@story-studio/types'
 
 export type ContentAssistantAction = 'continue' | 'polish' | 'check-consistency'
+export type AssistantDraftInsertMode = 'append' | 'replace'
 
 export interface BuildContentAssistantPromptInput {
   action: ContentAssistantAction
   workspaceTitle: string
   entry: WorkspaceContentEntry
   linkedBeat?: TimelineBeat
+}
+
+export interface MergeAssistantDraftInput {
+  body: string
+  draft: string
+  mode: AssistantDraftInsertMode
 }
 
 const ACTION_GOALS = {
@@ -35,6 +42,17 @@ export function countContentWords(body: string): number {
   const matches = plainText.match(/[\u4E00-\u9FFF]|[a-z0-9]+/gi)
 
   return matches?.length ?? 0
+}
+
+export function mergeAssistantDraftIntoContent(input: MergeAssistantDraftInput): string {
+  const draft = input.draft.trim()
+
+  if (input.mode === 'replace')
+    return draft
+
+  const body = input.body.trim()
+
+  return body ? `${body}\n\n${draft}` : draft
 }
 
 export function buildContentAssistantPrompt(input: BuildContentAssistantPromptInput): string {
