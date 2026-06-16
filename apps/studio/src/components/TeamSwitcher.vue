@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { CheckIcon, ChevronsUpDownIcon, GalleryVerticalEndIcon, PlusIcon } from '@lucide/vue'
+import { CheckIcon, ChevronsUpDownIcon, GalleryVerticalEndIcon, PencilIcon, PlusIcon } from '@lucide/vue'
 import { ref } from 'vue'
 import {
   DropdownMenu,
@@ -17,12 +17,14 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar'
 import WorkspaceCreateDialog from '@/components/WorkspaceCreateDialog.vue'
+import WorkspaceDetailsDialog from '@/components/WorkspaceDetailsDialog.vue'
 import { useLocale } from '@/composables/useLocale'
 import { useWorkspaces } from '@/modules/workspaces/useWorkspaces'
 
 const { isMobile } = useSidebar()
 const { t } = useLocale()
 const createDialogOpen = ref(false)
+const detailsDialogOpen = ref(false)
 const {
   activeWorkspace,
   activeWorkspaceId,
@@ -74,6 +76,14 @@ const {
             </DropdownMenuShortcut>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
+          <DropdownMenuItem class="gap-2 p-2" @click="detailsDialogOpen = true">
+            <div class="bg-background flex size-6 items-center justify-center rounded-md border">
+              <PencilIcon class="size-4" />
+            </div>
+            <div class="text-muted-foreground font-medium">
+              {{ t('menu.editWorkspace') }}
+            </div>
+          </DropdownMenuItem>
           <DropdownMenuItem class="gap-2 p-2" @click="createDialogOpen = true">
             <div class="bg-background flex size-6 items-center justify-center rounded-md border">
               <PlusIcon class="size-4" />
@@ -85,6 +95,7 @@ const {
         </DropdownMenuContent>
       </DropdownMenu>
       <WorkspaceCreateDialog v-model:open="createDialogOpen" />
+      <WorkspaceDetailsDialog v-model:open="detailsDialogOpen" />
     </SidebarMenuItem>
   </SidebarMenu>
 </template>

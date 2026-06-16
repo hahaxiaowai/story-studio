@@ -12,6 +12,12 @@ export interface AppendWorkspaceResult {
   workspaces: Workspace[]
 }
 
+export interface UpdateWorkspaceDetailsOptions {
+  title: string
+  description?: string
+  now: string
+}
+
 export const workspaceModules = ['outline', 'characters', 'maps', 'content'] as const satisfies readonly WorkspaceModule[]
 
 const workspaceIdSegments: Record<string, string> = {
@@ -70,6 +76,23 @@ export function updateWorkspaceStoryStyle(workspaces: Workspace[], workspaceId: 
         ...workspace,
         storyStyleId: nextStoryStyleId || undefined,
         updatedAt: new Date().toISOString(),
+      }
+    : workspace)
+}
+
+export function updateWorkspaceDetails(workspaces: Workspace[], workspaceId: string, options: UpdateWorkspaceDetailsOptions): Workspace[] {
+  const title = options.title.trim()
+  const description = options.description?.trim()
+
+  if (!title)
+    throw new Error('Workspace title is required.')
+
+  return workspaces.map(workspace => workspace.id === workspaceId
+    ? {
+        ...workspace,
+        title,
+        ...(description ? { description } : { description: undefined }),
+        updatedAt: options.now,
       }
     : workspace)
 }

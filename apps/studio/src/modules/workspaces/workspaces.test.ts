@@ -5,6 +5,7 @@ import {
   getWorkspaceById,
   getWorkspaceModuleLabelKey,
   isPublicNavigationHash,
+  updateWorkspaceDetails,
   updateWorkspaceStoryStyle,
 } from './workspaces'
 
@@ -75,6 +76,60 @@ describe('workspaces', () => {
 
     expect(workspaces.find(workspace => workspace.id === firstResult.activeWorkspaceId)?.storyStyleId).toBe('story-style-epic-fantasy')
     expect(workspaces.find(workspace => workspace.id === secondResult.activeWorkspaceId)?.storyStyleId).toBeUndefined()
+  })
+
+  it('updates workspace details while keeping workspace ids stable', () => {
+    const firstResult = appendWorkspace([], {
+      title: 'Star Harbor',
+      description: '旧简介',
+      now: '2026-05-24T00:00:00.000Z',
+    })
+    const secondResult = appendWorkspace(firstResult.workspaces, {
+      title: '雾港来信',
+      now: '2026-05-24T00:00:00.000Z',
+    })
+
+    const workspaces = updateWorkspaceDetails(secondResult.workspaces, firstResult.activeWorkspaceId, {
+      title: '  Star Harbor Revised  ',
+      description: '  新简介  ',
+      now: '2026-05-24T13:00:00.000Z',
+    })
+
+    expect(workspaces.find(workspace => workspace.id === firstResult.activeWorkspaceId)).toMatchObject({
+      id: 'workspace-star-harbor',
+      title: 'Star Harbor Revised',
+      description: '新简介',
+      updatedAt: '2026-05-24T13:00:00.000Z',
+    })
+    expect(workspaces.find(workspace => workspace.id === secondResult.activeWorkspaceId)?.title).toBe('雾港来信')
+  })
+
+  it('clears workspace descriptions when saving blank descriptions', () => {
+    const result = appendWorkspace([], {
+      title: 'Star Harbor',
+      description: '旧简介',
+      now: '2026-05-24T00:00:00.000Z',
+    })
+
+    const workspaces = updateWorkspaceDetails(result.workspaces, result.activeWorkspaceId, {
+      title: 'Star Harbor',
+      description: '   ',
+      now: '2026-05-24T13:00:00.000Z',
+    })
+
+    expect(workspaces[0]?.description).toBeUndefined()
+  })
+
+  it('rejects empty workspace titles when updating details', () => {
+    const result = appendWorkspace([], {
+      title: 'Star Harbor',
+      now: '2026-05-24T00:00:00.000Z',
+    })
+
+    expect(() => updateWorkspaceDetails(result.workspaces, result.activeWorkspaceId, {
+      title: '   ',
+      now: '2026-05-24T13:00:00.000Z',
+    })).toThrow('Workspace title is required.')
   })
 
   it('rejects empty workspace titles', () => {

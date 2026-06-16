@@ -1,20 +1,23 @@
 import type { Workspace } from '@story-studio/types'
 import type { ComputedRef, Ref } from 'vue'
-import type { AppendWorkspaceOptions } from './workspaces'
+import type { AppendWorkspaceOptions, UpdateWorkspaceDetailsOptions } from './workspaces'
 import { computed } from 'vue'
 import { useStudioData } from '../storage/useStudioData'
 import {
   appendWorkspace,
   getWorkspaceById,
+  updateWorkspaceDetails,
   updateWorkspaceStoryStyle,
 } from './workspaces'
 
 export type AddWorkspaceInput = Pick<AppendWorkspaceOptions, 'title' | 'description'>
+export type SaveWorkspaceDetailsInput = Pick<UpdateWorkspaceDetailsOptions, 'title' | 'description'>
 
 export function useWorkspaces(): {
   activeWorkspace: ComputedRef<Workspace>
   activeWorkspaceId: Ref<string, string>
   addWorkspace: (input?: AddWorkspaceInput) => Workspace
+  saveActiveWorkspaceDetails: (input: SaveWorkspaceDetailsInput) => void
   setActiveWorkspace: (workspaceId: string) => void
   setActiveWorkspaceStoryStyle: (storyStyleId: string) => void
   workspaces: Ref<Workspace[], Workspace[]>
@@ -70,10 +73,20 @@ export function useWorkspaces(): {
     })
   }
 
+  function saveActiveWorkspaceDetails(input: SaveWorkspaceDetailsInput): void {
+    studioData.updateDocument((document) => {
+      document.workspaces = updateWorkspaceDetails(document.workspaces, document.activeWorkspaceId, {
+        ...input,
+        now: new Date().toISOString(),
+      })
+    })
+  }
+
   return {
     activeWorkspace,
     activeWorkspaceId,
     addWorkspace,
+    saveActiveWorkspaceDetails,
     setActiveWorkspace,
     setActiveWorkspaceStoryStyle,
     workspaces,

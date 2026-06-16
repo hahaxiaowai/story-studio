@@ -72,6 +72,35 @@ describe('useWorkspaces', () => {
       ]),
     }))
   })
+
+  it('persists current workspace details without changing the workspace id', async () => {
+    const driver = createDriver(createDefaultStudioDataDocument())
+    await useStudioData(driver).ready
+
+    const workspaces = useWorkspaces()
+    workspaces.saveActiveWorkspaceDetails({
+      title: '魔兽世界 修订版',
+      description: '更新后的作品简介',
+    })
+    await nextTick()
+
+    expect(workspaces.activeWorkspace.value).toMatchObject({
+      id: 'workspace-mo-shou-shi-jie',
+      title: '魔兽世界 修订版',
+      description: '更新后的作品简介',
+      updatedAt: '2026-05-24T12:00:00.000Z',
+    })
+    expect(driver.save).toHaveBeenLastCalledWith(expect.objectContaining({
+      activeWorkspaceId: 'workspace-mo-shou-shi-jie',
+      workspaces: expect.arrayContaining([
+        expect.objectContaining({
+          id: 'workspace-mo-shou-shi-jie',
+          title: '魔兽世界 修订版',
+          description: '更新后的作品简介',
+        }),
+      ]),
+    }))
+  })
 })
 
 function createDriver(document: StudioDataDocument): StudioStorageDriver & {
