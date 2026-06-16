@@ -1,4 +1,4 @@
-import type { AiProviderConfig, AssistantChatThread, Workspace } from '@story-studio/types'
+import type { AiProviderConfig, AssistantChatThread, AssistantStoryStyle, Workspace } from '@story-studio/types'
 import { describe, expect, it } from 'vitest'
 import {
   appendAssistantChunk,
@@ -94,6 +94,7 @@ describe('assistant chat state', () => {
     const prompt = prepareLocalTerminalPrompt({
       workspace: createWorkspace(),
       provider: createProvider(),
+      storyStyle: createStoryStyle(),
       moduleName: '助手',
       userMessage: '写一个开头',
     })
@@ -101,7 +102,22 @@ describe('assistant chat state', () => {
     expect(prompt).toContain('当前作品：魔兽世界')
     expect(prompt).toContain('当前模块：助手')
     expect(prompt).toContain('当前 Provider：Codex')
+    expect(prompt).toContain('故事风格：史诗奇幻')
+    expect(prompt).toContain('风格约束：强调宏大冲突、历史纵深、阵营/世界规则一致性。')
     expect(prompt).toContain('用户输入：\n写一个开头')
+  })
+
+  it('omits empty story style constraints from local terminal prompts', () => {
+    const prompt = prepareLocalTerminalPrompt({
+      workspace: createWorkspace(),
+      provider: createProvider(),
+      storyStyle: createStoryStyle({ constraints: '   ' }),
+      moduleName: '助手',
+      userMessage: '写一个开头',
+    })
+
+    expect(prompt).toContain('故事风格：史诗奇幻')
+    expect(prompt).not.toContain('风格约束：')
   })
 
   it('disables send for web, empty input, running state, and invalid local terminal providers', () => {
@@ -179,6 +195,36 @@ describe('assistant chat state', () => {
       { role: 'assistant', content: '开头内容' },
     ])
   })
+
+  it('prepends story style context to API request messages', () => {
+    const thread = createThread({
+      messages: [
+        createMessage({ id: 'user-1', role: 'user', content: '写一个开头' }),
+        createMessage({ id: 'assistant-1', role: 'assistant', content: '开头内容', status: 'complete' }),
+        createMessage({ id: 'assistant-2', role: 'assistant', content: '', status: 'streaming' }),
+      ],
+    })
+
+    expect(toAssistantChatRequestMessages(thread, {
+      workspace: createWorkspace(),
+      moduleName: '助手',
+      storyStyle: createStoryStyle(),
+    })).toEqual([
+      {
+        role: 'system',
+        content: [
+          'Story Studio AI 对话上下文',
+          '当前作品：魔兽世界',
+          '当前模块：助手',
+          '故事风格：史诗奇幻',
+          '风格说明：高魔世界的大型战争叙事。',
+          '风格约束：强调宏大冲突、历史纵深、阵营/世界规则一致性。',
+        ].join('\n'),
+      },
+      { role: 'user', content: '写一个开头' },
+      { role: 'assistant', content: '开头内容' },
+    ])
+  })
 })
 
 function createThread(input: Partial<AssistantChatThread>): AssistantChatThread {
@@ -248,5 +294,17 @@ function createWorkspace(): Workspace {
     },
     createdAt: '2026-06-09T08:00:00.000Z',
     updatedAt: '2026-06-09T08:00:00.000Z',
+  }
+}
+
+function createStoryStyle(input: Partial<AssistantStoryStyle> = {}): AssistantStoryStyle {
+  return {
+    id: input.id ?? 'story-style-epic-fantasy',
+    name: input.name ?? '史诗奇幻',
+    description: input.description ?? '高魔世界的大型战争叙事。',
+    constraints: input.constraints ?? '强调宏大冲突、历史纵深、阵营/世界规则一致性。',
+    system: input.system ?? true,
+    createdAt: input.createdAt ?? '2026-01-01T00:00:00.000Z',
+    updatedAt: input.updatedAt ?? '2026-01-01T00:00:00.000Z',
   }
 }

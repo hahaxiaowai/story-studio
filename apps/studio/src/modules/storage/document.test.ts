@@ -48,9 +48,16 @@ describe('studio data document', () => {
           },
         ],
         featureBindings: [],
+        storyStyles: [
+          expect.objectContaining({ id: 'story-style-general', name: '通用叙事', system: true }),
+          expect.objectContaining({ id: 'story-style-epic-fantasy', name: '史诗奇幻', system: true }),
+          expect.objectContaining({ id: 'story-style-mystery', name: '悬疑推理', system: true }),
+          expect.objectContaining({ id: 'story-style-healing', name: '轻松治愈', system: true }),
+          expect.objectContaining({ id: 'story-style-dark-realism', name: '黑暗现实', system: true }),
+        ],
       },
     })
-    expect(document.schemaVersion).toBe(8)
+    expect(document.schemaVersion).toBe(10)
     expect(document.workspaces.map(workspace => workspace.title)).toEqual(['魔兽世界'])
     expect(document.propertyDefinitions.map(property => property.id)).toEqual([
       'character-name',
@@ -239,7 +246,7 @@ describe('studio data document', () => {
     const document = resolveStudioDataDocument(v2Document as unknown as StudioDataDocument)
 
     expect(document).toMatchObject({
-      schemaVersion: 8,
+      schemaVersion: 10,
       activeWorkspaceId: 'workspace-mo-shou-shi-jie',
       preferences: {
         locale: 'zh-CN',
@@ -261,7 +268,7 @@ describe('studio data document', () => {
 
     const document = resolveStudioDataDocument(v3Document)
 
-    expect(document.schemaVersion).toBe(8)
+    expect(document.schemaVersion).toBe(10)
     expect(document.worlds.map(world => world.workspaceId)).toEqual(['workspace-mo-shou-shi-jie'])
     expect(document.worlds[0]?.maps[0]?.title).toBe('世界地图')
   })
@@ -282,7 +289,7 @@ describe('studio data document', () => {
 
     const document = resolveStudioDataDocument(v4Document)
 
-    expect(document.schemaVersion).toBe(8)
+    expect(document.schemaVersion).toBe(10)
     expect(document.contents).toEqual([])
     expect(document.workspaces[0]?.moduleCounts.content).toBe(0)
   })
@@ -305,7 +312,7 @@ describe('studio data document', () => {
 
     const document = resolveStudioDataDocument(v5Document)
 
-    expect(document.schemaVersion).toBe(8)
+    expect(document.schemaVersion).toBe(10)
     expect(document.materialTags).toEqual([])
     expect(document.materials).toEqual([
       {
@@ -331,7 +338,7 @@ describe('studio data document', () => {
 
     const document = resolveStudioDataDocument(v6Document)
 
-    expect(document.schemaVersion).toBe(8)
+    expect(document.schemaVersion).toBe(10)
     expect(document.assistantSettings).toEqual({
       defaultProviderId: 'provider-codex-terminal',
       defaultModel: '',
@@ -350,6 +357,13 @@ describe('studio data document', () => {
         },
       ],
       featureBindings: [],
+      storyStyles: [
+        expect.objectContaining({ id: 'story-style-general', name: '通用叙事', system: true }),
+        expect.objectContaining({ id: 'story-style-epic-fantasy', name: '史诗奇幻', system: true }),
+        expect.objectContaining({ id: 'story-style-mystery', name: '悬疑推理', system: true }),
+        expect.objectContaining({ id: 'story-style-healing', name: '轻松治愈', system: true }),
+        expect.objectContaining({ id: 'story-style-dark-realism', name: '黑暗现实', system: true }),
+      ],
     })
     expect(document.assistantChatThreads).toEqual([])
   })
@@ -383,11 +397,41 @@ describe('studio data document', () => {
 
     const document = resolveStudioDataDocument(v7Document)
 
-    expect(document.schemaVersion).toBe(8)
+    expect(document.schemaVersion).toBe(10)
     expect(document.assistantChatThreads[0]?.messages[0]).toMatchObject({
       status: 'error',
       error: '上次生成已中断。',
     })
+  })
+
+  it('migrates v8 documents by adding story styles and cleaning invalid workspace styles', () => {
+    const defaultDocument = createDefaultStudioDataDocument()
+    const v8Document = {
+      ...defaultDocument,
+      schemaVersion: 8,
+      assistantSettings: {
+        ...defaultDocument.assistantSettings,
+        storyStyles: undefined,
+      },
+      workspaces: [
+        {
+          ...defaultDocument.workspaces[0],
+          storyStyleId: 'story-style-epic-fantasy',
+        },
+        {
+          ...defaultDocument.workspaces[0],
+          id: 'workspace-invalid-style',
+          storyStyleId: 'missing-style',
+        },
+      ],
+    } as unknown as StudioDataDocument
+
+    const document = resolveStudioDataDocument(v8Document)
+
+    expect(document.schemaVersion).toBe(10)
+    expect(document.assistantSettings.storyStyles.map(style => style.id)).toContain('story-style-general')
+    expect(document.workspaces[0]?.storyStyleId).toBe('story-style-epic-fantasy')
+    expect(document.workspaces[1]?.storyStyleId).toBeUndefined()
   })
 
   it('migrates legacy world setting groups into configurable records', () => {
@@ -395,7 +439,7 @@ describe('studio data document', () => {
       ...createDefaultStudioDataDocument(),
       propertyDefinitions: createDefaultStudioDataDocument().propertyDefinitions.filter(property => !String(property.kind).startsWith('world-setting')),
       entityRecords: createDefaultStudioDataDocument().entityRecords.filter(record => String(record.kind) !== 'world-setting'),
-    } as StudioDataDocument
+    } as unknown as StudioDataDocument
 
     const document = resolveStudioDataDocument(v4Document)
     const worldSettingProperties = document.propertyDefinitions.filter(property => property.kind === 'world-setting')
@@ -417,6 +461,49 @@ describe('studio data document', () => {
       'world-setting-name': '东部王国',
       'world-setting-category': 'geography',
     })
+  })
+
+  it('migrates v9 documents by normalizing valid outline beat links on contents', () => {
+    const defaultDocument = createDefaultStudioDataDocument()
+    const v9Document = {
+      ...defaultDocument,
+      schemaVersion: 9,
+      contents: [
+        {
+          id: 'content-valid',
+          workspaceId: 'workspace-mo-shou-shi-jie',
+          outlineBeatId: 'beat-dark-portal',
+          volume: '第一卷',
+          chapter: '第一章',
+          body: '',
+          order: 0,
+          createdAt: '2026-06-16T08:00:00.000Z',
+          updatedAt: '2026-06-16T08:00:00.000Z',
+        },
+        {
+          id: 'content-invalid',
+          workspaceId: 'workspace-mo-shou-shi-jie',
+          outlineBeatId: 'missing-beat',
+          volume: '第一卷',
+          chapter: '第二章',
+          body: '',
+          order: 1,
+          createdAt: '2026-06-16T08:00:00.000Z',
+          updatedAt: '2026-06-16T08:00:00.000Z',
+        },
+      ],
+    } as unknown as StudioDataDocument
+
+    const document = resolveStudioDataDocument(v9Document)
+
+    expect(document.schemaVersion).toBe(10)
+    expect(document.contents.map(entry => ({
+      id: entry.id,
+      outlineBeatId: entry.outlineBeatId,
+    }))).toEqual([
+      { id: 'content-valid', outlineBeatId: 'beat-dark-portal' },
+      { id: 'content-invalid', outlineBeatId: undefined },
+    ])
   })
 
   it('replaces the old prototype seed document with the Warcraft sample', () => {

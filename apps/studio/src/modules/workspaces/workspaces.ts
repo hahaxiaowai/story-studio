@@ -62,6 +62,18 @@ export function getWorkspaceById(workspaces: Workspace[], workspaceId: string): 
   return workspaces.find(workspace => workspace.id === workspaceId)
 }
 
+export function updateWorkspaceStoryStyle(workspaces: Workspace[], workspaceId: string, storyStyleId: string): Workspace[] {
+  const nextStoryStyleId = storyStyleId.trim()
+
+  return workspaces.map(workspace => workspace.id === workspaceId
+    ? {
+        ...workspace,
+        storyStyleId: nextStoryStyleId || undefined,
+        updatedAt: new Date().toISOString(),
+      }
+    : workspace)
+}
+
 export function getWorkspaceModuleLabelKey(module: WorkspaceModule): MessageKey {
   const keys = {
     characters: 'nav.characters',

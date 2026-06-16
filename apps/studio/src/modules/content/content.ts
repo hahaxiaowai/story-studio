@@ -7,9 +7,16 @@ export interface CreateContentEntryInput {
 }
 
 export interface UpdateContentEntryInput {
+  outlineBeatId?: string
   volume?: string
   chapter?: string
   body?: string
+  now: string
+}
+
+export interface AssignOutlineBeatToContentEntryInput {
+  entryId: string
+  outlineBeatId: string
   now: string
 }
 
@@ -29,11 +36,38 @@ export function createContentEntry(input: CreateContentEntryInput): WorkspaceCon
 export function updateContentEntry(entry: WorkspaceContentEntry, input: UpdateContentEntryInput): WorkspaceContentEntry {
   return {
     ...entry,
+    ...(input.outlineBeatId !== undefined ? { outlineBeatId: normalizeOptionalId(input.outlineBeatId) } : {}),
     ...(input.volume !== undefined ? { volume: input.volume } : {}),
     ...(input.chapter !== undefined ? { chapter: input.chapter } : {}),
     ...(input.body !== undefined ? { body: input.body } : {}),
     updatedAt: input.now,
   }
+}
+
+export function assignOutlineBeatToContentEntry(
+  entries: WorkspaceContentEntry[],
+  input: AssignOutlineBeatToContentEntryInput,
+): WorkspaceContentEntry[] {
+  const outlineBeatId = normalizeOptionalId(input.outlineBeatId)
+
+  return entries.map((entry) => {
+    if (entry.id === input.entryId) {
+      return {
+        ...entry,
+        outlineBeatId,
+        updatedAt: input.now,
+      }
+    }
+
+    if (outlineBeatId && entry.outlineBeatId === outlineBeatId) {
+      return {
+        ...entry,
+        outlineBeatId: undefined,
+      }
+    }
+
+    return entry
+  })
 }
 
 export function removeContentEntry(entries: WorkspaceContentEntry[], entryId: string): WorkspaceContentEntry[] {
@@ -55,4 +89,8 @@ function createContentEntryId(now: string): string {
   const randomSegment = Math.random().toString(36).slice(2, 8)
 
   return `content-${stamp}-${randomSegment}`
+}
+
+function normalizeOptionalId(value: string): string | undefined {
+  return value.trim() || undefined
 }

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { BeatEvent, CharacterChange, CharacterChangeCategory, OutlineEventTag, PlotLine, TimelineBeat } from '@story-studio/types'
+import type { BeatEvent, CharacterChange, CharacterChangeCategory, OutlineEventTag, PlotLine, TimelineBeat, WorkspaceContentEntry } from '@story-studio/types'
 import type { UpdateBeatInput } from './useOutline'
 import { ArrowDownIcon, ArrowUpIcon, PlusIcon, Trash2Icon } from '@lucide/vue'
 import { Button } from '@/components/ui/button'
@@ -11,6 +11,8 @@ withDefaults(defineProps<{
   beat: TimelineBeat
   plotLines: PlotLine[]
   eventTags: OutlineEventTag[]
+  contentEntries: WorkspaceContentEntry[]
+  linkedContentEntry?: WorkspaceContentEntry
   characterOptions: Array<{ id: string, label: string }>
   characterChangeCategories: Array<{ value: CharacterChangeCategory, label: string }>
   stickyHeader?: boolean
@@ -21,6 +23,7 @@ withDefaults(defineProps<{
 const emit = defineEmits<{
   updateBeat: [patch: UpdateBeatInput]
   createEvent: []
+  linkContentEntry: [contentEntryId: string]
   updateEvent: [eventId: string, patch: Partial<BeatEvent>]
   removeEvent: [eventId: string]
   togglePlotLine: [plotLineId: string]
@@ -33,6 +36,10 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useLocale()
+
+function readSelectValue(event: Event): string {
+  return event.target instanceof HTMLSelectElement ? event.target.value : ''
+}
 </script>
 
 <template>
@@ -83,6 +90,24 @@ const { t } = useLocale()
         <label class="grid gap-1.5 md:col-span-2">
           <span class="text-muted-foreground text-sm">{{ t('outline.summary') }}</span>
           <Textarea :model-value="beat.summary" @update:model-value="emit('updateBeat', { summary: String($event) })" />
+        </label>
+        <label class="grid gap-1.5 md:col-span-2">
+          <span class="text-muted-foreground text-sm">{{ t('outline.linkedContent') }}</span>
+          <select
+            class="border-input bg-background ring-offset-background focus-visible:ring-ring h-9 rounded-md border px-3 text-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+            :value="linkedContentEntry?.id ?? ''"
+            @change="emit('linkContentEntry', readSelectValue($event))"
+          >
+            <option value="">
+              {{ t('outline.noLinkedContent') }}
+            </option>
+            <option v-for="entry in contentEntries" :key="entry.id" :value="entry.id">
+              {{ entry.volume ? `${entry.volume} / ${entry.chapter || t('content.chapter')}` : entry.chapter || t('content.chapter') }}
+            </option>
+          </select>
+          <span class="text-muted-foreground text-xs">
+            {{ linkedContentEntry ? t('outline.linkedContentHint') : t('outline.noLinkedContentHint') }}
+          </span>
         </label>
       </div>
     </section>

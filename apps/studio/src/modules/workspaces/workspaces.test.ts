@@ -5,6 +5,7 @@ import {
   getWorkspaceById,
   getWorkspaceModuleLabelKey,
   isPublicNavigationHash,
+  updateWorkspaceStoryStyle,
 } from './workspaces'
 
 describe('workspaces', () => {
@@ -49,6 +50,31 @@ describe('workspaces', () => {
       title: '海上群星',
       description: '一部关于远航与失忆城市的作品',
     })
+  })
+
+  it('keeps new workspace story style unset by default', () => {
+    const result = appendWorkspace([], {
+      title: '海上群星',
+      now: '2026-05-24T00:00:00.000Z',
+    })
+
+    expect(result.workspaces[0]?.storyStyleId).toBeUndefined()
+  })
+
+  it('updates story style for only the selected workspace', () => {
+    const firstResult = appendWorkspace([], {
+      title: '海上群星',
+      now: '2026-05-24T00:00:00.000Z',
+    })
+    const secondResult = appendWorkspace(firstResult.workspaces, {
+      title: '雾港来信',
+      now: '2026-05-24T00:00:00.000Z',
+    })
+
+    const workspaces = updateWorkspaceStoryStyle(secondResult.workspaces, firstResult.activeWorkspaceId, 'story-style-epic-fantasy')
+
+    expect(workspaces.find(workspace => workspace.id === firstResult.activeWorkspaceId)?.storyStyleId).toBe('story-style-epic-fantasy')
+    expect(workspaces.find(workspace => workspace.id === secondResult.activeWorkspaceId)?.storyStyleId).toBeUndefined()
   })
 
   it('rejects empty workspace titles', () => {

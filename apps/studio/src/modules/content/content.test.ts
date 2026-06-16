@@ -1,6 +1,7 @@
 import type { WorkspaceContentEntry } from '@story-studio/types'
 import { describe, expect, it } from 'vitest'
 import {
+  assignOutlineBeatToContentEntry,
   createContentEntry,
   getContentEntriesByWorkspace,
   removeContentEntry,
@@ -24,6 +25,7 @@ describe('content entries', () => {
       createdAt: '2026-05-28T10:00:00.000Z',
       updatedAt: '2026-05-28T10:00:00.000Z',
     })
+    expect(entry.outlineBeatId).toBeUndefined()
     expect(entry.id).toMatch(/^content-20260528100000-/)
   })
 
@@ -77,12 +79,59 @@ describe('content entries', () => {
       'content-3',
     ])
   })
+
+  it('assigns one outline beat to one content entry', () => {
+    const entries = [
+      createEntry({ id: 'content-1', outlineBeatId: 'beat-old' }),
+      createEntry({ id: 'content-2', outlineBeatId: 'beat-target' }),
+      createEntry({ id: 'content-3' }),
+    ]
+
+    const nextEntries = assignOutlineBeatToContentEntry(entries, {
+      entryId: 'content-1',
+      outlineBeatId: 'beat-target',
+      now: '2026-05-28T11:00:00.000Z',
+    })
+
+    expect(nextEntries.map(entry => ({
+      id: entry.id,
+      outlineBeatId: entry.outlineBeatId,
+      updatedAt: entry.updatedAt,
+    }))).toEqual([
+      { id: 'content-1', outlineBeatId: 'beat-target', updatedAt: '2026-05-28T11:00:00.000Z' },
+      { id: 'content-2', outlineBeatId: undefined, updatedAt: '2026-05-28T10:00:00.000Z' },
+      { id: 'content-3', outlineBeatId: undefined, updatedAt: '2026-05-28T10:00:00.000Z' },
+    ])
+  })
+
+  it('clears an outline beat assignment from a content entry', () => {
+    const entries = [
+      createEntry({ id: 'content-1', outlineBeatId: 'beat-old' }),
+      createEntry({ id: 'content-2', outlineBeatId: 'beat-target' }),
+    ]
+
+    const nextEntries = assignOutlineBeatToContentEntry(entries, {
+      entryId: 'content-1',
+      outlineBeatId: '',
+      now: '2026-05-28T11:00:00.000Z',
+    })
+
+    expect(nextEntries.map(entry => ({
+      id: entry.id,
+      outlineBeatId: entry.outlineBeatId,
+      updatedAt: entry.updatedAt,
+    }))).toEqual([
+      { id: 'content-1', outlineBeatId: undefined, updatedAt: '2026-05-28T11:00:00.000Z' },
+      { id: 'content-2', outlineBeatId: 'beat-target', updatedAt: '2026-05-28T10:00:00.000Z' },
+    ])
+  })
 })
 
 function createEntry(input: Partial<WorkspaceContentEntry>): WorkspaceContentEntry {
   return {
     id: input.id ?? 'content-1',
     workspaceId: input.workspaceId ?? 'workspace-story',
+    outlineBeatId: input.outlineBeatId,
     volume: input.volume ?? '第一卷',
     chapter: input.chapter ?? '第一章',
     body: input.body ?? '',

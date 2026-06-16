@@ -3,6 +3,7 @@ import type { ComputedRef, Ref } from 'vue'
 import type { AssistantChatRequestMessage, AssistantChatTransportKind } from './assistantChat'
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useStudioData } from '../storage/useStudioData'
+import { resolveAssistantStoryStyle } from './assistant'
 import {
   appendAssistantChunk,
   ASSISTANT_CHAT_TAURI_UNAVAILABLE,
@@ -65,6 +66,7 @@ export function useAssistantChat(input: {
   const currentWorkspace = computed<Workspace | undefined>(() => {
     return studioData.document.value.workspaces.find(workspace => workspace.id === studioData.document.value.activeWorkspaceId)
   })
+  const currentStoryStyle = computed(() => resolveAssistantStoryStyle(input.settings.value, currentWorkspace.value?.storyStyleId))
   const threads = computed(() => {
     return filterAssistantThreadsByWorkspace(
       studioData.document.value.assistantChatThreads,
@@ -247,7 +249,11 @@ export function useAssistantChat(input: {
         baseUrl: normalizeOpenAiCompatibleBaseUrl(input.provider.baseUrl),
         apiKey: input.provider.apiKey,
         model: input.provider.model,
-        messages: toAssistantChatRequestMessages(input.thread) satisfies AssistantChatRequestMessage[],
+        messages: toAssistantChatRequestMessages(input.thread, {
+          workspace: currentWorkspace.value,
+          moduleName: '助手',
+          storyStyle: currentStoryStyle.value,
+        }) satisfies AssistantChatRequestMessage[],
       })
       return
     }
@@ -260,6 +266,7 @@ export function useAssistantChat(input: {
       prompt: prepareLocalTerminalPrompt({
         workspace: currentWorkspace.value,
         provider: input.provider,
+        storyStyle: currentStoryStyle.value,
         moduleName: '助手',
         userMessage: input.userMessage,
       }),

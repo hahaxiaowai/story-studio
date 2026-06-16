@@ -1,5 +1,6 @@
 import type { AssistantSettings } from '@story-studio/types'
 import { describe, expect, it } from 'vitest'
+import { createAssistantSettings } from './assistant'
 import {
   createAssistantRunner,
   getAssistantRunDisabledReason,
@@ -132,6 +133,7 @@ describe('assistant runner', () => {
 
 function createSettings(input: { localCommand?: string } = {}): AssistantSettings {
   return {
+    ...createAssistantSettings(),
     defaultProviderId: 'provider-api',
     defaultModel: 'gpt-4.1-mini',
     providers: [

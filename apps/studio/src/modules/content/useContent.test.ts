@@ -66,6 +66,34 @@ describe('useContent', () => {
     })
   })
 
+  it('links content entries to outline beats with one-to-one ownership', async () => {
+    const driver = createDriver(createDefaultStudioDataDocument())
+    await useStudioData(driver).ready
+
+    const content = useContent()
+    const firstEntry = content.addEntry()
+    const secondEntry = content.addEntry()
+    content.linkEntryToBeat(firstEntry.id, 'beat-dark-portal')
+    content.linkEntryToBeat(secondEntry.id, 'beat-dark-portal')
+    await nextTick()
+
+    expect(content.entries.value.map(entry => ({
+      id: entry.id,
+      outlineBeatId: entry.outlineBeatId,
+    }))).toEqual([
+      { id: firstEntry.id, outlineBeatId: undefined },
+      { id: secondEntry.id, outlineBeatId: 'beat-dark-portal' },
+    ])
+    expect(driver.save).toHaveBeenLastCalledWith(expect.objectContaining({
+      contents: expect.arrayContaining([
+        expect.objectContaining({
+          id: secondEntry.id,
+          outlineBeatId: 'beat-dark-portal',
+        }),
+      ]),
+    }))
+  })
+
   it('removes entries and updates content counts', async () => {
     const driver = createDriver(createDefaultStudioDataDocument())
     await useStudioData(driver).ready

@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { CopyIcon, MessageSquarePlusIcon, RotateCcwIcon, SendIcon, SquareIcon, Trash2Icon } from '@lucide/vue'
-import { computed, nextTick, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { useLocale } from '@/composables/useLocale'
+import { consumeAssistantDraftPrompt } from './assistantDraft'
 import { useAssistant } from './useAssistant'
 import { useAssistantChat } from './useAssistantChat'
 
@@ -33,6 +34,13 @@ watch(() => chat.activeThread.value?.messages.map(message => `${message.id}:${me
 
     messageList.value.scrollTop = messageList.value.scrollHeight
   })
+})
+
+onMounted(() => {
+  const draftPrompt = consumeAssistantDraftPrompt()
+
+  if (draftPrompt)
+    chat.inputMessage.value = draftPrompt
 })
 
 function handleComposerKeydown(event: KeyboardEvent): void {

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { BeatEvent, CharacterChange, CharacterChangeCategory, EntityRecord, TimelineBeat } from '@story-studio/types'
+import type { BeatEvent, CharacterChange, CharacterChangeCategory, EntityRecord, TimelineBeat, WorkspaceContentEntry } from '@story-studio/types'
 import { PlusIcon } from '@lucide/vue'
 import { computed, ref, watch } from 'vue'
 import { Button } from '@/components/ui/button'
@@ -11,6 +11,7 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet'
 import { useLocale } from '@/composables/useLocale'
+import { useContent } from '../content/useContent'
 import { getEntityTitle } from '../entities/entities'
 import { useStudioData } from '../storage/useStudioData'
 import { useWorkspaces } from '../workspaces/useWorkspaces'
@@ -39,6 +40,10 @@ const {
   removeBeat,
   moveBeat,
 } = useOutline()
+const {
+  entries: contentEntries,
+  linkEntryToBeat,
+} = useContent()
 const mobileEditorOpen = ref(false)
 
 const selectedBeatIdModel = computed<string | undefined>({
@@ -64,6 +69,11 @@ const characterChangeCategories = computed<Array<{ value: CharacterChangeCategor
   { value: 'depth', label: t('outline.change.depth') },
   { value: 'state', label: t('outline.change.state') },
 ])
+const linkedContentByBeatId = computed<Map<string, WorkspaceContentEntry>>(() => {
+  return new Map(contentEntries.value
+    .filter(entry => entry.outlineBeatId)
+    .map(entry => [entry.outlineBeatId!, entry]))
+})
 
 watch(beats, (nextBeats) => {
   if (!nextBeats.length) {
@@ -99,6 +109,22 @@ function deleteSelectedBeat(): void {
     return
 
   removeBeat(selectedBeat.value.id)
+}
+
+function linkSelectedBeatContentEntry(contentEntryId: string): void {
+  if (!selectedBeat.value)
+    return
+
+  const currentLinkedEntry = linkedContentByBeatId.value.get(selectedBeat.value.id)
+
+  if (!contentEntryId) {
+    if (currentLinkedEntry)
+      linkEntryToBeat(currentLinkedEntry.id, '')
+
+    return
+  }
+
+  linkEntryToBeat(contentEntryId, selectedBeat.value.id)
 }
 
 function togglePlotLine(plotLineId: string): void {
@@ -231,6 +257,9 @@ function createLocalId(prefix: string): string {
             <span v-if="card.characterChangeCount" class="bg-muted-foreground/10 text-muted-foreground rounded px-1.5 py-0.5 text-[11px]">
               {{ card.characterChangeCount }} {{ t('outline.characterChanges') }}
             </span>
+            <span v-if="linkedContentByBeatId.get(card.beat.id)" class="bg-primary/10 text-primary rounded px-1.5 py-0.5 text-[11px]">
+              {{ t('outline.linkedContentShort') }} {{ linkedContentByBeatId.get(card.beat.id)?.chapter || t('content.chapter') }}
+            </span>
           </span>
         </button>
       </div>
@@ -251,10 +280,13 @@ function createLocalId(prefix: string): string {
         :beat="selectedBeat"
         :plot-lines="plotLines"
         :event-tags="eventTags"
+        :content-entries="contentEntries"
+        :linked-content-entry="linkedContentByBeatId.get(selectedBeat.id)"
         :character-options="characterOptions"
         :character-change-categories="characterChangeCategories"
         sticky-header
         @update-beat="updateSelectedBeat"
+        @link-content-entry="linkSelectedBeatContentEntry"
         @create-event="createEvent"
         @update-event="updateEvent"
         @remove-event="removeEvent"
@@ -284,9 +316,12 @@ function createLocalId(prefix: string): string {
             :beat="selectedBeat"
             :plot-lines="plotLines"
             :event-tags="eventTags"
+            :content-entries="contentEntries"
+            :linked-content-entry="linkedContentByBeatId.get(selectedBeat.id)"
             :character-options="characterOptions"
             :character-change-categories="characterChangeCategories"
             @update-beat="updateSelectedBeat"
+            @link-content-entry="linkSelectedBeatContentEntry"
             @create-event="createEvent"
             @update-event="updateEvent"
             @remove-event="removeEvent"

@@ -2,12 +2,17 @@ import type { AiProviderConfig, AssistantSettings } from '@story-studio/types'
 import { describe, expect, it } from 'vitest'
 import {
   createAssistantSettings,
+  createAssistantStoryStyle,
   createProvider,
+  getDefaultAssistantStoryStyle,
   getFeatureModelBinding,
+  removeAssistantStoryStyle,
   removeFeatureBinding,
   removeProvider,
+  resolveAssistantStoryStyle,
   setFeatureBinding,
   updateAssistantSettings,
+  updateAssistantStoryStyle,
   updateProvider,
 } from './assistant'
 
@@ -31,6 +36,118 @@ describe('assistant settings', () => {
         },
       ],
       featureBindings: [],
+      storyStyles: [
+        expect.objectContaining({
+          id: 'story-style-general',
+          name: '通用叙事',
+          system: true,
+        }),
+        expect.objectContaining({
+          id: 'story-style-epic-fantasy',
+          name: '史诗奇幻',
+          system: true,
+        }),
+        expect.objectContaining({
+          id: 'story-style-mystery',
+          name: '悬疑推理',
+          system: true,
+        }),
+        expect.objectContaining({
+          id: 'story-style-healing',
+          name: '轻松治愈',
+          system: true,
+        }),
+        expect.objectContaining({
+          id: 'story-style-dark-realism',
+          name: '黑暗现实',
+          system: true,
+        }),
+      ],
+    })
+  })
+
+  it('creates custom story styles with normalized fields', () => {
+    const style = createAssistantStoryStyle({
+      name: '  新怪谈  ',
+      description: '  都市民俗恐怖  ',
+      constraints: '  控制信息密度，避免直接解释怪异来源。  ',
+      now: '2026-06-10T08:00:00.000Z',
+    })
+
+    expect(style).toMatchObject({
+      name: '新怪谈',
+      description: '都市民俗恐怖',
+      constraints: '控制信息密度，避免直接解释怪异来源。',
+      system: false,
+      createdAt: '2026-06-10T08:00:00.000Z',
+      updatedAt: '2026-06-10T08:00:00.000Z',
+    })
+    expect(style.id).toMatch(/^story-style-20260610080000-/)
+  })
+
+  it('updates custom story styles but preserves system styles', () => {
+    const settings = createAssistantSettings()
+    const customStyle = createAssistantStoryStyle({
+      name: '新怪谈',
+      description: '都市民俗恐怖',
+      constraints: '克制解释。',
+      now: '2026-06-10T08:00:00.000Z',
+    })
+    const withCustom = {
+      ...settings,
+      storyStyles: [...settings.storyStyles, customStyle],
+    }
+
+    const updated = updateAssistantStoryStyle(withCustom, customStyle.id, {
+      name: '  民俗悬疑  ',
+      constraints: '  保留不确定性。  ',
+      now: '2026-06-10T09:00:00.000Z',
+    })
+    const unchangedSystem = updateAssistantStoryStyle(updated, 'story-style-general', {
+      name: '  被改名  ',
+      now: '2026-06-10T09:00:00.000Z',
+    })
+
+    expect(updated.storyStyles.find(style => style.id === customStyle.id)).toMatchObject({
+      name: '民俗悬疑',
+      description: '都市民俗恐怖',
+      constraints: '保留不确定性。',
+      updatedAt: '2026-06-10T09:00:00.000Z',
+    })
+    expect(unchangedSystem.storyStyles.find(style => style.id === 'story-style-general')?.name).toBe('通用叙事')
+  })
+
+  it('prevents deleting system story styles and deletes custom styles', () => {
+    const settings = createAssistantSettings()
+    const customStyle = createAssistantStoryStyle({
+      name: '新怪谈',
+      description: '',
+      constraints: '',
+      now: '2026-06-10T08:00:00.000Z',
+    })
+    const withCustom = {
+      ...settings,
+      storyStyles: [...settings.storyStyles, customStyle],
+    }
+
+    expect(removeAssistantStoryStyle(withCustom, 'story-style-general').storyStyles.some(style => style.id === 'story-style-general')).toBe(true)
+    expect(removeAssistantStoryStyle(withCustom, customStyle.id).storyStyles.some(style => style.id === customStyle.id)).toBe(false)
+  })
+
+  it('resolves invalid workspace style ids to the default story style', () => {
+    const settings = createAssistantSettings()
+
+    expect(getDefaultAssistantStoryStyle(settings)).toMatchObject({
+      id: 'story-style-general',
+      name: '通用叙事',
+    })
+    expect(resolveAssistantStoryStyle(settings, 'missing-style')).toMatchObject({
+      id: 'story-style-general',
+      name: '通用叙事',
+    })
+    expect(resolveAssistantStoryStyle(settings, 'story-style-epic-fantasy')).toMatchObject({
+      id: 'story-style-epic-fantasy',
+      name: '史诗奇幻',
     })
   })
 
@@ -123,6 +240,7 @@ describe('assistant settings', () => {
         createProviderRecord({ id: 'provider-outline', model: 'outline-model' }),
       ],
       featureBindings: [],
+      storyStyles: [],
     }
 
     const withOverride = setFeatureBinding(settings, {
@@ -154,6 +272,7 @@ describe('assistant settings', () => {
         { feature: 'outline', providerId: 'provider-1', model: 'outline-model' },
         { feature: 'content', providerId: 'provider-2', model: 'content-model' },
       ],
+      storyStyles: [],
     }
 
     expect(removeProvider(settings, 'provider-1')).toMatchObject({
@@ -180,6 +299,7 @@ describe('assistant settings', () => {
       defaultModel: 'global-model',
       providers: [provider],
       featureBindings: [],
+      storyStyles: settings.storyStyles,
     })
   })
 })

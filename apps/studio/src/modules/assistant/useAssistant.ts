@@ -1,15 +1,20 @@
-import type { AiProviderConfig, AiProviderKind, AssistantFeatureKey, AssistantSettings } from '@story-studio/types'
+import type { AiProviderConfig, AiProviderKind, AssistantFeatureKey, AssistantSettings, AssistantStoryStyle } from '@story-studio/types'
 import type { ComputedRef } from 'vue'
 import { computed } from 'vue'
 import { useStudioData } from '../storage/useStudioData'
 import {
+  createAssistantStoryStyle,
   createProvider,
   getAssistantFeatures,
+  getDefaultAssistantStoryStyle,
   getFeatureModelBinding,
+  removeAssistantStoryStyle,
   removeFeatureBinding,
   removeProvider,
+  resolveAssistantStoryStyle,
   setFeatureBinding,
   updateAssistantSettings,
+  updateAssistantStoryStyle,
   updateProvider,
 } from './assistant'
 
@@ -18,10 +23,16 @@ export type UpdateProviderInput = Omit<Parameters<typeof updateProvider>[1], 'no
 export function useAssistant(): {
   settings: ComputedRef<AssistantSettings>
   providers: ComputedRef<AiProviderConfig[]>
+  storyStyles: ComputedRef<AssistantStoryStyle[]>
   features: readonly AssistantFeatureKey[]
   addProvider: (kind: AiProviderKind) => AiProviderConfig
   updateProviderById: (providerId: string, input: UpdateProviderInput) => void
   removeProviderById: (providerId: string) => void
+  addStoryStyle: (input: Omit<Parameters<typeof createAssistantStoryStyle>[0], 'now'>) => AssistantStoryStyle
+  updateStoryStyleById: (styleId: string, input: Omit<Parameters<typeof updateAssistantStoryStyle>[2], 'now'>) => void
+  removeStoryStyleById: (styleId: string) => void
+  getDefaultStoryStyle: () => AssistantStoryStyle
+  resolveStoryStyle: (styleId: string | undefined) => AssistantStoryStyle
   updateDefaults: (input: Parameters<typeof updateAssistantSettings>[1]) => void
   updateFeatureBinding: (input: Parameters<typeof setFeatureBinding>[1]) => void
   clearFeatureBinding: (feature: AssistantFeatureKey) => void
@@ -30,6 +41,7 @@ export function useAssistant(): {
   const studioData = useStudioData()
   const settings = computed<AssistantSettings>(() => studioData.document.value.assistantSettings)
   const providers = computed<AiProviderConfig[]>(() => settings.value.providers)
+  const storyStyles = computed<AssistantStoryStyle[]>(() => settings.value.storyStyles)
 
   function addProvider(kind: AiProviderKind): AiProviderConfig {
     const provider = createProvider({
@@ -74,6 +86,48 @@ export function useAssistant(): {
     })
   }
 
+  function addStoryStyle(input: Omit<Parameters<typeof createAssistantStoryStyle>[0], 'now'>): AssistantStoryStyle {
+    const style = createAssistantStoryStyle({
+      ...input,
+      now: new Date().toISOString(),
+    })
+
+    studioData.updateDocument((document) => {
+      document.assistantSettings = {
+        ...document.assistantSettings,
+        storyStyles: [...document.assistantSettings.storyStyles, style],
+      }
+    })
+
+    return style
+  }
+
+  function updateStoryStyleById(styleId: string, input: Omit<Parameters<typeof updateAssistantStoryStyle>[2], 'now'>): void {
+    studioData.updateDocument((document) => {
+      document.assistantSettings = updateAssistantStoryStyle(document.assistantSettings, styleId, {
+        ...input,
+        now: new Date().toISOString(),
+      })
+    })
+  }
+
+  function removeStoryStyleById(styleId: string): void {
+    studioData.updateDocument((document) => {
+      document.assistantSettings = removeAssistantStoryStyle(document.assistantSettings, styleId)
+      document.workspaces = document.workspaces.map(workspace => workspace.storyStyleId === styleId
+        ? { ...workspace, storyStyleId: undefined }
+        : workspace)
+    })
+  }
+
+  function getDefaultStoryStyle(): AssistantStoryStyle {
+    return getDefaultAssistantStoryStyle(settings.value)
+  }
+
+  function resolveStoryStyle(styleId: string | undefined): AssistantStoryStyle {
+    return resolveAssistantStoryStyle(settings.value, styleId)
+  }
+
   function updateDefaults(input: Parameters<typeof updateAssistantSettings>[1]): void {
     studioData.updateDocument((document) => {
       document.assistantSettings = updateAssistantSettings(document.assistantSettings, input)
@@ -99,10 +153,16 @@ export function useAssistant(): {
   return {
     settings,
     providers,
+    storyStyles,
     features: getAssistantFeatures(),
     addProvider,
     updateProviderById,
     removeProviderById,
+    addStoryStyle,
+    updateStoryStyleById,
+    removeStoryStyleById,
+    getDefaultStoryStyle,
+    resolveStoryStyle,
     updateDefaults,
     updateFeatureBinding,
     clearFeatureBinding,

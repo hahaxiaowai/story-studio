@@ -4,6 +4,7 @@ import { computed } from 'vue'
 import { useStudioData } from '../storage/useStudioData'
 import { useWorkspaces } from '../workspaces/useWorkspaces'
 import {
+  assignOutlineBeatToContentEntry,
   createContentEntry,
   getContentEntriesByWorkspace,
   removeContentEntry,
@@ -16,6 +17,7 @@ export function useContent(): {
   entries: ComputedRef<WorkspaceContentEntry[]>
   addEntry: () => WorkspaceContentEntry
   updateEntry: (entryId: string, input: UpdateContentInput) => void
+  linkEntryToBeat: (entryId: string, outlineBeatId: string) => void
   removeEntry: (entryId: string) => void
 } {
   const studioData = useStudioData()
@@ -53,6 +55,26 @@ export function useContent(): {
     })
   }
 
+  function linkEntryToBeat(entryId: string, outlineBeatId: string): void {
+    const workspaceId = activeWorkspace.value.id
+
+    studioData.updateDocument((document) => {
+      const nextWorkspaceEntries = assignOutlineBeatToContentEntry(
+        document.contents.filter(entry => entry.workspaceId === workspaceId),
+        {
+          entryId,
+          outlineBeatId,
+          now: new Date().toISOString(),
+        },
+      )
+
+      document.contents = [
+        ...document.contents.filter(entry => entry.workspaceId !== workspaceId),
+        ...nextWorkspaceEntries,
+      ]
+    })
+  }
+
   function removeEntry(entryId: string): void {
     const workspaceId = activeWorkspace.value.id
 
@@ -75,6 +97,7 @@ export function useContent(): {
     entries,
     addEntry,
     updateEntry,
+    linkEntryToBeat,
     removeEntry,
   }
 }

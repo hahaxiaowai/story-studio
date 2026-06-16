@@ -174,6 +174,7 @@ export interface Workspace {
   id: string
   title: string
   description?: string
+  storyStyleId?: string
   status: 'draft' | 'archived'
   moduleCounts: WorkspaceModuleCounts
   createdAt: string
@@ -211,6 +212,7 @@ export interface WorkspaceMaterialRef {
 export interface WorkspaceContentEntry {
   id: string
   workspaceId: string
+  outlineBeatId?: string
   volume: string
   chapter: string
   body: string
@@ -242,11 +244,22 @@ export interface AssistantFeatureBinding {
   model: string
 }
 
+export interface AssistantStoryStyle {
+  id: string
+  name: string
+  description: string
+  constraints: string
+  system: boolean
+  createdAt: string
+  updatedAt: string
+}
+
 export interface AssistantSettings {
   defaultProviderId: string
   defaultModel: string
   providers: AiProviderConfig[]
   featureBindings: AssistantFeatureBinding[]
+  storyStyles: AssistantStoryStyle[]
 }
 
 export type AssistantChatMessageRole = 'user' | 'assistant' | 'system'
@@ -274,7 +287,7 @@ export interface AssistantChatThread {
   updatedAt: string
 }
 
-export type StudioDataSchemaVersion = 8
+export type StudioDataSchemaVersion = 10
 
 export interface StudioPreferences {
   locale: 'zh-CN' | 'en-US'

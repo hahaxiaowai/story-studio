@@ -1,11 +1,11 @@
-import type { AssistantChatMessage, AssistantChatThread, EntityRecord, MaterialAsset, MaterialTag, PropertyDefinition, StudioDataDocument, StudioPreferences, WorkspaceContentEntry, WorkspaceWorld, WorldSettingGroup } from '@story-studio/types'
+import type { AssistantChatMessage, AssistantChatThread, EntityRecord, MaterialAsset, MaterialTag, PropertyDefinition, StudioDataDocument, StudioPreferences, WorkspaceContentEntry, WorkspaceOutline, WorkspaceWorld, WorldSettingGroup } from '@story-studio/types'
 import { createAssistantSettings, normalizeAssistantSettings } from '../assistant/assistant'
 import { defaultPropertyDefinitions } from '../properties/properties'
 import { seedWorkspaces } from '../workspaces/workspaces'
 import { createWorkspaceWorld } from '../worlds/world'
 import { createDefaultEntityRecords, createDefaultOutlines, createDefaultWorlds, isLegacyPrototypeSeedDocument } from './defaultContent'
 
-export const STUDIO_DATA_SCHEMA_VERSION = 8
+export const STUDIO_DATA_SCHEMA_VERSION = 10
 
 export const LEGACY_LOCALE_STORAGE_KEY = 'story-studio:locale'
 export const LEGACY_THEME_MODE_STORAGE_KEY = 'story-studio:theme-mode'
@@ -77,10 +77,11 @@ function migrateStudioDataDocument(document: StudioDataDocument): StudioDataDocu
   }
   const outlines = sourceDocument.outlines ?? []
   const worlds = sourceDocument.worlds ?? sourceDocument.workspaces.map(workspace => createWorkspaceWorld(workspace.id, sourceDocument.updatedAt))
-  const contents = normalizeContentEntries(sourceDocument.contents ?? [])
+  const contents = normalizeContentEntries(sourceDocument.contents ?? [], outlines)
   const materials = normalizeMaterials(sourceDocument.materials ?? [])
   const materialTags = normalizeMaterialTags(sourceDocument.materialTags ?? [])
   const assistantSettings = normalizeAssistantSettings(sourceDocument.assistantSettings)
+  const storyStyleIds = new Set(assistantSettings.storyStyles.map(style => style.id))
   const workspaceIds = new Set(sourceDocument.workspaces.map(workspace => workspace.id))
   const assistantChatThreads = normalizeAssistantChatThreads(sourceDocument.assistantChatThreads ?? [], workspaceIds, sourceDocument.updatedAt)
   const propertyDefinitions = mergeDefaultPropertyDefinitions(sourceDocument.propertyDefinitions ?? [])
@@ -89,15 +90,7 @@ function migrateStudioDataDocument(document: StudioDataDocument): StudioDataDocu
   return {
     ...sourceDocument,
     schemaVersion: STUDIO_DATA_SCHEMA_VERSION,
-    workspaces: sourceDocument.workspaces.map(workspace => ({
-      ...workspace,
-      moduleCounts: {
-        outline: workspace.moduleCounts.outline,
-        characters: workspace.moduleCounts.characters,
-        maps: workspace.moduleCounts.maps,
-        content: contents.filter(entry => entry.workspaceId === workspace.id).length,
-      },
-    })),
+    workspaces: sourceDocument.workspaces.map(workspace => normalizeWorkspace(workspace, storyStyleIds, contents)),
     propertyDefinitions: propertyDefinitions.filter(property => String(property.kind) !== 'task' && String(property.kind) !== 'outline'),
     entityRecords: entityRecords.filter(record => String(record.kind) !== 'task' && String(record.kind) !== 'outline'),
     outlines,
@@ -108,6 +101,25 @@ function migrateStudioDataDocument(document: StudioDataDocument): StudioDataDocu
     materialRefs: sourceDocument.materialRefs ?? [],
     assistantSettings,
     assistantChatThreads,
+  }
+}
+
+function normalizeWorkspace(
+  workspace: StudioDataDocument['workspaces'][number],
+  storyStyleIds: Set<string>,
+  contents: WorkspaceContentEntry[],
+): StudioDataDocument['workspaces'][number] {
+  const storyStyleId = normalizeStorageText(workspace.storyStyleId)
+
+  return {
+    ...workspace,
+    ...(storyStyleId && storyStyleIds.has(storyStyleId) ? { storyStyleId } : { storyStyleId: undefined }),
+    moduleCounts: {
+      outline: workspace.moduleCounts.outline,
+      characters: workspace.moduleCounts.characters,
+      maps: workspace.moduleCounts.maps,
+      content: contents.filter(entry => entry.workspaceId === workspace.id).length,
+    },
   }
 }
 
@@ -153,14 +165,31 @@ function normalizeStorageText(value: string | undefined): string {
   return value?.trim() ?? ''
 }
 
-function normalizeContentEntries(contents: WorkspaceContentEntry[]): WorkspaceContentEntry[] {
+function normalizeContentEntries(contents: WorkspaceContentEntry[], outlines: WorkspaceOutline[]): WorkspaceContentEntry[] {
+  const beatWorkspaceById = new Map<string, string>()
+
+  for (const outline of outlines) {
+    for (const beat of outline.beats)
+      beatWorkspaceById.set(beat.id, outline.workspaceId)
+  }
+
   return contents.map((entry, index) => ({
     ...entry,
+    outlineBeatId: normalizeContentOutlineBeatId(entry, beatWorkspaceById),
     volume: entry.volume ?? '',
     chapter: entry.chapter ?? '',
     body: entry.body ?? '',
     order: Number.isFinite(entry.order) ? entry.order : index,
   }))
+}
+
+function normalizeContentOutlineBeatId(entry: WorkspaceContentEntry, beatWorkspaceById: Map<string, string>): string | undefined {
+  const outlineBeatId = normalizeStorageText(entry.outlineBeatId)
+
+  if (!outlineBeatId)
+    return undefined
+
+  return beatWorkspaceById.get(outlineBeatId) === entry.workspaceId ? outlineBeatId : undefined
 }
 
 function normalizeMaterials(materials: MaterialAsset[]): MaterialAsset[] {

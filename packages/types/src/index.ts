@@ -8,6 +8,7 @@ export type {
   AssistantFeatureBinding,
   AssistantFeatureKey,
   AssistantSettings,
+  AssistantStoryStyle,
   BeatEvent,
   CharacterChange,
   CharacterChangeCategory,

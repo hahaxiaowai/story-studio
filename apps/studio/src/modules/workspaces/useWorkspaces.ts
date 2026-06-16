@@ -6,6 +6,7 @@ import { useStudioData } from '../storage/useStudioData'
 import {
   appendWorkspace,
   getWorkspaceById,
+  updateWorkspaceStoryStyle,
 } from './workspaces'
 
 export type AddWorkspaceInput = Pick<AppendWorkspaceOptions, 'title' | 'description'>
@@ -15,6 +16,7 @@ export function useWorkspaces(): {
   activeWorkspaceId: Ref<string, string>
   addWorkspace: (input?: AddWorkspaceInput) => Workspace
   setActiveWorkspace: (workspaceId: string) => void
+  setActiveWorkspaceStoryStyle: (storyStyleId: string) => void
   workspaces: Ref<Workspace[], Workspace[]>
 } {
   const studioData = useStudioData()
@@ -62,11 +64,18 @@ export function useWorkspaces(): {
     return activeWorkspace.value
   }
 
+  function setActiveWorkspaceStoryStyle(storyStyleId: string): void {
+    studioData.updateDocument((document) => {
+      document.workspaces = updateWorkspaceStoryStyle(document.workspaces, document.activeWorkspaceId, storyStyleId)
+    })
+  }
+
   return {
     activeWorkspace,
     activeWorkspaceId,
     addWorkspace,
     setActiveWorkspace,
+    setActiveWorkspaceStoryStyle,
     workspaces,
   }
 }

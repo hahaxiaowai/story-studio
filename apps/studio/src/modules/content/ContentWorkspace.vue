@@ -1,15 +1,22 @@
 <script setup lang="ts">
 import type { WorkspaceContentEntry } from '@story-studio/types'
-import { PlusIcon, Trash2Icon } from '@lucide/vue'
+import type { ContentAssistantAction } from './contentAssistant'
+import { PenLineIcon, PlusIcon, ShieldCheckIcon, SparklesIcon, Trash2Icon } from '@lucide/vue'
 import { computed, ref, watch } from 'vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { useLocale } from '@/composables/useLocale'
+import { useWorkspaces } from '@/modules/workspaces/useWorkspaces'
+import { queueAssistantDraftPrompt } from '../assistant/assistantDraft'
+import { useOutline } from '../outlines/useOutline'
+import { buildContentAssistantPrompt, countContentWords } from './contentAssistant'
 import { useContent } from './useContent'
 
 const { t } = useLocale()
-const { entries, addEntry, updateEntry, removeEntry } = useContent()
+const { entries, addEntry, updateEntry, linkEntryToBeat, removeEntry } = useContent()
+const { activeWorkspace } = useWorkspaces()
+const { beats } = useOutline()
 const selectedEntryId = ref<string>()
 
 const selectedEntry = computed<WorkspaceContentEntry | undefined>(() => entries.value.find(entry => entry.id === selectedEntryId.value) ?? entries.value[0])
@@ -18,6 +25,19 @@ const selectedTitle = computed<string>(() => {
     return t('content.title')
 
   return `${selectedEntry.value.volume || t('content.volume')} / ${selectedEntry.value.chapter || t('content.chapter')}`
+})
+const selectedWordCount = computed<number>(() => selectedEntry.value ? countContentWords(selectedEntry.value.body) : 0)
+const selectedUpdatedAt = computed<string>(() => {
+  if (!selectedEntry.value)
+    return ''
+
+  return new Date(selectedEntry.value.updatedAt).toLocaleString()
+})
+const selectedLinkedBeat = computed(() => {
+  if (!selectedEntry.value?.outlineBeatId)
+    return undefined
+
+  return beats.value.find(beat => beat.id === selectedEntry.value?.outlineBeatId)
 })
 
 watch(entries, (nextEntries) => {
@@ -42,11 +62,37 @@ function updateSelectedEntry(input: { volume?: string, chapter?: string, body?: 
   updateEntry(selectedEntry.value.id, input)
 }
 
+function updateSelectedEntryBeat(event: Event): void {
+  if (!selectedEntry.value)
+    return
+
+  linkEntryToBeat(selectedEntry.value.id, readEventValue(event))
+}
+
 function deleteSelectedEntry(): void {
   if (!selectedEntry.value)
     return
 
   removeEntry(selectedEntry.value.id)
+}
+
+function sendSelectedEntryToAssistant(action: ContentAssistantAction): void {
+  if (!selectedEntry.value)
+    return
+
+  queueAssistantDraftPrompt(buildContentAssistantPrompt({
+    action,
+    workspaceTitle: activeWorkspace.value.title,
+    entry: selectedEntry.value,
+    linkedBeat: selectedLinkedBeat.value,
+  }))
+
+  if (typeof window !== 'undefined')
+    window.location.hash = '#assistant'
+}
+
+function readEventValue(event: Event): string {
+  return event.target instanceof HTMLSelectElement ? event.target.value : ''
 }
 </script>
 
@@ -98,6 +144,9 @@ function deleteSelectedEntry(): void {
               <h2 class="truncate text-xl font-semibold">
                 {{ selectedTitle }}
               </h2>
+              <p class="text-muted-foreground mt-1 text-xs">
+                {{ selectedWordCount }} {{ t('content.wordCount') }} · {{ t('content.updatedAt') }} {{ selectedUpdatedAt }}
+              </p>
             </div>
             <Button variant="ghost" size="icon-sm" :aria-label="t('content.delete')" @click="deleteSelectedEntry">
               <Trash2Icon class="size-4" />
@@ -122,6 +171,25 @@ function deleteSelectedEntry(): void {
             </label>
 
             <label class="grid gap-1.5 md:col-span-2">
+              <span class="text-muted-foreground text-sm">{{ t('content.linkedBeat') }}</span>
+              <select
+                class="border-input bg-background ring-offset-background focus-visible:ring-ring h-9 rounded-md border px-3 text-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+                :value="selectedEntry.outlineBeatId ?? ''"
+                @change="updateSelectedEntryBeat"
+              >
+                <option value="">
+                  {{ t('content.noLinkedBeat') }}
+                </option>
+                <option v-for="beat in beats" :key="beat.id" :value="beat.id">
+                  {{ beat.timeLabel ? `${beat.timeLabel} · ${beat.title}` : beat.title }}
+                </option>
+              </select>
+              <span class="text-muted-foreground text-xs">
+                {{ selectedLinkedBeat?.summary || t('content.linkedBeatSummaryEmpty') }}
+              </span>
+            </label>
+
+            <label class="grid gap-1.5 md:col-span-2">
               <span class="text-muted-foreground text-sm">{{ t('content.body') }}</span>
               <Textarea
                 class="min-h-[28rem] font-serif text-base leading-7"
@@ -131,6 +199,32 @@ function deleteSelectedEntry(): void {
               />
             </label>
           </form>
+
+          <section class="grid gap-3 rounded-lg border p-4">
+            <div>
+              <h3 class="text-base font-semibold">
+                {{ t('content.aiActions') }}
+              </h3>
+              <p class="text-muted-foreground mt-1 text-sm">
+                {{ selectedEntry.body.trim() ? t('content.aiActionsHint') : t('content.emptyBody') }}
+              </p>
+            </div>
+
+            <div class="flex flex-wrap gap-2">
+              <Button size="sm" variant="outline" @click="sendSelectedEntryToAssistant('continue')">
+                <SparklesIcon class="size-4" />
+                {{ t('content.aiContinue') }}
+              </Button>
+              <Button size="sm" variant="outline" @click="sendSelectedEntryToAssistant('polish')">
+                <PenLineIcon class="size-4" />
+                {{ t('content.aiPolish') }}
+              </Button>
+              <Button size="sm" variant="outline" @click="sendSelectedEntryToAssistant('check-consistency')">
+                <ShieldCheckIcon class="size-4" />
+                {{ t('content.aiCheckConsistency') }}
+              </Button>
+            </div>
+          </section>
         </div>
 
         <div v-else class="text-muted-foreground grid min-h-80 place-items-center rounded-md border border-dashed text-sm">

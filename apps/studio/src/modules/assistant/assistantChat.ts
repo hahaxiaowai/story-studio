@@ -1,4 +1,4 @@
-import type { AiProviderConfig, AssistantChatMessage, AssistantChatThread, Workspace } from '@story-studio/types'
+import type { AiProviderConfig, AssistantChatMessage, AssistantChatThread, AssistantStoryStyle, Workspace } from '@story-studio/types'
 
 export const ASSISTANT_CHAT_TAURI_UNAVAILABLE = '本地 Terminal 仅 Tauri 可用。'
 export const ASSISTANT_API_CHAT_TAURI_UNAVAILABLE = 'API 对话仅 Tauri 可用。'
@@ -29,8 +29,15 @@ export interface CreateUserAssistantTurnInput {
 export interface PrepareLocalTerminalPromptInput {
   workspace: Workspace | undefined
   provider: AiProviderConfig | undefined
+  storyStyle: AssistantStoryStyle | undefined
   moduleName: string
   userMessage: string
+}
+
+export interface AssistantChatContextInput {
+  workspace: Workspace | undefined
+  moduleName: string
+  storyStyle: AssistantStoryStyle | undefined
 }
 
 export function filterAssistantThreadsByWorkspace(threads: AssistantChatThread[], workspaceId: string): AssistantChatThread[] {
@@ -112,6 +119,7 @@ export function prepareLocalTerminalPrompt(input: PrepareLocalTerminalPromptInpu
     `当前模块：${input.moduleName}`,
     `当前 Provider：${input.provider?.name || '未选择 Provider'}`,
     `当前模型：${input.provider?.model || '默认模型'}`,
+    ...createAssistantChatContextLines(input),
     '',
     `用户输入：\n${input.userMessage.trim()}`,
   ].join('\n')
@@ -121,8 +129,9 @@ export function normalizeOpenAiCompatibleBaseUrl(baseUrl: string): string {
   return baseUrl.trim().replace(/\/+$/, '')
 }
 
-export function toAssistantChatRequestMessages(thread: AssistantChatThread): AssistantChatRequestMessage[] {
-  return thread.messages.flatMap((message) => {
+export function toAssistantChatRequestMessages(thread: AssistantChatThread, context?: AssistantChatContextInput): AssistantChatRequestMessage[] {
+  const contextMessage = context ? createAssistantChatContextMessage(context) : undefined
+  const historyMessages = thread.messages.flatMap((message) => {
     const content = message.content.trim()
 
     if (!content)
@@ -140,6 +149,8 @@ export function toAssistantChatRequestMessages(thread: AssistantChatThread): Ass
 
     return []
   })
+
+  return contextMessage ? [contextMessage, ...historyMessages] : historyMessages
 }
 
 export function getAssistantChatDisabledReason(input: {
@@ -202,6 +213,36 @@ function normalizeTitle(value: string | undefined): string {
   const title = value?.trim().replace(/\s+/g, ' ').slice(0, 24)
 
   return title || '新对话'
+}
+
+function createAssistantChatContextMessage(input: AssistantChatContextInput): AssistantChatRequestMessage | undefined {
+  const content = [
+    'Story Studio AI 对话上下文',
+    `当前作品：${input.workspace?.title || '未选择作品'}`,
+    `当前模块：${input.moduleName}`,
+    ...createAssistantChatContextLines(input),
+  ].join('\n').trim()
+
+  if (!content)
+    return undefined
+
+  return {
+    role: 'system',
+    content,
+  }
+}
+
+function createAssistantChatContextLines(input: Pick<AssistantChatContextInput, 'storyStyle'>): string[] {
+  const storyStyle = input.storyStyle
+
+  if (!storyStyle)
+    return []
+
+  return [
+    `故事风格：${storyStyle.name}`,
+    ...(storyStyle.description.trim() ? [`风格说明：${storyStyle.description.trim()}`] : []),
+    ...(storyStyle.constraints.trim() ? [`风格约束：${storyStyle.constraints.trim()}`] : []),
+  ]
 }
 
 function createId(idFactory: ((prefix: string) => string) | undefined, prefix: string): string {
