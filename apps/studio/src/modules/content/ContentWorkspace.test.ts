@@ -14,4 +14,11 @@ describe('content workspace chapter reorder wiring', () => {
     expect(componentSource).toContain('content.moveUp')
     expect(componentSource).toContain('content.moveDown')
   })
+
+  it('binds the chapter search input to the content composable', () => {
+    expect(componentSource).toContain('searchQuery')
+    expect(componentSource).toContain('v-model="searchQuery"')
+    expect(componentSource).toContain('content.searchPlaceholder')
+    expect(componentSource).toContain('content.searchEmpty')
+  })
 })

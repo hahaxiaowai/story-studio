@@ -1,12 +1,13 @@
 import type { Workspace, WorkspaceContentEntry } from '@story-studio/types'
-import type { ComputedRef } from 'vue'
-import { computed } from 'vue'
+import type { ComputedRef, Ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useStudioData } from '../storage/useStudioData'
 import { useWorkspaces } from '../workspaces/useWorkspaces'
 import {
   assignOutlineBeatToContentEntry,
   createContentEntry,
   getContentEntriesByWorkspace,
+  getFilteredContentEntries,
   moveContentEntry,
   removeContentEntry,
   updateContentEntry,
@@ -16,6 +17,7 @@ export type UpdateContentInput = Omit<Parameters<typeof updateContentEntry>[1], 
 export type MoveContentDirection = Parameters<typeof moveContentEntry>[1]['direction']
 
 export function useContent(): {
+  searchQuery: Ref<string>
   entries: ComputedRef<WorkspaceContentEntry[]>
   addEntry: () => WorkspaceContentEntry
   updateEntry: (entryId: string, input: UpdateContentInput) => void
@@ -25,10 +27,12 @@ export function useContent(): {
 } {
   const studioData = useStudioData()
   const { activeWorkspace } = useWorkspaces()
+  const searchQuery = ref('')
   const entries = computed<WorkspaceContentEntry[]>(() => getContentEntriesByWorkspace(
     studioData.document.value.contents,
     activeWorkspace.value.id,
   ))
+  const filteredEntries = computed<WorkspaceContentEntry[]>(() => getFilteredContentEntries(entries.value, searchQuery.value))
 
   function addEntry(): WorkspaceContentEntry {
     const now = new Date().toISOString()
@@ -117,7 +121,8 @@ export function useContent(): {
   }
 
   return {
-    entries,
+    searchQuery,
+    entries: filteredEntries,
     addEntry,
     updateEntry,
     linkEntryToBeat,

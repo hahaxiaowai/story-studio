@@ -106,6 +106,18 @@ export function getContentEntriesByWorkspace(entries: WorkspaceContentEntry[], w
   return sortContentEntries(entries.filter(entry => entry.workspaceId === workspaceId))
 }
 
+export function getFilteredContentEntries(entries: WorkspaceContentEntry[], query: string): WorkspaceContentEntry[] {
+  const sortedEntries = sortContentEntries(entries)
+  const normalizedQuery = query.trim().toLowerCase()
+
+  if (!normalizedQuery)
+    return sortedEntries
+
+  return sortedEntries.filter(entry =>
+    [entry.volume, entry.chapter, entry.body].some(value => value.toLowerCase().includes(normalizedQuery)),
+  )
+}
+
 export function sortContentEntries(entries: WorkspaceContentEntry[]): WorkspaceContentEntry[] {
   return [...entries].sort((left, right) => left.order - right.order || left.createdAt.localeCompare(right.createdAt))
 }

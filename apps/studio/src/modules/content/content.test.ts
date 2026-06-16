@@ -4,6 +4,7 @@ import {
   assignOutlineBeatToContentEntry,
   createContentEntry,
   getContentEntriesByWorkspace,
+  getFilteredContentEntries,
   moveContentEntry,
   removeContentEntry,
   updateContentEntry,
@@ -142,6 +143,23 @@ describe('content entries', () => {
       'content-1',
       'content-3',
     ])
+  })
+
+  it('filters entries by volume, chapter, and body text while keeping order', () => {
+    const entries = [
+      createEntry({ id: 'content-3', volume: '第三卷', chapter: '归途', body: '黎明之后返回故乡', order: 2 }),
+      createEntry({ id: 'content-1', volume: '第一卷', chapter: '雨夜', body: '钟楼停在十一点', order: 0 }),
+      createEntry({ id: 'content-2', volume: '第二卷', chapter: '雾城', body: 'Alice 进入旧街区', order: 1 }),
+    ]
+
+    expect(getFilteredContentEntries(entries, '').map(entry => entry.id)).toEqual([
+      'content-1',
+      'content-2',
+      'content-3',
+    ])
+    expect(getFilteredContentEntries(entries, '第二卷').map(entry => entry.id)).toEqual(['content-2'])
+    expect(getFilteredContentEntries(entries, '雨夜').map(entry => entry.id)).toEqual(['content-1'])
+    expect(getFilteredContentEntries(entries, 'alice').map(entry => entry.id)).toEqual(['content-2'])
   })
 
   it('assigns one outline beat to one content entry', () => {

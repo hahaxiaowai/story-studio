@@ -133,6 +133,41 @@ describe('useContent', () => {
     }))
   })
 
+  it('filters entries with local search state without saving the document', async () => {
+    const driver = createDriver(createDefaultStudioDataDocument())
+    await useStudioData(driver).ready
+
+    const content = useContent()
+    const firstEntry = content.addEntry()
+    const secondEntry = content.addEntry()
+    const thirdEntry = content.addEntry()
+
+    content.updateEntry(firstEntry.id, {
+      volume: '第一卷',
+      chapter: '雨夜',
+      body: '钟楼停在十一点',
+    })
+    content.updateEntry(secondEntry.id, {
+      volume: '第二卷',
+      chapter: '雾城',
+      body: 'Alice 进入旧街区',
+    })
+    content.updateEntry(thirdEntry.id, {
+      volume: '第三卷',
+      chapter: '归途',
+      body: '黎明之后返回故乡',
+    })
+    await nextTick()
+
+    const saveCallCount = driver.save.mock.calls.length
+
+    content.searchQuery.value = 'alice'
+    await nextTick()
+
+    expect(content.entries.value.map(entry => entry.id)).toEqual([secondEntry.id])
+    expect(driver.save).toHaveBeenCalledTimes(saveCallCount)
+  })
+
   it('removes entries and updates content counts', async () => {
     const driver = createDriver(createDefaultStudioDataDocument())
     await useStudioData(driver).ready
