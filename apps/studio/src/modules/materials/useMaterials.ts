@@ -1,5 +1,6 @@
 import type { MaterialAsset, MaterialTag } from '@story-studio/types'
 import type { ComputedRef, Ref } from 'vue'
+import type { MaterialKindFilter } from './materials'
 import { computed, ref } from 'vue'
 import { useStudioData } from '../storage/useStudioData'
 import {
@@ -21,6 +22,7 @@ export function useMaterials(): {
   materials: ComputedRef<MaterialAsset[]>
   tags: ComputedRef<MaterialTag[]>
   selectedTagId: Ref<string | undefined>
+  selectedKind: Ref<MaterialKindFilter>
   searchQuery: Ref<string>
   filteredMaterials: ComputedRef<MaterialAsset[]>
   addMaterial: () => MaterialAsset
@@ -32,10 +34,12 @@ export function useMaterials(): {
 } {
   const studioData = useStudioData()
   const selectedTagId = ref<string>()
+  const selectedKind = ref<MaterialKindFilter>('all')
   const searchQuery = ref('')
   const materials = computed<MaterialAsset[]>(() => getMaterialsByTag(studioData.document.value.materials, undefined))
   const tags = computed<MaterialTag[]>(() => sortMaterialTags(studioData.document.value.materialTags))
   const filteredMaterials = computed<MaterialAsset[]>(() => getFilteredMaterials(materials.value, {
+    kind: selectedKind.value,
     query: searchQuery.value,
     tagId: selectedTagId.value,
   }))
@@ -108,6 +112,7 @@ export function useMaterials(): {
     materials,
     tags,
     selectedTagId,
+    selectedKind,
     searchQuery,
     filteredMaterials,
     addMaterial,

@@ -14,9 +14,12 @@ export interface UpdateMaterialInput {
 }
 
 export interface MaterialFilterOptions {
+  kind?: MaterialKindFilter
   query?: string
   tagId?: string
 }
+
+export type MaterialKindFilter = 'all' | 'text' | 'link' | 'image'
 
 export interface CreateMaterialTagInput {
   name: string
@@ -71,6 +74,11 @@ export function getFilteredMaterials(materials: MaterialAsset[], options: Materi
 
   if (options.tagId)
     nextMaterials = nextMaterials.filter(material => material.tagIds.includes(options.tagId!))
+
+  const kind = options.kind
+
+  if (kind && kind !== 'all')
+    nextMaterials = nextMaterials.filter(material => materialMatchesKind(material, kind))
 
   if (!query)
     return nextMaterials
@@ -135,6 +143,16 @@ function materialMatchesQuery(material: MaterialAsset, query: string): boolean {
     material.url,
     material.imageUrl,
   ].some(value => value.toLowerCase().includes(query))
+}
+
+function materialMatchesKind(material: MaterialAsset, kind: Exclude<MaterialKindFilter, 'all'>): boolean {
+  if (kind === 'text')
+    return material.text.trim().length > 0
+
+  if (kind === 'link')
+    return material.url.trim().length > 0
+
+  return material.imageUrl.trim().length > 0
 }
 
 function normalizeTagName(name: string): string {

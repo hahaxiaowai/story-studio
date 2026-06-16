@@ -31,6 +31,23 @@ describe('useMaterials', () => {
 
     expect(materials.filteredMaterials.value.map(material => material.id)).toEqual(['material-a'])
   })
+
+  it('filters materials by selected kind', async () => {
+    const driver = createDriver({
+      ...createDefaultStudioDataDocument(),
+      materials: [
+        createMaterialRecord({ id: 'material-text', text: 'Archive note', updatedAt: '2026-05-28T09:00:00.000Z' }),
+        createMaterialRecord({ id: 'material-link', url: 'https://example.com/relic', updatedAt: '2026-05-28T12:00:00.000Z' }),
+        createMaterialRecord({ id: 'material-image', imageUrl: 'https://cdn.example.com/portrait.png', updatedAt: '2026-05-28T13:00:00.000Z' }),
+      ],
+    })
+    await useStudioData(driver).ready
+
+    const materials = useMaterials()
+    materials.selectedKind.value = 'link'
+
+    expect(materials.filteredMaterials.value.map(material => material.id)).toEqual(['material-link'])
+  })
 })
 
 function createDriver(document: StudioDataDocument): StudioStorageDriver & {

@@ -12,4 +12,12 @@ describe('material workspace search wiring', () => {
     expect(componentSource).toContain('v-model="searchQuery"')
     expect(componentSource).toContain('materials.searchPlaceholder')
   })
+
+  it('binds material kind filters to the materials composable', () => {
+    expect(componentSource).toContain('selectedKind')
+    expect(componentSource).toContain('materials.typeFilter')
+    expect(componentSource).toContain('materials.kindText')
+    expect(componentSource).toContain('materials.kindLink')
+    expect(componentSource).toContain('materials.kindImage')
+  })
 })

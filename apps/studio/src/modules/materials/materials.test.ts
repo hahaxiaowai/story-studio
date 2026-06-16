@@ -91,6 +91,35 @@ describe('materials', () => {
     expect(getFilteredMaterials(materials, { tagId: 'tag-a', query: '   ' }).map(material => material.id)).toEqual(['material-c', 'material-a'])
   })
 
+  it('filters materials by derived content kind', () => {
+    const materials = [
+      createMaterialRecord({ id: 'material-text', text: 'Archive note', updatedAt: '2026-05-28T09:00:00.000Z' }),
+      createMaterialRecord({ id: 'material-link', url: 'https://example.com/relic', updatedAt: '2026-05-28T12:00:00.000Z' }),
+      createMaterialRecord({ id: 'material-image', imageUrl: 'https://cdn.example.com/portrait.png', updatedAt: '2026-05-28T13:00:00.000Z' }),
+      createMaterialRecord({ id: 'material-empty', updatedAt: '2026-05-28T14:00:00.000Z' }),
+    ]
+
+    expect(getFilteredMaterials(materials, { kind: 'text' }).map(material => material.id)).toEqual(['material-text'])
+    expect(getFilteredMaterials(materials, { kind: 'link' }).map(material => material.id)).toEqual(['material-link'])
+    expect(getFilteredMaterials(materials, { kind: 'image' }).map(material => material.id)).toEqual(['material-image'])
+    expect(getFilteredMaterials(materials, { kind: 'all' }).map(material => material.id)).toEqual([
+      'material-empty',
+      'material-image',
+      'material-link',
+      'material-text',
+    ])
+  })
+
+  it('combines material kind filters with tags and search', () => {
+    const materials = [
+      createMaterialRecord({ id: 'material-a', text: 'Storm archive', tagIds: ['tag-a'], updatedAt: '2026-05-28T09:00:00.000Z' }),
+      createMaterialRecord({ id: 'material-b', text: 'Storm clue', tagIds: ['tag-b'], updatedAt: '2026-05-28T12:00:00.000Z' }),
+      createMaterialRecord({ id: 'material-c', url: 'https://example.com/storm-map', tagIds: ['tag-a'], updatedAt: '2026-05-28T13:00:00.000Z' }),
+    ]
+
+    expect(getFilteredMaterials(materials, { kind: 'text', tagId: 'tag-a', query: 'storm' }).map(material => material.id)).toEqual(['material-a'])
+  })
+
   it('removes materials by id', () => {
     const materials = [
       createMaterialRecord({ id: 'material-1' }),
