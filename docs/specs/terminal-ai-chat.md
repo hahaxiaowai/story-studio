@@ -106,14 +106,14 @@ interface LocalTerminalChatStreamEvent {
 
 ## 验收标准
 
-- [ ] 默认文档与 v7 迁移包含 `assistantChatThreads: []`。
-- [ ] 助手页默认显示聊天区而不是测试面板。
-- [ ] 发送消息会立即持久化 user 消息和 streaming assistant 消息。
-- [ ] Tauri stdout chunk 会流式追加到 assistant 消息。
-- [ ] 非零退出、超时、取消会把 assistant 消息标记为 error。
-- [ ] 停止运行后不会继续写入该 run 的后续 chunk。
-- [ ] 切换工作区只显示当前工作区线程。
-- [ ] Web 环境禁用发送并显示本地 Terminal 仅 Tauri 可用。
+- [x] 默认文档与 v7 迁移包含 `assistantChatThreads: []`。
+- [x] 助手页默认显示聊天区而不是测试面板。
+- [x] 发送消息会立即持久化 user 消息和 streaming assistant 消息。
+- [x] Tauri stdout chunk 会流式追加到 assistant 消息。
+- [x] 非零退出、超时、取消会把 assistant 消息标记为 error。
+- [x] 停止运行后不会继续写入该 run 的后续 chunk。
+- [x] 切换工作区只显示当前工作区线程。
+- [x] Web 环境禁用发送并显示本地 Terminal 仅 Tauri 可用。
 
 ## 验证命令
 
