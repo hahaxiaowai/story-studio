@@ -12,6 +12,11 @@ export interface AppendWorkspaceResult {
   workspaces: Workspace[]
 }
 
+export interface WorkspaceStatusChangeResult {
+  activeWorkspaceId: string
+  workspaces: Workspace[]
+}
+
 export interface UpdateWorkspaceDetailsOptions {
   title: string
   description?: string
@@ -68,6 +73,14 @@ export function getWorkspaceById(workspaces: Workspace[], workspaceId: string): 
   return workspaces.find(workspace => workspace.id === workspaceId)
 }
 
+export function getDraftWorkspaces(workspaces: Workspace[]): Workspace[] {
+  return workspaces.filter(workspace => workspace.status === 'draft')
+}
+
+export function getArchivedWorkspaces(workspaces: Workspace[]): Workspace[] {
+  return workspaces.filter(workspace => workspace.status === 'archived')
+}
+
 export function updateWorkspaceStoryStyle(workspaces: Workspace[], workspaceId: string, storyStyleId: string): Workspace[] {
   const nextStoryStyleId = storyStyleId.trim()
 
@@ -78,6 +91,59 @@ export function updateWorkspaceStoryStyle(workspaces: Workspace[], workspaceId: 
         updatedAt: new Date().toISOString(),
       }
     : workspace)
+}
+
+export function archiveWorkspace(workspaces: Workspace[], activeWorkspaceId: string, workspaceId: string, now: string): WorkspaceStatusChangeResult {
+  const draftWorkspaces = getDraftWorkspaces(workspaces)
+  const workspace = getWorkspaceById(workspaces, workspaceId)
+
+  if (!workspace || workspace.status === 'archived') {
+    return {
+      activeWorkspaceId,
+      workspaces,
+    }
+  }
+
+  if (draftWorkspaces.length <= 1)
+    throw new Error('Cannot archive the last draft workspace.')
+
+  const nextDraftWorkspace = draftWorkspaces.find(draftWorkspace => draftWorkspace.id !== workspaceId)
+  const nextActiveWorkspaceId = activeWorkspaceId === workspaceId
+    ? nextDraftWorkspace?.id ?? activeWorkspaceId
+    : activeWorkspaceId
+
+  return {
+    activeWorkspaceId: nextActiveWorkspaceId,
+    workspaces: workspaces.map(currentWorkspace => currentWorkspace.id === workspaceId
+      ? {
+          ...currentWorkspace,
+          status: 'archived',
+          updatedAt: now,
+        }
+      : currentWorkspace),
+  }
+}
+
+export function restoreWorkspace(workspaces: Workspace[], activeWorkspaceId: string, workspaceId: string, now: string): WorkspaceStatusChangeResult {
+  const workspace = getWorkspaceById(workspaces, workspaceId)
+
+  if (!workspace || workspace.status === 'draft') {
+    return {
+      activeWorkspaceId,
+      workspaces,
+    }
+  }
+
+  return {
+    activeWorkspaceId: workspaceId,
+    workspaces: workspaces.map(currentWorkspace => currentWorkspace.id === workspaceId
+      ? {
+          ...currentWorkspace,
+          status: 'draft',
+          updatedAt: now,
+        }
+      : currentWorkspace),
+  }
 }
 
 export function updateWorkspaceDetails(workspaces: Workspace[], workspaceId: string, options: UpdateWorkspaceDetailsOptions): Workspace[] {

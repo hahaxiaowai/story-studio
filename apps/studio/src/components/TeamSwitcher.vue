@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { CheckIcon, ChevronsUpDownIcon, GalleryVerticalEndIcon, PencilIcon, PlusIcon } from '@lucide/vue'
+import { ArchiveIcon, CheckIcon, ChevronsUpDownIcon, GalleryVerticalEndIcon, PencilIcon, PlusIcon, RotateCcwIcon } from '@lucide/vue'
 import { ref } from 'vue'
 import {
   DropdownMenu,
@@ -28,8 +28,11 @@ const detailsDialogOpen = ref(false)
 const {
   activeWorkspace,
   activeWorkspaceId,
+  archiveActiveWorkspace,
+  archivedWorkspaces,
+  draftWorkspaces,
+  restoreArchivedWorkspace,
   setActiveWorkspace,
-  workspaces,
 } = useWorkspaces()
 </script>
 
@@ -62,7 +65,7 @@ const {
             {{ t('app.spaces') }}
           </DropdownMenuLabel>
           <DropdownMenuItem
-            v-for="workspace in workspaces"
+            v-for="workspace in draftWorkspaces"
             :key="workspace.id"
             class="gap-2 p-2"
             @click="setActiveWorkspace(workspace.id)"
@@ -84,6 +87,18 @@ const {
               {{ t('menu.editWorkspace') }}
             </div>
           </DropdownMenuItem>
+          <DropdownMenuItem
+            class="gap-2 p-2"
+            :disabled="draftWorkspaces.length <= 1"
+            @click="archiveActiveWorkspace"
+          >
+            <div class="bg-background flex size-6 items-center justify-center rounded-md border">
+              <ArchiveIcon class="size-4" />
+            </div>
+            <div class="text-muted-foreground font-medium">
+              {{ t('workspace.archiveCurrent') }}
+            </div>
+          </DropdownMenuItem>
           <DropdownMenuItem class="gap-2 p-2" @click="createDialogOpen = true">
             <div class="bg-background flex size-6 items-center justify-center rounded-md border">
               <PlusIcon class="size-4" />
@@ -92,6 +107,23 @@ const {
               {{ t('menu.newWorkspace') }}
             </div>
           </DropdownMenuItem>
+          <template v-if="archivedWorkspaces.length">
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel class="text-muted-foreground text-xs">
+              {{ t('workspace.archivedGroup') }}
+            </DropdownMenuLabel>
+            <DropdownMenuItem
+              v-for="workspace in archivedWorkspaces"
+              :key="workspace.id"
+              class="gap-2 p-2"
+              @click="restoreArchivedWorkspace(workspace.id)"
+            >
+              <div class="flex size-6 items-center justify-center rounded-md border">
+                <RotateCcwIcon class="size-3.5 shrink-0" />
+              </div>
+              <span class="min-w-0 flex-1 truncate">{{ t('workspace.restore') }} {{ workspace.title }}</span>
+            </DropdownMenuItem>
+          </template>
         </DropdownMenuContent>
       </DropdownMenu>
       <WorkspaceCreateDialog v-model:open="createDialogOpen" />

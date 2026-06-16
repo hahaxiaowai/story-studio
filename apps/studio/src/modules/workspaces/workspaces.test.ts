@@ -1,10 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import {
   appendWorkspace,
+  archiveWorkspace,
+  getArchivedWorkspaces,
+  getDraftWorkspaces,
   getNavigationLabelKey,
   getWorkspaceById,
   getWorkspaceModuleLabelKey,
   isPublicNavigationHash,
+  restoreWorkspace,
   updateWorkspaceDetails,
   updateWorkspaceStoryStyle,
 } from './workspaces'
@@ -76,6 +80,70 @@ describe('workspaces', () => {
 
     expect(workspaces.find(workspace => workspace.id === firstResult.activeWorkspaceId)?.storyStyleId).toBe('story-style-epic-fantasy')
     expect(workspaces.find(workspace => workspace.id === secondResult.activeWorkspaceId)?.storyStyleId).toBeUndefined()
+  })
+
+  it('splits draft and archived workspaces', () => {
+    const firstResult = appendWorkspace([], {
+      title: 'Star Harbor',
+      now: '2026-05-24T00:00:00.000Z',
+    })
+    const secondResult = appendWorkspace(firstResult.workspaces, {
+      title: 'Fog Port Letters',
+      now: '2026-05-24T00:00:00.000Z',
+    })
+    const archiveResult = archiveWorkspace(secondResult.workspaces, secondResult.activeWorkspaceId, firstResult.activeWorkspaceId, '2026-05-24T13:00:00.000Z')
+
+    expect(getDraftWorkspaces(archiveResult.workspaces).map(workspace => workspace.id)).toEqual([secondResult.activeWorkspaceId])
+    expect(getArchivedWorkspaces(archiveResult.workspaces).map(workspace => workspace.id)).toEqual([firstResult.activeWorkspaceId])
+  })
+
+  it('archives the active workspace and activates another draft workspace', () => {
+    const firstResult = appendWorkspace([], {
+      title: 'Star Harbor',
+      now: '2026-05-24T00:00:00.000Z',
+    })
+    const secondResult = appendWorkspace(firstResult.workspaces, {
+      title: 'Fog Port Letters',
+      now: '2026-05-24T00:00:00.000Z',
+    })
+
+    const archiveResult = archiveWorkspace(secondResult.workspaces, firstResult.activeWorkspaceId, firstResult.activeWorkspaceId, '2026-05-24T13:00:00.000Z')
+
+    expect(archiveResult.activeWorkspaceId).toBe(secondResult.activeWorkspaceId)
+    expect(archiveResult.workspaces.find(workspace => workspace.id === firstResult.activeWorkspaceId)).toMatchObject({
+      status: 'archived',
+      updatedAt: '2026-05-24T13:00:00.000Z',
+    })
+  })
+
+  it('does not archive the last draft workspace', () => {
+    const result = appendWorkspace([], {
+      title: 'Star Harbor',
+      now: '2026-05-24T00:00:00.000Z',
+    })
+
+    expect(() => archiveWorkspace(result.workspaces, result.activeWorkspaceId, result.activeWorkspaceId, '2026-05-24T13:00:00.000Z'))
+      .toThrow('Cannot archive the last draft workspace.')
+  })
+
+  it('restores an archived workspace and makes it active', () => {
+    const firstResult = appendWorkspace([], {
+      title: 'Star Harbor',
+      now: '2026-05-24T00:00:00.000Z',
+    })
+    const secondResult = appendWorkspace(firstResult.workspaces, {
+      title: 'Fog Port Letters',
+      now: '2026-05-24T00:00:00.000Z',
+    })
+    const archiveResult = archiveWorkspace(secondResult.workspaces, secondResult.activeWorkspaceId, firstResult.activeWorkspaceId, '2026-05-24T13:00:00.000Z')
+
+    const restoreResult = restoreWorkspace(archiveResult.workspaces, archiveResult.activeWorkspaceId, firstResult.activeWorkspaceId, '2026-05-24T14:00:00.000Z')
+
+    expect(restoreResult.activeWorkspaceId).toBe(firstResult.activeWorkspaceId)
+    expect(restoreResult.workspaces.find(workspace => workspace.id === firstResult.activeWorkspaceId)).toMatchObject({
+      status: 'draft',
+      updatedAt: '2026-05-24T14:00:00.000Z',
+    })
   })
 
   it('updates workspace details while keeping workspace ids stable', () => {

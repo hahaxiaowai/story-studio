@@ -12,4 +12,15 @@ describe('team switcher workspace details wiring', () => {
     expect(componentSource).toContain('detailsDialogOpen')
     expect(componentSource).toContain('menu.editWorkspace')
   })
+
+  it('renders draft workspaces and exposes archive restore actions', () => {
+    expect(componentSource).toContain('draftWorkspaces')
+    expect(componentSource).toContain('archivedWorkspaces')
+    expect(componentSource).toContain('archiveActiveWorkspace')
+    expect(componentSource).toContain('restoreArchivedWorkspace')
+    expect(componentSource).toContain('workspace.archiveCurrent')
+    expect(componentSource).toContain(':disabled="draftWorkspaces.length <= 1"')
+    expect(componentSource).toContain('workspace.archivedGroup')
+    expect(componentSource).toContain('workspace.restore')
+  })
 })

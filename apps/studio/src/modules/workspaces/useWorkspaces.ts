@@ -5,7 +5,11 @@ import { computed } from 'vue'
 import { useStudioData } from '../storage/useStudioData'
 import {
   appendWorkspace,
+  archiveWorkspace,
+  getArchivedWorkspaces,
+  getDraftWorkspaces,
   getWorkspaceById,
+  restoreWorkspace,
   updateWorkspaceDetails,
   updateWorkspaceStoryStyle,
 } from './workspaces'
@@ -17,6 +21,10 @@ export function useWorkspaces(): {
   activeWorkspace: ComputedRef<Workspace>
   activeWorkspaceId: Ref<string, string>
   addWorkspace: (input?: AddWorkspaceInput) => Workspace
+  archiveActiveWorkspace: () => void
+  archivedWorkspaces: ComputedRef<Workspace[]>
+  draftWorkspaces: ComputedRef<Workspace[]>
+  restoreArchivedWorkspace: (workspaceId: string) => void
   saveActiveWorkspaceDetails: (input: SaveWorkspaceDetailsInput) => void
   setActiveWorkspace: (workspaceId: string) => void
   setActiveWorkspaceStoryStyle: (storyStyleId: string) => void
@@ -43,6 +51,8 @@ export function useWorkspaces(): {
 
     return workspaces.value[0]!
   })
+  const draftWorkspaces = computed<Workspace[]>(() => getDraftWorkspaces(workspaces.value))
+  const archivedWorkspaces = computed<Workspace[]>(() => getArchivedWorkspaces(workspaces.value))
 
   function setActiveWorkspace(workspaceId: string): void {
     if (getWorkspaceById(workspaces.value, workspaceId)) {
@@ -82,10 +92,32 @@ export function useWorkspaces(): {
     })
   }
 
+  function archiveActiveWorkspace(): void {
+    studioData.updateDocument((document) => {
+      const result = archiveWorkspace(document.workspaces, document.activeWorkspaceId, document.activeWorkspaceId, new Date().toISOString())
+
+      document.workspaces = result.workspaces
+      document.activeWorkspaceId = result.activeWorkspaceId
+    })
+  }
+
+  function restoreArchivedWorkspace(workspaceId: string): void {
+    studioData.updateDocument((document) => {
+      const result = restoreWorkspace(document.workspaces, document.activeWorkspaceId, workspaceId, new Date().toISOString())
+
+      document.workspaces = result.workspaces
+      document.activeWorkspaceId = result.activeWorkspaceId
+    })
+  }
+
   return {
     activeWorkspace,
     activeWorkspaceId,
     addWorkspace,
+    archiveActiveWorkspace,
+    archivedWorkspaces,
+    draftWorkspaces,
+    restoreArchivedWorkspace,
     saveActiveWorkspaceDetails,
     setActiveWorkspace,
     setActiveWorkspaceStoryStyle,

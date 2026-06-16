@@ -101,6 +101,59 @@ describe('useWorkspaces', () => {
       ]),
     }))
   })
+
+  it('persists archiving the active workspace and switches to another draft workspace', async () => {
+    const driver = createDriver(createDefaultStudioDataDocument())
+    await useStudioData(driver).ready
+
+    const workspaces = useWorkspaces()
+    const nextWorkspace = workspaces.addWorkspace({
+      title: 'Star Harbor',
+    })
+    workspaces.setActiveWorkspace('workspace-mo-shou-shi-jie')
+    workspaces.archiveActiveWorkspace()
+    await nextTick()
+
+    expect(workspaces.activeWorkspaceId.value).toBe(nextWorkspace.id)
+    expect(workspaces.archivedWorkspaces.value.map(workspace => workspace.id)).toEqual(['workspace-mo-shou-shi-jie'])
+    expect(driver.save).toHaveBeenLastCalledWith(expect.objectContaining({
+      activeWorkspaceId: nextWorkspace.id,
+      workspaces: expect.arrayContaining([
+        expect.objectContaining({
+          id: 'workspace-mo-shou-shi-jie',
+          status: 'archived',
+        }),
+      ]),
+    }))
+  })
+
+  it('persists restoring archived workspaces and activates them', async () => {
+    const document = createDefaultStudioDataDocument()
+    document.workspaces.push({
+      ...document.workspaces[0]!,
+      id: 'workspace-archived',
+      title: '归档作品',
+      status: 'archived',
+    })
+    const driver = createDriver(document)
+    await useStudioData(driver).ready
+
+    const workspaces = useWorkspaces()
+    workspaces.restoreArchivedWorkspace('workspace-archived')
+    await nextTick()
+
+    expect(workspaces.activeWorkspaceId.value).toBe('workspace-archived')
+    expect(workspaces.draftWorkspaces.value.map(workspace => workspace.id)).toContain('workspace-archived')
+    expect(driver.save).toHaveBeenLastCalledWith(expect.objectContaining({
+      activeWorkspaceId: 'workspace-archived',
+      workspaces: expect.arrayContaining([
+        expect.objectContaining({
+          id: 'workspace-archived',
+          status: 'draft',
+        }),
+      ]),
+    }))
+  })
 })
 
 function createDriver(document: StudioDataDocument): StudioStorageDriver & {
