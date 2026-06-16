@@ -80,15 +80,15 @@ interface AssistantChatRequestMessage {
 
 ## 验收标准
 
-- [ ] API Provider 缺 Base URL、API Key 或模型时不能发送，并展示明确原因。
-- [ ] Web 环境下 API Provider 不能发送，并提示 API 对话仅 Tauri 可用。
+- [x] API Provider 缺 Base URL、API Key 或模型时不能发送，并展示明确原因。
+- [x] Web 环境下 API Provider 不能发送，并提示 API 对话仅 Tauri 可用。
 - [ ] Tauri 桌面环境中 API Provider 可以流式追加 assistant 回复。
 - [ ] 停止 API 请求后不会继续写入该 run 后续 chunk。
-- [ ] 多轮历史按当前线程消息顺序发送给 API。
-- [ ] 本地 Terminal 对话能力不回归。
-- [ ] 类型检查通过。
-- [ ] 必要测试通过。
-- [ ] 构建通过。
+- [x] 多轮历史按当前线程消息顺序发送给 API。
+- [x] 本地 Terminal 对话能力不回归。
+- [x] 类型检查通过。
+- [x] 必要测试通过。
+- [x] 构建通过。
 
 ## 验证命令
 
