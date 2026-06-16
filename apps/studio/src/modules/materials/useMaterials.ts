@@ -5,6 +5,7 @@ import { useStudioData } from '../storage/useStudioData'
 import {
   createMaterial,
   createMaterialTag,
+  getFilteredMaterials,
   getMaterialsByTag,
   removeMaterial,
   removeMaterialTag,
@@ -20,6 +21,7 @@ export function useMaterials(): {
   materials: ComputedRef<MaterialAsset[]>
   tags: ComputedRef<MaterialTag[]>
   selectedTagId: Ref<string | undefined>
+  searchQuery: Ref<string>
   filteredMaterials: ComputedRef<MaterialAsset[]>
   addMaterial: () => MaterialAsset
   updateMaterialById: (materialId: string, input: UpdateMaterialInput) => void
@@ -30,9 +32,13 @@ export function useMaterials(): {
 } {
   const studioData = useStudioData()
   const selectedTagId = ref<string>()
+  const searchQuery = ref('')
   const materials = computed<MaterialAsset[]>(() => getMaterialsByTag(studioData.document.value.materials, undefined))
   const tags = computed<MaterialTag[]>(() => sortMaterialTags(studioData.document.value.materialTags))
-  const filteredMaterials = computed<MaterialAsset[]>(() => getMaterialsByTag(materials.value, selectedTagId.value))
+  const filteredMaterials = computed<MaterialAsset[]>(() => getFilteredMaterials(materials.value, {
+    query: searchQuery.value,
+    tagId: selectedTagId.value,
+  }))
 
   function addMaterial(): MaterialAsset {
     const material = createMaterial({ now: new Date().toISOString() })
@@ -102,6 +108,7 @@ export function useMaterials(): {
     materials,
     tags,
     selectedTagId,
+    searchQuery,
     filteredMaterials,
     addMaterial,
     updateMaterialById,

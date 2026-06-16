@@ -13,6 +13,7 @@ const {
   materials,
   tags,
   selectedTagId,
+  searchQuery,
   filteredMaterials,
   addMaterial,
   updateMaterialById,
@@ -151,7 +152,14 @@ function formatDate(value: string): string {
           <span class="text-muted-foreground text-xs">{{ filteredMaterials.length }}</span>
         </div>
 
-        <div v-if="filteredMaterials.length" class="mt-4 grid gap-2">
+        <Input
+          v-model="searchQuery"
+          class="mt-4"
+          type="search"
+          :placeholder="t('materials.searchPlaceholder')"
+        />
+
+        <div v-if="filteredMaterials.length" class="mt-3 grid gap-2">
           <button
             v-for="material in filteredMaterials"
             :key="material.id"

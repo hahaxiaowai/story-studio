@@ -13,6 +13,11 @@ export interface UpdateMaterialInput {
   now: string
 }
 
+export interface MaterialFilterOptions {
+  query?: string
+  tagId?: string
+}
+
 export interface CreateMaterialTagInput {
   name: string
   order: number
@@ -57,12 +62,20 @@ export function removeMaterial(materials: MaterialAsset[], materialId: string): 
 }
 
 export function getMaterialsByTag(materials: MaterialAsset[], tagId: string | undefined): MaterialAsset[] {
-  const nextMaterials = sortMaterials(materials)
+  return getFilteredMaterials(materials, { tagId })
+}
 
-  if (!tagId)
+export function getFilteredMaterials(materials: MaterialAsset[], options: MaterialFilterOptions): MaterialAsset[] {
+  const query = normalizeSearchQuery(options.query)
+  let nextMaterials = sortMaterials(materials)
+
+  if (options.tagId)
+    nextMaterials = nextMaterials.filter(material => material.tagIds.includes(options.tagId!))
+
+  if (!query)
     return nextMaterials
 
-  return nextMaterials.filter(material => material.tagIds.includes(tagId))
+  return nextMaterials.filter(material => materialMatchesQuery(material, query))
 }
 
 export function createMaterialTag(input: CreateMaterialTagInput): MaterialTag {
@@ -109,6 +122,19 @@ export function sortMaterials(materials: MaterialAsset[]): MaterialAsset[] {
 
 function normalizeTitle(title: string): string {
   return title.trim() || '未命名素材'
+}
+
+function normalizeSearchQuery(query: string | undefined): string {
+  return query?.trim().toLowerCase() ?? ''
+}
+
+function materialMatchesQuery(material: MaterialAsset, query: string): boolean {
+  return [
+    material.title,
+    material.text,
+    material.url,
+    material.imageUrl,
+  ].some(value => value.toLowerCase().includes(query))
 }
 
 function normalizeTagName(name: string): string {

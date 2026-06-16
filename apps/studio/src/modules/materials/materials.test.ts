@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import {
   createMaterial,
   createMaterialTag,
+  getFilteredMaterials,
   getMaterialsByTag,
   removeMaterial,
   removeMaterialTag,
@@ -65,6 +66,29 @@ describe('materials', () => {
       'material-new',
       'material-old',
     ])
+  })
+
+  it('filters materials by keyword across title text url and image url', () => {
+    const materials = [
+      createMaterialRecord({ id: 'material-title', title: 'Storm Harbor', updatedAt: '2026-05-28T09:00:00.000Z' }),
+      createMaterialRecord({ id: 'material-text', text: 'A note about moonlit archives', updatedAt: '2026-05-28T12:00:00.000Z' }),
+      createMaterialRecord({ id: 'material-url', url: 'https://example.com/relic-map', updatedAt: '2026-05-28T13:00:00.000Z' }),
+      createMaterialRecord({ id: 'material-image', imageUrl: 'https://cdn.example.com/character.png', updatedAt: '2026-05-28T14:00:00.000Z' }),
+    ]
+
+    expect(getFilteredMaterials(materials, { query: '  MOONLIT  ' }).map(material => material.id)).toEqual(['material-text'])
+    expect(getFilteredMaterials(materials, { query: 'example.com' }).map(material => material.id)).toEqual(['material-image', 'material-url'])
+  })
+
+  it('combines material keyword search with tag filters', () => {
+    const materials = [
+      createMaterialRecord({ id: 'material-a', title: 'Storm Harbor', tagIds: ['tag-a'], updatedAt: '2026-05-28T09:00:00.000Z' }),
+      createMaterialRecord({ id: 'material-b', title: 'Storm Relic', tagIds: ['tag-b'], updatedAt: '2026-05-28T12:00:00.000Z' }),
+      createMaterialRecord({ id: 'material-c', title: 'Quiet Archive', tagIds: ['tag-a'], updatedAt: '2026-05-28T13:00:00.000Z' }),
+    ]
+
+    expect(getFilteredMaterials(materials, { tagId: 'tag-a', query: 'storm' }).map(material => material.id)).toEqual(['material-a'])
+    expect(getFilteredMaterials(materials, { tagId: 'tag-a', query: '   ' }).map(material => material.id)).toEqual(['material-c', 'material-a'])
   })
 
   it('removes materials by id', () => {
