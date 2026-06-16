@@ -13,42 +13,42 @@
 
 ## 实施步骤
 
-1. 更新共享类型。
+- [x] 更新共享类型。
    - 在 `packages/types/src/types/story.ts` 增加 `StudioDataDocument`、`StudioPreferences`、`StudioDataSchemaVersion`。
-   - `StudioDataSchemaVersion` 当前为 `2`。
+   - `StudioDataSchemaVersion` 当前为 `11`。
    - `Workspace` 支持可选 `description`，随单一 JSON 文档持久化。
    - `StudioDataDocument` 包含 `propertyDefinitions` 和 `entityRecords`。
    - 从 `packages/types/src/index.ts` 导出新增类型。
 
-2. 先补前端存储测试。
+- [x] 先补前端存储测试。
    - 覆盖默认文档生成。
    - 覆盖 legacy `localStorage` 偏好迁移。
    - 覆盖 Tauri driver command 调用。
    - 覆盖 `useStudioData` 加载和保存。
    - 覆盖 `useWorkspaces` 新建和切换后保存。
 
-3. 实现前端存储模块。
+- [x] 实现前端存储模块。
    - 新增 `apps/studio/src/modules/storage`。
    - 实现 JSON 文档创建、IndexedDB driver、Tauri driver、运行时 driver 选择和 `useStudioData`。
    - 默认文档使用 `defaultPropertyDefinitions` 初始化属性配置。
-   - 迁移已有文档时补齐 v2 字段，并过滤历史 `task` 类型。
+   - 迁移已有文档时补齐当前 schema 字段，并过滤历史 `task` 类型。
 
-4. 接入现有状态。
+- [x] 接入现有状态。
    - `useWorkspaces()` 改为读写 `useStudioData()`。
    - `useLocale()` 和 `useThemeMode()` 改为读写 `document.preferences`。
    - `useProperties()` 和 `useEntities()` 改为读写 `document.propertyDefinitions` 和 `document.entityRecords`。
    - 布局或页面等待数据加载后再渲染主要内容。
 
-5. 实现 Tauri 端读写命令。
+- [x] 实现 Tauri 端读写命令。
    - Rust 端新增 `load_studio_data` 和 `save_studio_data`。
    - 使用 app data dir 下的 `story-studio-data.json`。
    - 增加 Rust 单元测试覆盖文件不存在、写入读取、损坏 JSON。
 
-5.1. 接入新建工作区表单数据。
+- [x] 接入新建工作区表单数据。
    - 表单提交后通过 `useWorkspaces.addWorkspace({ title, description })` 更新统一文档。
    - 新工作区名称、简介和 active workspace 一起保存。
 
-6. 运行验证命令。
+- [x] 运行验证命令。
    - `pnpm run lint`
    - `pnpm run typecheck`
    - `pnpm run test`

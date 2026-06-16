@@ -32,14 +32,14 @@ Story Studio 当前只有偏好设置写入浏览器 `localStorage`，工作区�
 
 ## 数据模型
 
-共享类型位于 `packages/types/src/types/story.ts`：
+共享类型位于 `packages/types/src/types/story.ts`。本规格最初落地时目标 schema 为 v2；当前实现已随正文、世界、素材、助手和章节关联能力演进到 schema v11。
 
-- `StudioDataSchemaVersion = 2`
+- `StudioDataSchemaVersion = 11`
 - `StudioPreferences`
   - `locale: 'zh-CN' | 'en-US'`
   - `themeMode: 'light' | 'dark'`
 - `StudioDataDocument`
-  - `schemaVersion: 2`
+  - `schemaVersion: 11`
   - `preferences: StudioPreferences`
   - `workspaces: Workspace[]`
     - 每个工作区包含作品名称和可选简介。
@@ -48,8 +48,14 @@ Story Studio 当前只有偏好设置写入浏览器 `localStorage`，工作区�
     - 当前角色和大纲的系统属性、自定义属性、选项、排序和显隐配置。
   - `entityRecords: EntityRecord[]`
     - 当前角色和大纲记录，按 `workspaceId` 与工作区关联。
+  - `outlines: WorkspaceOutline[]`
+  - `worlds: WorkspaceWorld[]`
+  - `contents: WorkspaceContentEntry[]`
   - `materials: MaterialAsset[]`
+  - `materialTags: MaterialTag[]`
   - `materialRefs: WorkspaceMaterialRef[]`
+  - `assistantSettings: AssistantSettings`
+  - `assistantChatThreads: AssistantChatThread[]`
   - `createdAt: string`
   - `updatedAt: string`
 
@@ -80,15 +86,15 @@ Story Studio 当前只有偏好设置写入浏览器 `localStorage`，工作区�
 
 ## 验收标准
 
-- [ ] Web 端通过表单新建工作区后刷新仍存在。
-- [ ] Tauri 端新建工作区后重启仍存在。
-- [ ] 工作区简介随工作区一起持久化。
-- [ ] 切换工作区后刷新或重启仍保留当前工作区。
-- [ ] 切换语言和主题后刷新或重启仍保留。
-- [ ] 缺失存档时能创建默认文档。
-- [ ] 工作区、偏好、实体记录、属性定义、素材和素材引用属于同一份持久化文档。
-- [ ] schema v1 文档加载后会补齐 schema v2 字段。
-- [ ] lint、typecheck、test、build 通过。
+- [x] Web 端通过表单新建工作区后刷新仍存在。
+- [x] Tauri 端新建工作区后重启仍存在。
+- [x] 工作区简介随工作区一起持久化。
+- [x] 切换工作区后刷新或重启仍保留当前工作区。
+- [x] 切换语言和主题后刷新或重启仍保留。
+- [x] 缺失存档时能创建默认文档。
+- [x] 工作区、偏好、实体记录、属性定义、素材和素材引用属于同一份持久化文档。
+- [x] 旧 schema 文档加载后会升级到当前 schema，并补齐当前字段。
+- [x] lint、typecheck、test、build 通过。
 
 ## 验证命令
 
