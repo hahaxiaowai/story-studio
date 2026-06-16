@@ -97,15 +97,15 @@ interface LocalTerminalModelResult {
 
 ## 验收标准
 
-- [ ] 助手页可以新增或选择本地 Terminal Provider。
-- [ ] 命令为空、prompt 为空、非本地 Terminal Provider 或运行中时按钮禁用，并显示原因。
-- [ ] Tauri 应用内运行成功时展示 stdout、stderr、退出码和耗时。
-- [ ] 命令非零退出码时展示 stderr 和 exitCode，不静默吞掉错误信息。
-- [ ] Web dev server 中运行时提示本地 Terminal 仅 Tauri 可用。
-- [ ] 测试面板结果不写入大纲、人物、世界、正文或素材模块。
-- [ ] 类型检查通过。
-- [ ] 必要测试通过。
-- [ ] 构建通过。
+- [x] 助手页可以新增或选择本地 Terminal Provider。
+- [x] 命令为空、prompt 为空、非本地 Terminal Provider 或运行中时按钮禁用，并显示原因。
+- [x] Tauri 应用内运行成功时展示 stdout、stderr、退出码和耗时。
+- [x] 命令非零退出码时展示 stderr 和 exitCode，不静默吞掉错误信息。
+- [x] Web dev server 中运行时提示本地 Terminal 仅 Tauri 可用。
+- [x] 测试面板结果不写入大纲、人物、世界、正文或素材模块。
+- [x] 类型检查通过。
+- [x] 必要测试通过。
+- [x] 构建通过。
 
 ## 验证命令
 
