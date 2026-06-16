@@ -59,13 +59,13 @@ Story Studio 当前只有一个静态项目工作台，用于展示项目标题�
 
 ## 验收标准
 
-- [ ] 首页工作台能正常渲染。
-- [ ] `App.vue` 仍然保持轻量。
-- [ ] 页面级内容位于 `pages/index.vue`。
-- [ ] 示例项目数据位于 `constants/project.ts`。
-- [ ] 共享故事类型位于 `packages/types`。
-- [ ] `createSlug` 等共享工具位于 `packages/utils`。
-- [ ] lint、typecheck、test、build 通过。
+- [x] 首页工作台能正常渲染。
+- [x] `App.vue` 仍然保持轻量。
+- [x] 页面级内容位于 `pages/index.vue`。
+- [x] 示例项目数据位于 `constants/project.ts`。
+- [x] 共享故事类型位于 `packages/types`。
+- [x] `createSlug` 等共享工具位于 `packages/utils`。
+- [x] lint、typecheck、test、build 通过。
 
 ## 验证命令
 
