@@ -60,10 +60,12 @@ function handleComposerKeydown(event: KeyboardEvent): void {
 
 async function sendCurrentMessage(): Promise<void> {
   const sourceEntryId = sourceContentEntryId.value
-
-  await chat.send({
+  const sent = await chat.send({
     sourceContentEntryId: sourceEntryId,
   })
+
+  if (sent)
+    sourceContentEntryId.value = ''
 }
 
 function sendMessageToContent(sourceContentEntryId: string | undefined, content: string): void {

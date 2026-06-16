@@ -1,7 +1,7 @@
 import type { AiProviderConfig, AssistantChatThread, AssistantSettings, Workspace } from '@story-studio/types'
 import type { ComputedRef, Ref } from 'vue'
 import type { AssistantChatRequestMessage, AssistantChatTransportKind } from './assistantChat'
-import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { computed, getCurrentInstance, onBeforeUnmount, ref, watch } from 'vue'
 import { useStudioData } from '../storage/useStudioData'
 import { resolveAssistantStoryStyle } from './assistant'
 import {
@@ -51,7 +51,7 @@ export function useAssistantChat(input: {
   disabledReason: ComputedRef<string>
   createThread: (titleSeed?: string) => AssistantChatThread
   clearThread: () => void
-  send: (input?: SendAssistantChatInput) => Promise<void>
+  send: (input?: SendAssistantChatInput) => Promise<boolean>
   retryLast: () => Promise<void>
   stop: () => Promise<void>
   copyMessage: (content: string) => Promise<void>
@@ -96,9 +96,11 @@ export function useAssistantChat(input: {
       selectedThreadId.value = nextThreads[0]?.id ?? ''
   }, { immediate: true })
 
-  onBeforeUnmount(() => {
-    void cleanupListener()
-  })
+  if (getCurrentInstance()) {
+    onBeforeUnmount(() => {
+      void cleanupListener()
+    })
+  }
 
   function createThread(titleSeed = ''): AssistantChatThread {
     const now = new Date().toISOString()
@@ -130,19 +132,19 @@ export function useAssistantChat(input: {
     })
   }
 
-  async function send(input: SendAssistantChatInput = {}): Promise<void> {
+  async function send(input: SendAssistantChatInput = {}): Promise<boolean> {
     const reason = disabledReason.value
 
     if (reason) {
       error.value = reason
-      return
+      return false
     }
 
     const userMessage = inputMessage.value.trim()
     const selectedProvider = provider.value
 
     if (!selectedProvider)
-      return
+      return false
 
     const thread = activeThread.value ?? createThread(userMessage)
     const now = new Date().toISOString()
@@ -186,6 +188,8 @@ export function useAssistantChat(input: {
       markActiveAssistantFailed(message)
       finishActiveRun()
     }
+
+    return true
   }
 
   async function retryLast(): Promise<void> {
