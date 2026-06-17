@@ -9,6 +9,9 @@ const componentSource = readFileSync(fileURLToPath(new URL('./ContentWorkspace.v
 describe('content workspace chapter reorder wiring', () => {
   it('binds move buttons to content ordering state', () => {
     expect(componentSource).toContain('moveEntry')
+    expect(componentSource).toContain('isSearchingEntries')
+    expect(componentSource).toContain('!isSearchingEntries.value && selectedEntryIndex.value > 0')
+    expect(componentSource).toContain('!isSearchingEntries.value && selectedEntryIndex.value >= 0')
     expect(componentSource).toContain('canMoveSelectedEntryUp')
     expect(componentSource).toContain('canMoveSelectedEntryDown')
     expect(componentSource).toContain('content.moveUp')

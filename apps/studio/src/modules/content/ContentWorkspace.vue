@@ -24,8 +24,9 @@ const assistantDraftTargetEntryId = ref('')
 
 const selectedEntry = computed<WorkspaceContentEntry | undefined>(() => entries.value.find(entry => entry.id === selectedEntryId.value) ?? entries.value[0])
 const selectedEntryIndex = computed<number>(() => selectedEntry.value ? entries.value.findIndex(entry => entry.id === selectedEntry.value?.id) : -1)
-const canMoveSelectedEntryUp = computed<boolean>(() => selectedEntryIndex.value > 0)
-const canMoveSelectedEntryDown = computed<boolean>(() => selectedEntryIndex.value >= 0 && selectedEntryIndex.value < entries.value.length - 1)
+const isSearchingEntries = computed<boolean>(() => searchQuery.value.trim().length > 0)
+const canMoveSelectedEntryUp = computed<boolean>(() => !isSearchingEntries.value && selectedEntryIndex.value > 0)
+const canMoveSelectedEntryDown = computed<boolean>(() => !isSearchingEntries.value && selectedEntryIndex.value >= 0 && selectedEntryIndex.value < entries.value.length - 1)
 const selectedTitle = computed<string>(() => {
   if (!selectedEntry.value)
     return t('content.title')
