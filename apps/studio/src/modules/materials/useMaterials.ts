@@ -1,6 +1,6 @@
 import type { MaterialAsset, MaterialTag } from '@story-studio/types'
 import type { ComputedRef, Ref } from 'vue'
-import type { MaterialKindCounts, MaterialKindFilter } from './materials'
+import type { MaterialKindCounts, MaterialKindFilter, MaterialTagCounts } from './materials'
 import { computed, ref } from 'vue'
 import { useStudioData } from '../storage/useStudioData'
 import {
@@ -9,6 +9,7 @@ import {
   getFilteredMaterials,
   getMaterialKindCounts,
   getMaterialsByTag,
+  getMaterialTagCounts,
   removeMaterial,
   removeMaterialTag,
   sortMaterialTags,
@@ -27,6 +28,7 @@ export function useMaterials(): {
   searchQuery: Ref<string>
   filteredMaterials: ComputedRef<MaterialAsset[]>
   kindCounts: ComputedRef<MaterialKindCounts>
+  tagCounts: ComputedRef<MaterialTagCounts>
   addMaterial: () => MaterialAsset
   updateMaterialById: (materialId: string, input: UpdateMaterialInput) => void
   removeMaterialById: (materialId: string) => void
@@ -48,6 +50,10 @@ export function useMaterials(): {
   const kindCounts = computed<MaterialKindCounts>(() => getMaterialKindCounts(materials.value, {
     query: searchQuery.value,
     tagId: selectedTagId.value,
+  }))
+  const tagCounts = computed<MaterialTagCounts>(() => getMaterialTagCounts(materials.value, tags.value, {
+    kind: selectedKind.value,
+    query: searchQuery.value,
   }))
 
   function addMaterial(): MaterialAsset {
@@ -122,6 +128,7 @@ export function useMaterials(): {
     searchQuery,
     filteredMaterials,
     kindCounts,
+    tagCounts,
     addMaterial,
     updateMaterialById,
     removeMaterialById,

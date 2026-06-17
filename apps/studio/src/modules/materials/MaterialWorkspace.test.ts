@@ -22,4 +22,11 @@ describe('material workspace search wiring', () => {
     expect(componentSource).toContain('materials.kindLink')
     expect(componentSource).toContain('materials.kindImage')
   })
+
+  it('binds tag filter counts to the materials composable', () => {
+    expect(componentSource).toContain('tagCounts')
+    expect(componentSource).toContain('tagCounts.all')
+    expect(componentSource).toContain('tagCounts.byTagId[tag.id]')
+    expect(componentSource).not.toContain('materials.filter(material => material.tagIds.includes(tag.id)).length')
+  })
 })

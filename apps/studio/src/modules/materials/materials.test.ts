@@ -5,6 +5,7 @@ import {
   createMaterialTag,
   getFilteredMaterials,
   getMaterialsByTag,
+  getMaterialTagCounts,
   removeMaterial,
   removeMaterialTag,
   sortMaterialTags,
@@ -118,6 +119,29 @@ describe('materials', () => {
     ]
 
     expect(getFilteredMaterials(materials, { kind: 'text', tagId: 'tag-a', query: 'storm' }).map(material => material.id)).toEqual(['material-a'])
+  })
+
+  it('counts material tags within keyword and kind filters', () => {
+    const tags = [
+      createMaterialTagRecord({ id: 'tag-a', order: 0 }),
+      createMaterialTagRecord({ id: 'tag-b', order: 1 }),
+      createMaterialTagRecord({ id: 'tag-empty', order: 2 }),
+    ]
+    const materials = [
+      createMaterialRecord({ id: 'material-a', title: 'Storm archive', text: 'Archive note', tagIds: ['tag-a'], updatedAt: '2026-05-28T09:00:00.000Z' }),
+      createMaterialRecord({ id: 'material-b', title: 'Storm source', url: 'https://example.com/storm', tagIds: ['tag-a', 'tag-b'], updatedAt: '2026-05-28T12:00:00.000Z' }),
+      createMaterialRecord({ id: 'material-c', title: 'Storm image', imageUrl: 'https://cdn.example.com/storm.png', tagIds: ['tag-b'], updatedAt: '2026-05-28T13:00:00.000Z' }),
+      createMaterialRecord({ id: 'material-d', title: 'Quiet archive', text: 'Archive note', tagIds: ['tag-a'], updatedAt: '2026-05-28T14:00:00.000Z' }),
+    ]
+
+    expect(getMaterialTagCounts(materials, tags, { kind: 'link', query: 'storm' })).toEqual({
+      all: 1,
+      byTagId: {
+        'tag-a': 1,
+        'tag-b': 1,
+        'tag-empty': 0,
+      },
+    })
   })
 
   it('removes materials by id', () => {

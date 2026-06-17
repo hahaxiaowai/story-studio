@@ -23,6 +23,11 @@ export type MaterialKindFilter = 'all' | 'text' | 'link' | 'image'
 
 export type MaterialKindCounts = Record<MaterialKindFilter, number>
 
+export interface MaterialTagCounts {
+  all: number
+  byTagId: Record<string, number>
+}
+
 export interface CreateMaterialTagInput {
   name: string
   order: number
@@ -97,6 +102,22 @@ export function getMaterialKindCounts(
     text: getFilteredMaterials(materials, { ...options, kind: 'text' }).length,
     link: getFilteredMaterials(materials, { ...options, kind: 'link' }).length,
     image: getFilteredMaterials(materials, { ...options, kind: 'image' }).length,
+  }
+}
+
+export function getMaterialTagCounts(
+  materials: MaterialAsset[],
+  tags: MaterialTag[],
+  options: Omit<MaterialFilterOptions, 'tagId'>,
+): MaterialTagCounts {
+  const scopedMaterials = getFilteredMaterials(materials, options)
+
+  return {
+    all: scopedMaterials.length,
+    byTagId: Object.fromEntries(tags.map(tag => [
+      tag.id,
+      scopedMaterials.filter(material => material.tagIds.includes(tag.id)).length,
+    ])),
   }
 }
 

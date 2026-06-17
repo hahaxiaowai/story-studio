@@ -11,13 +11,13 @@ import { useMaterials } from './useMaterials'
 
 const { t } = useLocale()
 const {
-  materials,
   tags,
   selectedTagId,
   selectedKind,
   searchQuery,
   filteredMaterials,
   kindCounts,
+  tagCounts,
   addMaterial,
   updateMaterialById,
   removeMaterialById,
@@ -134,7 +134,7 @@ function formatDate(value: string): string {
             @click="selectedTagId = undefined"
           >
             <span>{{ t('materials.all') }}</span>
-            <span>{{ materials.length }}</span>
+            <span>{{ tagCounts.all }}</span>
           </button>
           <button
             v-for="tag in tags"
@@ -148,7 +148,7 @@ function formatDate(value: string): string {
               <span class="size-2.5 shrink-0 rounded-full" :style="{ backgroundColor: tag.color }" />
               <span class="truncate">{{ tag.name }}</span>
             </span>
-            <span>{{ materials.filter(material => material.tagIds.includes(tag.id)).length }}</span>
+            <span>{{ tagCounts.byTagId[tag.id] ?? 0 }}</span>
           </button>
         </div>
       </aside>
