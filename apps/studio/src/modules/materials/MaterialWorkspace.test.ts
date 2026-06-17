@@ -13,6 +13,14 @@ describe('material workspace search wiring', () => {
     expect(componentSource).toContain('materials.searchPlaceholder')
   })
 
+  it('clears material filters when creating a new material', () => {
+    expect(componentSource).toContain('function createMaterial(): void')
+    expect(componentSource).toContain('selectedTagId.value = undefined')
+    expect(componentSource).toContain('selectedKind.value = \'all\'')
+    expect(componentSource).toContain('searchQuery.value = \'\'')
+    expect(componentSource).toContain('selectedMaterialId.value = material.id')
+  })
+
   it('binds material kind filters to the materials composable', () => {
     expect(componentSource).toContain('selectedKind')
     expect(componentSource).toContain('kindCounts')

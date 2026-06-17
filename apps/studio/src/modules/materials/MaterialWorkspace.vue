@@ -51,7 +51,10 @@ watch(filteredMaterials, (nextMaterials) => {
 
 function createMaterial(): void {
   const material = addMaterial()
+
   selectedTagId.value = undefined
+  selectedKind.value = 'all'
+  searchQuery.value = ''
   selectedMaterialId.value = material.id
 }
 
