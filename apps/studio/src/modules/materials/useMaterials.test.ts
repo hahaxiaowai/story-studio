@@ -48,6 +48,31 @@ describe('useMaterials', () => {
 
     expect(materials.filteredMaterials.value.map(material => material.id)).toEqual(['material-link'])
   })
+
+  it('counts material kinds within the selected tag and search query', async () => {
+    const driver = createDriver({
+      ...createDefaultStudioDataDocument(),
+      materials: [
+        createMaterialRecord({ id: 'material-text', title: 'Storm note', text: 'Archive note', tagIds: ['tag-a'], updatedAt: '2026-05-28T09:00:00.000Z' }),
+        createMaterialRecord({ id: 'material-link', title: 'Storm source', url: 'https://example.com/relic', tagIds: ['tag-a'], updatedAt: '2026-05-28T12:00:00.000Z' }),
+        createMaterialRecord({ id: 'material-image', title: 'Storm portrait', imageUrl: 'https://cdn.example.com/portrait.png', tagIds: ['tag-b'], updatedAt: '2026-05-28T13:00:00.000Z' }),
+        createMaterialRecord({ id: 'material-other', title: 'Quiet archive', text: 'Unmatched note', tagIds: ['tag-a'], updatedAt: '2026-05-28T14:00:00.000Z' }),
+      ],
+    })
+    await useStudioData(driver).ready
+
+    const materials = useMaterials()
+    materials.searchQuery.value = 'storm'
+    materials.selectedTagId.value = 'tag-a'
+    materials.selectedKind.value = 'link'
+
+    expect(materials.kindCounts.value).toEqual({
+      all: 2,
+      text: 1,
+      link: 1,
+      image: 0,
+    })
+  })
 })
 
 function createDriver(document: StudioDataDocument): StudioStorageDriver & {

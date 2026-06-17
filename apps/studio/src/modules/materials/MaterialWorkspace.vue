@@ -17,6 +17,7 @@ const {
   selectedKind,
   searchQuery,
   filteredMaterials,
+  kindCounts,
   addMaterial,
   updateMaterialById,
   removeMaterialById,
@@ -176,11 +177,12 @@ function formatDate(value: string): string {
               v-for="filter in materialKindFilters"
               :key="filter.key"
               type="button"
-              class="hover:bg-muted focus-visible:ring-ring/50 rounded-md px-3 py-2 text-left text-xs transition focus-visible:ring-3"
+              class="hover:bg-muted focus-visible:ring-ring/50 flex items-center justify-between gap-2 rounded-md px-3 py-2 text-left text-xs transition focus-visible:ring-3"
               :class="selectedKind === filter.key ? 'bg-muted font-medium' : 'text-muted-foreground'"
               @click="selectedKind = filter.key"
             >
-              {{ t(filter.label) }}
+              <span>{{ t(filter.label) }}</span>
+              <span>{{ kindCounts[filter.key] }}</span>
             </button>
           </div>
         </div>

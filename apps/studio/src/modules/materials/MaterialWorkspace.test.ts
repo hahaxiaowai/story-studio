@@ -15,6 +15,8 @@ describe('material workspace search wiring', () => {
 
   it('binds material kind filters to the materials composable', () => {
     expect(componentSource).toContain('selectedKind')
+    expect(componentSource).toContain('kindCounts')
+    expect(componentSource).toContain('kindCounts[filter.key]')
     expect(componentSource).toContain('materials.typeFilter')
     expect(componentSource).toContain('materials.kindText')
     expect(componentSource).toContain('materials.kindLink')
