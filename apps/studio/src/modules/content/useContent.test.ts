@@ -165,7 +165,49 @@ describe('useContent', () => {
     await nextTick()
 
     expect(content.entries.value.map(entry => entry.id)).toEqual([secondEntry.id])
+    expect(content.entryCounts.value).toEqual({
+      total: 3,
+      filtered: 1,
+    })
     expect(driver.save).toHaveBeenCalledTimes(saveCallCount)
+  })
+
+  it('adds entries after the full workspace list when search is active', async () => {
+    const driver = createDriver(createDefaultStudioDataDocument())
+    await useStudioData(driver).ready
+
+    const content = useContent()
+    const firstEntry = content.addEntry()
+    const secondEntry = content.addEntry()
+    content.updateEntry(firstEntry.id, { chapter: '雨夜' })
+    content.updateEntry(secondEntry.id, { chapter: '雾城' })
+    await nextTick()
+
+    content.searchQuery.value = '雨夜'
+    await nextTick()
+
+    const thirdEntry = content.addEntry()
+    await nextTick()
+
+    expect(thirdEntry).toMatchObject({
+      chapter: '第3章',
+      order: 2,
+    })
+    expect(content.entryCounts.value).toEqual({
+      total: 3,
+      filtered: 1,
+    })
+    expect(driver.save).toHaveBeenLastCalledWith(expect.objectContaining({
+      contents: expect.arrayContaining([
+        expect.objectContaining({ id: thirdEntry.id, chapter: '第3章', order: 2 }),
+      ]),
+      workspaces: expect.arrayContaining([
+        expect.objectContaining({
+          id: 'workspace-mo-shou-shi-jie',
+          moduleCounts: expect.objectContaining({ content: 3 }),
+        }),
+      ]),
+    }))
   })
 
   it('removes entries and updates content counts', async () => {

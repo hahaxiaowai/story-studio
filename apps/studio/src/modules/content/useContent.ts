@@ -16,9 +16,15 @@ import {
 export type UpdateContentInput = Omit<Parameters<typeof updateContentEntry>[1], 'now'>
 export type MoveContentDirection = Parameters<typeof moveContentEntry>[1]['direction']
 
+export interface ContentEntryCounts {
+  total: number
+  filtered: number
+}
+
 export function useContent(): {
   searchQuery: Ref<string>
   entries: ComputedRef<WorkspaceContentEntry[]>
+  entryCounts: ComputedRef<ContentEntryCounts>
   addEntry: () => WorkspaceContentEntry
   updateEntry: (entryId: string, input: UpdateContentInput) => void
   linkEntryToBeat: (entryId: string, outlineBeatId: string) => void
@@ -28,18 +34,22 @@ export function useContent(): {
   const studioData = useStudioData()
   const { activeWorkspace } = useWorkspaces()
   const searchQuery = ref('')
-  const entries = computed<WorkspaceContentEntry[]>(() => getContentEntriesByWorkspace(
+  const workspaceEntries = computed<WorkspaceContentEntry[]>(() => getContentEntriesByWorkspace(
     studioData.document.value.contents,
     activeWorkspace.value.id,
   ))
-  const filteredEntries = computed<WorkspaceContentEntry[]>(() => getFilteredContentEntries(entries.value, searchQuery.value))
+  const filteredEntries = computed<WorkspaceContentEntry[]>(() => getFilteredContentEntries(workspaceEntries.value, searchQuery.value))
+  const entryCounts = computed<ContentEntryCounts>(() => ({
+    total: workspaceEntries.value.length,
+    filtered: filteredEntries.value.length,
+  }))
 
   function addEntry(): WorkspaceContentEntry {
     const now = new Date().toISOString()
-    const nextContentCount = entries.value.length + 1
+    const nextContentCount = workspaceEntries.value.length + 1
     const entry = createContentEntry({
       workspaceId: activeWorkspace.value.id,
-      order: entries.value.length,
+      order: workspaceEntries.value.length,
       now,
     })
 
@@ -123,6 +133,7 @@ export function useContent(): {
   return {
     searchQuery,
     entries: filteredEntries,
+    entryCounts,
     addEntry,
     updateEntry,
     linkEntryToBeat,

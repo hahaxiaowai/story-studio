@@ -21,4 +21,11 @@ describe('content workspace chapter reorder wiring', () => {
     expect(componentSource).toContain('content.searchPlaceholder')
     expect(componentSource).toContain('content.searchEmpty')
   })
+
+  it('shows the filtered and total chapter counts', () => {
+    expect(componentSource).toContain('entryCounts')
+    expect(componentSource).toContain('entryCounts.filtered')
+    expect(componentSource).toContain('entryCounts.total')
+    expect(componentSource).toContain('content.chapterList')
+  })
 })

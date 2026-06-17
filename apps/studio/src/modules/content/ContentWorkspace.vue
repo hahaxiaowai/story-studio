@@ -15,7 +15,7 @@ import { buildContentAssistantPrompt, countContentWords, insertAssistantDraftInt
 import { useContent } from './useContent'
 
 const { t } = useLocale()
-const { searchQuery, entries, addEntry, updateEntry, linkEntryToBeat, moveEntry, removeEntry } = useContent()
+const { searchQuery, entries, entryCounts, addEntry, updateEntry, linkEntryToBeat, moveEntry, removeEntry } = useContent()
 const { activeWorkspace } = useWorkspaces()
 const { beats } = useOutline()
 const selectedEntryId = ref<string>()
@@ -197,7 +197,13 @@ function getDefaultAssistantDraftTargetEntryId(suggestedEntryId: string | undefi
 
     <div class="grid min-h-[32rem] gap-0 lg:grid-cols-[18rem_minmax(0,1fr)]">
       <aside class="border-border/70 border-b p-4 lg:border-r lg:border-b-0">
-        <div class="mb-3">
+        <div class="mb-3 grid gap-2">
+          <div class="flex items-center justify-between gap-2">
+            <h2 class="text-sm font-semibold">
+              {{ t('content.chapterList') }}
+            </h2>
+            <span class="text-muted-foreground text-xs">{{ entryCounts.filtered }} / {{ entryCounts.total }}</span>
+          </div>
           <Input
             v-model="searchQuery"
             :placeholder="t('content.searchPlaceholder')"
