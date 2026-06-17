@@ -1,4 +1,4 @@
-import type { EntityKind, EntityRecord } from '@story-studio/types'
+import type { EntityKind, EntityRecord, Workspace } from '@story-studio/types'
 import type { ComputedRef } from 'vue'
 import { computed } from 'vue'
 import { useStudioData } from '../storage/useStudioData'
@@ -32,7 +32,15 @@ export function useEntities(kind: EntityKind): {
     })
 
     studioData.updateDocument((document) => {
-      document.entityRecords = [...document.entityRecords, record]
+      const nextRecords = [...document.entityRecords, record]
+
+      document.entityRecords = nextRecords
+      syncWorkspaceEntityCount(
+        document.workspaces,
+        record.workspaceId,
+        kind,
+        getRecordsByWorkspaceAndKind(nextRecords, record.workspaceId, kind).length,
+      )
     })
 
     return record
@@ -50,8 +58,18 @@ export function useEntities(kind: EntityKind): {
   }
 
   function removeRecord(recordId: string): void {
+    const workspaceId = activeWorkspace.value.id
+
     studioData.updateDocument((document) => {
-      document.entityRecords = document.entityRecords.filter(record => record.id !== recordId)
+      const nextRecords = document.entityRecords.filter(record => record.id !== recordId)
+
+      document.entityRecords = nextRecords
+      syncWorkspaceEntityCount(
+        document.workspaces,
+        workspaceId,
+        kind,
+        getRecordsByWorkspaceAndKind(nextRecords, workspaceId, kind).length,
+      )
     })
   }
 
@@ -61,4 +79,19 @@ export function useEntities(kind: EntityKind): {
     updateRecord,
     removeRecord,
   }
+}
+
+function syncWorkspaceEntityCount(
+  workspaces: Workspace[],
+  workspaceId: string,
+  kind: EntityKind,
+  count: number,
+): void {
+  if (kind !== 'character')
+    return
+
+  const workspace = workspaces.find(workspace => workspace.id === workspaceId)
+
+  if (workspace)
+    workspace.moduleCounts.characters = count
 }
