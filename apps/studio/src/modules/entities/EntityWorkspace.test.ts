@@ -18,5 +18,8 @@ describe('entity workspace required field validation wiring', () => {
     expect(componentSource).toContain('entity.current')
     expect(componentSource).toContain('entity.delete')
     expect(componentSource).toContain('entity.enable')
+    expect(componentSource).toContain('entity.booleanYes')
+    expect(componentSource).toContain('entity.booleanNo')
+    expect(componentSource).not.toContain('value ? \'是\' : \'否\'')
   })
 })

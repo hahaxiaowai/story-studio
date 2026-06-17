@@ -68,7 +68,7 @@ function formatValue(value: PropertyValue): string {
     return value.join(', ')
 
   if (typeof value === 'boolean')
-    return value ? '是' : '否'
+    return value ? t('entity.booleanYes') : t('entity.booleanNo')
 
   return value === null || value === undefined ? '' : String(value)
 }
