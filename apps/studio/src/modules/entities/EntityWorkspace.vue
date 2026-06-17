@@ -133,16 +133,16 @@ function updateCheckbox(property: PropertyDefinition, event: Event): void {
           <div class="flex items-center justify-between gap-3">
             <div class="min-w-0">
               <p class="text-muted-foreground text-xs">
-                当前记录
+                {{ t('entity.current') }}
               </p>
               <h2 class="truncate text-xl font-semibold">
                 {{ selectedTitle }}
               </h2>
               <p v-if="missingRequiredProperties.length" class="text-destructive mt-1 text-xs">
-                缺少必填字段：{{ missingRequiredProperties.map(property => property.name).join('、') }}
+                {{ t('entity.missingRequired') }}: {{ missingRequiredProperties.map(property => property.name).join('、') }}
               </p>
             </div>
-            <Button variant="ghost" size="icon-sm" aria-label="删除记录" @click="deleteSelectedRecord">
+            <Button variant="ghost" size="icon-sm" :aria-label="t('entity.delete')" @click="deleteSelectedRecord">
               <Trash2Icon class="size-4" />
             </Button>
           </div>
@@ -197,7 +197,7 @@ function updateCheckbox(property: PropertyDefinition, event: Event): void {
                   :checked="selectedRecord.values[property.id] === true"
                   @change="updateCheckbox(property, $event)"
                 >
-                <span>启用</span>
+                <span>{{ t('entity.enable') }}</span>
               </label>
 
               <Input
@@ -208,7 +208,7 @@ function updateCheckbox(property: PropertyDefinition, event: Event): void {
                 @update:model-value="updateValue(property, $event)"
               />
               <span v-if="missingRequiredPropertyIds.has(property.id)" class="text-destructive text-xs">
-                请填写必填字段
+                {{ t('entity.requiredPrompt') }}
               </span>
             </label>
           </form>

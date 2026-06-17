@@ -10,7 +10,13 @@ describe('entity workspace required field validation wiring', () => {
   it('renders required field summary and field-level messages', () => {
     expect(componentSource).toContain('getMissingRequiredProperties')
     expect(componentSource).toContain('missingRequiredProperties')
-    expect(componentSource).toContain('缺少必填字段')
-    expect(componentSource).toContain('请填写必填字段')
+    expect(componentSource).toContain('entity.missingRequired')
+    expect(componentSource).toContain('entity.requiredPrompt')
+  })
+
+  it('uses locale keys for record actions and state labels', () => {
+    expect(componentSource).toContain('entity.current')
+    expect(componentSource).toContain('entity.delete')
+    expect(componentSource).toContain('entity.enable')
   })
 })
