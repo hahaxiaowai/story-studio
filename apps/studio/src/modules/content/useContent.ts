@@ -24,6 +24,7 @@ export interface ContentEntryCounts {
 export function useContent(): {
   searchQuery: Ref<string>
   entries: ComputedRef<WorkspaceContentEntry[]>
+  allEntries: ComputedRef<WorkspaceContentEntry[]>
   entryCounts: ComputedRef<ContentEntryCounts>
   addEntry: () => WorkspaceContentEntry
   updateEntry: (entryId: string, input: UpdateContentInput) => void
@@ -133,6 +134,7 @@ export function useContent(): {
   return {
     searchQuery,
     entries: filteredEntries,
+    allEntries: workspaceEntries,
     entryCounts,
     addEntry,
     updateEntry,

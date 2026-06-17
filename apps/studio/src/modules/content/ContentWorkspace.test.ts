@@ -37,4 +37,11 @@ describe('content workspace chapter reorder wiring', () => {
     expect(componentSource).toContain('entryCounts.total')
     expect(componentSource).toContain('content.chapterList')
   })
+
+  it('uses the full chapter list for assistant draft targets', () => {
+    expect(componentSource).toContain('allEntries')
+    expect(componentSource).toContain('allEntries.value.find(entry => entry.id === assistantDraftTargetEntryId.value)')
+    expect(componentSource).toContain('allEntries.value.some(entry => entry.id === suggestedEntryId)')
+    expect(componentSource).toContain('v-for="entry in allEntries"')
+  })
 })

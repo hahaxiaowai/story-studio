@@ -165,6 +165,11 @@ describe('useContent', () => {
     await nextTick()
 
     expect(content.entries.value.map(entry => entry.id)).toEqual([secondEntry.id])
+    expect(content.allEntries.value.map(entry => entry.id)).toEqual([
+      firstEntry.id,
+      secondEntry.id,
+      thirdEntry.id,
+    ])
     expect(content.entryCounts.value).toEqual({
       total: 3,
       filtered: 1,

@@ -15,7 +15,7 @@ import { buildContentAssistantPrompt, countContentWords, insertAssistantDraftInt
 import { useContent } from './useContent'
 
 const { t } = useLocale()
-const { searchQuery, entries, entryCounts, addEntry, updateEntry, linkEntryToBeat, moveEntry, removeEntry } = useContent()
+const { searchQuery, entries, allEntries, entryCounts, addEntry, updateEntry, linkEntryToBeat, moveEntry, removeEntry } = useContent()
 const { activeWorkspace } = useWorkspaces()
 const { beats } = useOutline()
 const selectedEntryId = ref<string>()
@@ -47,7 +47,7 @@ const selectedLinkedBeat = computed(() => {
   return beats.value.find(beat => beat.id === selectedEntry.value?.outlineBeatId)
 })
 const assistantDraftTargetEntry = computed(() => {
-  return entries.value.find(entry => entry.id === assistantDraftTargetEntryId.value)
+  return allEntries.value.find(entry => entry.id === assistantDraftTargetEntryId.value)
 })
 
 watch(entries, (nextEntries) => {
@@ -124,6 +124,7 @@ function insertAssistantContent(mode: AssistantDraftInsertMode): void {
   updateEntry(nextTargetEntry.id, {
     body: nextTargetEntry.body,
   })
+  searchQuery.value = ''
   selectedEntryId.value = nextTargetEntry.id
   pendingAssistantContent.value = ''
   assistantDraftTargetEntryId.value = ''
@@ -174,10 +175,10 @@ function readEventValue(event: Event): string {
 }
 
 function getDefaultAssistantDraftTargetEntryId(suggestedEntryId: string | undefined): string {
-  if (suggestedEntryId && entries.value.some(entry => entry.id === suggestedEntryId))
+  if (suggestedEntryId && allEntries.value.some(entry => entry.id === suggestedEntryId))
     return suggestedEntryId
 
-  return selectedEntry.value?.id ?? entries.value[0]?.id ?? ''
+  return selectedEntry.value?.id ?? allEntries.value[0]?.id ?? ''
 }
 </script>
 
@@ -322,7 +323,7 @@ function getDefaultAssistantDraftTargetEntryId(suggestedEntryId: string | undefi
                 :value="assistantDraftTargetEntryId"
                 @change="updateAssistantDraftTarget"
               >
-                <option v-for="entry in entries" :key="entry.id" :value="entry.id">
+                <option v-for="entry in allEntries" :key="entry.id" :value="entry.id">
                   {{ `${entry.volume || t('content.volume')} / ${entry.chapter || t('content.chapter')}` }}
                 </option>
               </select>
