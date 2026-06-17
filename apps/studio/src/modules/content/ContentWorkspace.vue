@@ -71,6 +71,8 @@ onMounted(() => {
 
 function createEntry(): void {
   const entry = addEntry()
+
+  searchQuery.value = ''
   selectedEntryId.value = entry.id
 }
 

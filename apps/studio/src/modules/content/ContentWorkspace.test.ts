@@ -25,6 +25,12 @@ describe('content workspace chapter reorder wiring', () => {
     expect(componentSource).toContain('content.searchEmpty')
   })
 
+  it('clears chapter search when creating a new entry', () => {
+    expect(componentSource).toContain('function createEntry(): void')
+    expect(componentSource).toContain('searchQuery.value = \'\'')
+    expect(componentSource).toContain('selectedEntryId.value = entry.id')
+  })
+
   it('shows the filtered and total chapter counts', () => {
     expect(componentSource).toContain('entryCounts')
     expect(componentSource).toContain('entryCounts.filtered')
