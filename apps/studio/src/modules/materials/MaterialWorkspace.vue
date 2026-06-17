@@ -87,7 +87,9 @@ function submitTag(): void {
   const tag = addTag(newTagName.value)
 
   newTagName.value = ''
-  selectedTagId.value = tag.id
+
+  if (selectedMaterial.value)
+    updateSelectedMaterial({ tagIds: [...selectedMaterial.value.tagIds, tag.id] })
 }
 
 function updateTagName(tagId: string, name: string): void {

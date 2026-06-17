@@ -37,4 +37,11 @@ describe('material workspace search wiring', () => {
     expect(componentSource).toContain('tagCounts.byTagId[tag.id]')
     expect(componentSource).not.toContain('materials.filter(material => material.tagIds.includes(tag.id)).length')
   })
+
+  it('applies a newly created tag to the selected material', () => {
+    expect(componentSource).toContain('function submitTag(): void')
+    expect(componentSource).toContain('newTagName.value = \'\'')
+    expect(componentSource).toContain('updateSelectedMaterial({ tagIds: [...selectedMaterial.value.tagIds, tag.id] })')
+    expect(componentSource).not.toContain('selectedTagId.value = tag.id')
+  })
 })
