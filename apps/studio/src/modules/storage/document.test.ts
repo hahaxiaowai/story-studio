@@ -294,6 +294,26 @@ describe('studio data document', () => {
     expect(document.workspaces[0]?.moduleCounts.content).toBe(0)
   })
 
+  it('normalizes workspace character counts from entity records', () => {
+    const documentWithStaleCount = createDefaultStudioDataDocument()
+    const firstCharacter = documentWithStaleCount.entityRecords.find(record => record.kind === 'character')!
+    const staleDocument = {
+      ...documentWithStaleCount,
+      workspaces: documentWithStaleCount.workspaces.map(workspace => ({
+        ...workspace,
+        moduleCounts: {
+          ...workspace.moduleCounts,
+          characters: 9,
+        },
+      })),
+      entityRecords: [firstCharacter],
+    } as StudioDataDocument
+
+    const document = resolveStudioDataDocument(staleDocument)
+
+    expect(document.workspaces[0]?.moduleCounts.characters).toBe(1)
+  })
+
   it('migrates v5 documents by adding material tags and normalizing materials', () => {
     const v5Document = {
       ...createDefaultStudioDataDocument(),

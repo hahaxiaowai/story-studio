@@ -90,7 +90,7 @@ function migrateStudioDataDocument(document: StudioDataDocument): StudioDataDocu
   return {
     ...sourceDocument,
     schemaVersion: STUDIO_DATA_SCHEMA_VERSION,
-    workspaces: sourceDocument.workspaces.map(workspace => normalizeWorkspace(workspace, storyStyleIds, contents)),
+    workspaces: sourceDocument.workspaces.map(workspace => normalizeWorkspace(workspace, storyStyleIds, contents, entityRecords)),
     propertyDefinitions: propertyDefinitions.filter(property => String(property.kind) !== 'task' && String(property.kind) !== 'outline'),
     entityRecords: entityRecords.filter(record => String(record.kind) !== 'task' && String(record.kind) !== 'outline'),
     outlines,
@@ -108,6 +108,7 @@ function normalizeWorkspace(
   workspace: StudioDataDocument['workspaces'][number],
   storyStyleIds: Set<string>,
   contents: WorkspaceContentEntry[],
+  entityRecords: EntityRecord[],
 ): StudioDataDocument['workspaces'][number] {
   const storyStyleId = normalizeStorageText(workspace.storyStyleId)
 
@@ -116,7 +117,7 @@ function normalizeWorkspace(
     ...(storyStyleId && storyStyleIds.has(storyStyleId) ? { storyStyleId } : { storyStyleId: undefined }),
     moduleCounts: {
       outline: workspace.moduleCounts.outline,
-      characters: workspace.moduleCounts.characters,
+      characters: entityRecords.filter(record => record.workspaceId === workspace.id && record.kind === 'character').length,
       maps: workspace.moduleCounts.maps,
       content: contents.filter(entry => entry.workspaceId === workspace.id).length,
     },
