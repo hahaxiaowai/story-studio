@@ -70,7 +70,7 @@ export function useAssistantChat(input: {
   const currentWorkspace = computed<Workspace | undefined>(() => {
     return studioData.document.value.workspaces.find(workspace => workspace.id === studioData.document.value.activeWorkspaceId)
   })
-  const currentStoryStyle = computed(() => resolveAssistantStoryStyle(input.settings.value, currentWorkspace.value?.storyStyleId))
+  const currentStoryStyle = computed(() => resolveAssistantStoryStyle(input.settings.value))
   const threads = computed(() => {
     return filterAssistantThreadsByWorkspace(
       studioData.document.value.assistantChatThreads,

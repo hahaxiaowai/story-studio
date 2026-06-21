@@ -25,6 +25,10 @@ export interface UpdateAssistantSettingsInput {
   defaultModel?: string
 }
 
+export interface UpdateDefaultStoryStyleInput {
+  defaultStoryStyleId: string
+}
+
 export interface SetFeatureBindingInput {
   feature: AssistantFeatureKey
   providerId: string
@@ -111,6 +115,7 @@ export function createAssistantSettings(): AssistantSettings {
   return {
     defaultProviderId: defaultProvider.id,
     defaultModel: '',
+    defaultStoryStyleId: DEFAULT_STORY_STYLE_ID,
     providers: [defaultProvider],
     featureBindings: [],
     storyStyles: [...builtInAssistantStoryStyles],
@@ -136,13 +141,15 @@ export function normalizeAssistantSettings(settings: Partial<AssistantSettings> 
         .filter(binding => binding.providerId || binding.model)
     : []
   const defaultProviderId = providerIds.has(settings.defaultProviderId ?? '') ? settings.defaultProviderId ?? '' : ''
+  const storyStyles = normalizeAssistantStoryStyles(settings.storyStyles)
 
   return {
     defaultProviderId,
     defaultModel: defaultProviderId ? normalizeText(settings.defaultModel) : '',
     providers,
     featureBindings,
-    storyStyles: normalizeAssistantStoryStyles(settings.storyStyles),
+    defaultStoryStyleId: normalizeDefaultStoryStyleId(settings.defaultStoryStyleId, storyStyles),
+    storyStyles,
   }
 }
 
@@ -194,6 +201,16 @@ export function updateAssistantSettings(settings: AssistantSettings, input: Upda
     defaultModel: defaultProviderId
       ? normalizeText(input.defaultModel !== undefined ? input.defaultModel : settings.defaultModel)
       : '',
+  }
+}
+
+export function updateDefaultAssistantStoryStyle(settings: AssistantSettings, input: UpdateDefaultStoryStyleInput): AssistantSettings {
+  const storyStyles = normalizeAssistantStoryStyles(settings.storyStyles)
+
+  return {
+    ...settings,
+    defaultStoryStyleId: normalizeDefaultStoryStyleId(input.defaultStoryStyleId, storyStyles),
+    storyStyles,
   }
 }
 
@@ -272,17 +289,23 @@ export function removeAssistantStoryStyle(settings: AssistantSettings, styleId: 
   if (!style || style.system)
     return settings
 
+  const storyStyles = normalizeAssistantStoryStyles(settings.storyStyles.filter(item => item.id !== styleId))
+
   return {
     ...settings,
-    storyStyles: normalizeAssistantStoryStyles(settings.storyStyles.filter(item => item.id !== styleId)),
+    defaultStoryStyleId: normalizeDefaultStoryStyleId(
+      settings.defaultStoryStyleId === styleId ? DEFAULT_STORY_STYLE_ID : settings.defaultStoryStyleId,
+      storyStyles,
+    ),
+    storyStyles,
   }
 }
 
 export function getDefaultAssistantStoryStyle(settings: AssistantSettings): AssistantStoryStyle {
-  return resolveAssistantStoryStyle(settings, DEFAULT_STORY_STYLE_ID)
+  return resolveAssistantStoryStyle(settings, settings.defaultStoryStyleId)
 }
 
-export function resolveAssistantStoryStyle(settings: AssistantSettings, styleId: string | undefined): AssistantStoryStyle {
+export function resolveAssistantStoryStyle(settings: AssistantSettings, styleId = settings.defaultStoryStyleId): AssistantStoryStyle {
   const styles = normalizeAssistantStoryStyles(settings.storyStyles)
 
   return styles.find(style => style.id === styleId) ?? styles.find(style => style.id === DEFAULT_STORY_STYLE_ID) ?? builtInAssistantStoryStyles[0]!
@@ -355,6 +378,17 @@ function normalizeAssistantStoryStyle(style: AssistantStoryStyle): AssistantStor
     createdAt: style.createdAt,
     updatedAt: style.updatedAt,
   }
+}
+
+function normalizeDefaultStoryStyleId(styleId: string | undefined, storyStyles: AssistantStoryStyle[]): string {
+  const normalizedStyleId = normalizeText(styleId)
+
+  if (storyStyles.some(style => style.id === normalizedStyleId))
+    return normalizedStyleId
+
+  return storyStyles.some(style => style.id === DEFAULT_STORY_STYLE_ID)
+    ? DEFAULT_STORY_STYLE_ID
+    : storyStyles[0]?.id ?? ''
 }
 
 function createDefaultCodexProvider(now = DEFAULT_CODEX_PROVIDER_CREATED_AT): AiProviderConfig {

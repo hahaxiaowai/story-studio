@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import {
   BookOpenIcon,
-  BotIcon,
   FolderIcon,
   MapIcon,
+  MessageSquareIcon,
   PenLineIcon,
+  SettingsIcon,
   UsersIcon,
 } from '@lucide/vue'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
@@ -120,9 +121,15 @@ const projects = computed(() => [
     isActive: currentHash.value === '#materials',
   },
   {
-    name: t('nav.assistant'),
+    name: t('nav.assistantChat'),
+    url: '#assistant-chat',
+    icon: MessageSquareIcon,
+    isActive: currentHash.value === '#assistant-chat',
+  },
+  {
+    name: t('nav.assistantSettings'),
     url: '#assistant',
-    icon: BotIcon,
+    icon: SettingsIcon,
     isActive: currentHash.value === '#assistant',
   },
 ])

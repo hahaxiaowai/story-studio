@@ -81,18 +81,6 @@ export function getArchivedWorkspaces(workspaces: Workspace[]): Workspace[] {
   return workspaces.filter(workspace => workspace.status === 'archived')
 }
 
-export function updateWorkspaceStoryStyle(workspaces: Workspace[], workspaceId: string, storyStyleId: string): Workspace[] {
-  const nextStoryStyleId = storyStyleId.trim()
-
-  return workspaces.map(workspace => workspace.id === workspaceId
-    ? {
-        ...workspace,
-        storyStyleId: nextStoryStyleId || undefined,
-        updatedAt: new Date().toISOString(),
-      }
-    : workspace)
-}
-
 export function archiveWorkspace(workspaces: Workspace[], activeWorkspaceId: string, workspaceId: string, now: string): WorkspaceStatusChangeResult {
   const draftWorkspaces = getDraftWorkspaces(workspaces)
   const workspace = getWorkspaceById(workspaces, workspaceId)
@@ -177,7 +165,8 @@ export function getWorkspaceModuleLabelKey(module: WorkspaceModule): MessageKey 
 export function getNavigationLabelKey(hash: string): MessageKey {
   const normalizedHash = hash || '#manuscript'
   const keys: Record<string, MessageKey> = {
-    '#assistant': 'nav.assistant',
+    '#assistant': 'nav.assistantSettings',
+    '#assistant-chat': 'nav.assistantChat',
     '#cast': 'nav.characters',
     '#characters': 'nav.characters',
     '#content': 'nav.content',
@@ -193,7 +182,7 @@ export function getNavigationLabelKey(hash: string): MessageKey {
 }
 
 export function isPublicNavigationHash(hash: string): boolean {
-  return ['#assistant', '#materials'].includes(hash)
+  return ['#assistant', '#assistant-chat', '#materials'].includes(hash)
 }
 
 export function createWorkspace(options: AppendWorkspaceOptions & Partial<Pick<Workspace, 'moduleCounts'>>): Workspace {

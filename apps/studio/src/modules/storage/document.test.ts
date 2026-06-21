@@ -33,6 +33,7 @@ describe('studio data document', () => {
       assistantSettings: {
         defaultProviderId: 'provider-codex-terminal',
         defaultModel: '',
+        defaultStoryStyleId: 'story-style-general',
         providers: [
           {
             id: 'provider-codex-terminal',
@@ -57,7 +58,7 @@ describe('studio data document', () => {
         ],
       },
     })
-    expect(document.schemaVersion).toBe(11)
+    expect(document.schemaVersion).toBe(12)
     expect(document.workspaces.map(workspace => workspace.title)).toEqual(['魔兽世界'])
     expect(document.propertyDefinitions.map(property => property.id)).toEqual([
       'character-name',
@@ -236,6 +237,7 @@ describe('studio data document', () => {
       assistantSettings: {
         defaultProviderId: '',
         defaultModel: '',
+        defaultStoryStyleId: '',
         providers: [],
         featureBindings: [],
       },
@@ -246,7 +248,7 @@ describe('studio data document', () => {
     const document = resolveStudioDataDocument(v2Document as unknown as StudioDataDocument)
 
     expect(document).toMatchObject({
-      schemaVersion: 11,
+      schemaVersion: 12,
       activeWorkspaceId: 'workspace-mo-shou-shi-jie',
       preferences: {
         locale: 'zh-CN',
@@ -268,7 +270,7 @@ describe('studio data document', () => {
 
     const document = resolveStudioDataDocument(v3Document)
 
-    expect(document.schemaVersion).toBe(11)
+    expect(document.schemaVersion).toBe(12)
     expect(document.worlds.map(world => world.workspaceId)).toEqual(['workspace-mo-shou-shi-jie'])
     expect(document.worlds[0]?.maps[0]?.title).toBe('世界地图')
   })
@@ -289,7 +291,7 @@ describe('studio data document', () => {
 
     const document = resolveStudioDataDocument(v4Document)
 
-    expect(document.schemaVersion).toBe(11)
+    expect(document.schemaVersion).toBe(12)
     expect(document.contents).toEqual([])
     expect(document.workspaces[0]?.moduleCounts.content).toBe(0)
   })
@@ -332,7 +334,7 @@ describe('studio data document', () => {
 
     const document = resolveStudioDataDocument(v5Document)
 
-    expect(document.schemaVersion).toBe(11)
+    expect(document.schemaVersion).toBe(12)
     expect(document.materialTags).toEqual([])
     expect(document.materials).toEqual([
       {
@@ -358,10 +360,11 @@ describe('studio data document', () => {
 
     const document = resolveStudioDataDocument(v6Document)
 
-    expect(document.schemaVersion).toBe(11)
+    expect(document.schemaVersion).toBe(12)
     expect(document.assistantSettings).toEqual({
       defaultProviderId: 'provider-codex-terminal',
       defaultModel: '',
+      defaultStoryStyleId: 'story-style-general',
       providers: [
         {
           id: 'provider-codex-terminal',
@@ -417,14 +420,14 @@ describe('studio data document', () => {
 
     const document = resolveStudioDataDocument(v7Document)
 
-    expect(document.schemaVersion).toBe(11)
+    expect(document.schemaVersion).toBe(12)
     expect(document.assistantChatThreads[0]?.messages[0]).toMatchObject({
       status: 'error',
       error: '上次生成已中断。',
     })
   })
 
-  it('migrates v8 documents by adding story styles and cleaning invalid workspace styles', () => {
+  it('migrates v8 documents by adding story styles and moving workspace style to global default', () => {
     const defaultDocument = createDefaultStudioDataDocument()
     const v8Document = {
       ...defaultDocument,
@@ -448,10 +451,11 @@ describe('studio data document', () => {
 
     const document = resolveStudioDataDocument(v8Document)
 
-    expect(document.schemaVersion).toBe(11)
+    expect(document.schemaVersion).toBe(12)
     expect(document.assistantSettings.storyStyles.map(style => style.id)).toContain('story-style-general')
-    expect(document.workspaces[0]?.storyStyleId).toBe('story-style-epic-fantasy')
-    expect(document.workspaces[1]?.storyStyleId).toBeUndefined()
+    expect(document.assistantSettings.defaultStoryStyleId).toBe('story-style-epic-fantasy')
+    expect('storyStyleId' in document.workspaces[0]!).toBe(false)
+    expect('storyStyleId' in document.workspaces[1]!).toBe(false)
   })
 
   it('migrates legacy world setting groups into configurable records', () => {
@@ -516,7 +520,7 @@ describe('studio data document', () => {
 
     const document = resolveStudioDataDocument(v9Document)
 
-    expect(document.schemaVersion).toBe(11)
+    expect(document.schemaVersion).toBe(12)
     expect(document.contents.map(entry => ({
       id: entry.id,
       outlineBeatId: entry.outlineBeatId,
@@ -566,7 +570,7 @@ describe('studio data document', () => {
 
     const document = resolveStudioDataDocument(v10Document)
 
-    expect(document.schemaVersion).toBe(11)
+    expect(document.schemaVersion).toBe(12)
     expect(document.assistantChatThreads[0]?.messages.map(message => ({
       id: message.id,
       sourceContentEntryId: message.sourceContentEntryId,

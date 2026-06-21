@@ -13,6 +13,7 @@ import {
   setFeatureBinding,
   updateAssistantSettings,
   updateAssistantStoryStyle,
+  updateDefaultAssistantStoryStyle,
   updateProvider,
 } from './assistant'
 
@@ -21,6 +22,7 @@ describe('assistant settings', () => {
     expect(createAssistantSettings()).toEqual({
       defaultProviderId: 'provider-codex-terminal',
       defaultModel: '',
+      defaultStoryStyleId: 'story-style-general',
       providers: [
         {
           id: 'provider-codex-terminal',
@@ -132,9 +134,32 @@ describe('assistant settings', () => {
 
     expect(removeAssistantStoryStyle(withCustom, 'story-style-general').storyStyles.some(style => style.id === 'story-style-general')).toBe(true)
     expect(removeAssistantStoryStyle(withCustom, customStyle.id).storyStyles.some(style => style.id === customStyle.id)).toBe(false)
+    expect(removeAssistantStoryStyle({
+      ...withCustom,
+      defaultStoryStyleId: customStyle.id,
+    }, customStyle.id).defaultStoryStyleId).toBe('story-style-general')
   })
 
-  it('resolves invalid workspace style ids to the default story style', () => {
+  it('updates and resolves the global story style', () => {
+    const settings = createAssistantSettings()
+    const updated = updateDefaultAssistantStoryStyle(settings, {
+      defaultStoryStyleId: 'story-style-epic-fantasy',
+    })
+
+    expect(getDefaultAssistantStoryStyle(updated)).toMatchObject({
+      id: 'story-style-epic-fantasy',
+      name: '史诗奇幻',
+    })
+    expect(resolveAssistantStoryStyle(updated)).toMatchObject({
+      id: 'story-style-epic-fantasy',
+      name: '史诗奇幻',
+    })
+    expect(updateDefaultAssistantStoryStyle(settings, {
+      defaultStoryStyleId: 'missing-style',
+    }).defaultStoryStyleId).toBe('story-style-general')
+  })
+
+  it('resolves invalid style ids to the default story style', () => {
     const settings = createAssistantSettings()
 
     expect(getDefaultAssistantStoryStyle(settings)).toMatchObject({
@@ -235,6 +260,7 @@ describe('assistant settings', () => {
     const settings: AssistantSettings = {
       defaultProviderId: 'provider-default',
       defaultModel: 'global-model',
+      defaultStoryStyleId: 'story-style-general',
       providers: [
         createProviderRecord({ id: 'provider-default', model: 'global-model' }),
         createProviderRecord({ id: 'provider-outline', model: 'outline-model' }),
@@ -264,6 +290,7 @@ describe('assistant settings', () => {
     const settings: AssistantSettings = {
       defaultProviderId: 'provider-1',
       defaultModel: 'global-model',
+      defaultStoryStyleId: 'story-style-general',
       providers: [
         createProviderRecord({ id: 'provider-1' }),
         createProviderRecord({ id: 'provider-2' }),
@@ -297,6 +324,7 @@ describe('assistant settings', () => {
     })).toEqual({
       defaultProviderId: 'provider-1',
       defaultModel: 'global-model',
+      defaultStoryStyleId: settings.defaultStoryStyleId,
       providers: [provider],
       featureBindings: [],
       storyStyles: settings.storyStyles,

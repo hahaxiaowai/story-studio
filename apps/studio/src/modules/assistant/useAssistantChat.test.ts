@@ -1,5 +1,6 @@
 import type { StudioDataDocument } from '@story-studio/types'
 import type { StudioStorageDriver } from '../storage/types'
+import { invoke } from '@tauri-apps/api/core'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { computed } from 'vue'
 import { createDefaultStudioDataDocument } from '../storage/document'
@@ -17,6 +18,7 @@ vi.mock('@tauri-apps/api/event', () => ({
 describe('useAssistantChat', () => {
   beforeEach(() => {
     resetStudioDataForTest()
+    vi.clearAllMocks()
     vi.stubGlobal('window', { __TAURI_INTERNALS__: {} })
   })
 
@@ -107,6 +109,31 @@ describe('useAssistantChat', () => {
       role: 'assistant',
       sourceContentEntryId: 'content-2',
     })
+  })
+
+  it('uses the global story style when sending local terminal prompts', async () => {
+    const document = createDefaultStudioDataDocument()
+    document.assistantSettings.defaultStoryStyleId = 'story-style-epic-fantasy'
+    Object.assign(document.workspaces[0]!, {
+      storyStyleId: 'story-style-dark-realism',
+    })
+    const driver = createDriver(document)
+    const studioData = useStudioData(driver)
+    await studioData.ready
+    const chat = useAssistantChat({
+      settings: computed(() => studioData.document.value.assistantSettings),
+      providers: computed(() => studioData.document.value.assistantSettings.providers),
+    })
+
+    chat.inputMessage.value = '写一个开头'
+    await chat.send()
+
+    expect(vi.mocked(invoke)).toHaveBeenCalledWith('run_local_terminal_chat_stream', expect.objectContaining({
+      prompt: expect.stringContaining('故事风格：史诗奇幻'),
+    }))
+    expect(vi.mocked(invoke)).toHaveBeenCalledWith('run_local_terminal_chat_stream', expect.objectContaining({
+      prompt: expect.not.stringContaining('故事风格：黑暗现实'),
+    }))
   })
 })
 

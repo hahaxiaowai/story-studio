@@ -11,7 +11,6 @@ import {
   getWorkspaceById,
   restoreWorkspace,
   updateWorkspaceDetails,
-  updateWorkspaceStoryStyle,
 } from './workspaces'
 
 export type AddWorkspaceInput = Pick<AppendWorkspaceOptions, 'title' | 'description'>
@@ -27,7 +26,6 @@ export function useWorkspaces(): {
   restoreArchivedWorkspace: (workspaceId: string) => void
   saveActiveWorkspaceDetails: (input: SaveWorkspaceDetailsInput) => void
   setActiveWorkspace: (workspaceId: string) => void
-  setActiveWorkspaceStoryStyle: (storyStyleId: string) => void
   workspaces: Ref<Workspace[], Workspace[]>
 } {
   const studioData = useStudioData()
@@ -77,12 +75,6 @@ export function useWorkspaces(): {
     return activeWorkspace.value
   }
 
-  function setActiveWorkspaceStoryStyle(storyStyleId: string): void {
-    studioData.updateDocument((document) => {
-      document.workspaces = updateWorkspaceStoryStyle(document.workspaces, document.activeWorkspaceId, storyStyleId)
-    })
-  }
-
   function saveActiveWorkspaceDetails(input: SaveWorkspaceDetailsInput): void {
     studioData.updateDocument((document) => {
       document.workspaces = updateWorkspaceDetails(document.workspaces, document.activeWorkspaceId, {
@@ -120,7 +112,6 @@ export function useWorkspaces(): {
     restoreArchivedWorkspace,
     saveActiveWorkspaceDetails,
     setActiveWorkspace,
-    setActiveWorkspaceStoryStyle,
     workspaces,
   }
 }

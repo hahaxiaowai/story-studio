@@ -161,7 +161,7 @@ export interface WorkspaceWorld {
 
 export type WorkspaceModule = 'outline' | 'characters' | 'maps' | 'content'
 
-export type PublicModule = 'materials' | 'assistant'
+export type PublicModule = 'materials' | 'assistant-chat' | 'assistant'
 
 export interface WorkspaceModuleCounts {
   outline: number
@@ -174,7 +174,6 @@ export interface Workspace {
   id: string
   title: string
   description?: string
-  storyStyleId?: string
   status: 'draft' | 'archived'
   moduleCounts: WorkspaceModuleCounts
   createdAt: string
@@ -257,6 +256,7 @@ export interface AssistantStoryStyle {
 export interface AssistantSettings {
   defaultProviderId: string
   defaultModel: string
+  defaultStoryStyleId: string
   providers: AiProviderConfig[]
   featureBindings: AssistantFeatureBinding[]
   storyStyles: AssistantStoryStyle[]
@@ -288,7 +288,7 @@ export interface AssistantChatThread {
   updatedAt: string
 }
 
-export type StudioDataSchemaVersion = 11
+export type StudioDataSchemaVersion = 12
 
 export interface StudioPreferences {
   locale: 'zh-CN' | 'en-US'

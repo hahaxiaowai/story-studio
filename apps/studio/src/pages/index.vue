@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useLocale } from '@/composables/useLocale'
+import AssistantChatWorkspace from '@/modules/assistant/AssistantChatWorkspace.vue'
 import AssistantWorkspace from '@/modules/assistant/AssistantWorkspace.vue'
 import ContentWorkspace from '@/modules/content/ContentWorkspace.vue'
 import EntityWorkspace from '@/modules/entities/EntityWorkspace.vue'
@@ -18,7 +19,7 @@ const workspaceSlug = computed<string>(() => activeWorkspace.value.id.replace(/^
 const outlineCount = computed<number>(() => studioData.document.value.outlines.find(outline => outline.workspaceId === activeWorkspace.value.id)?.beats.length ?? 0)
 const characterCount = computed<number>(() => studioData.document.value.entityRecords.filter(record => record.workspaceId === activeWorkspace.value.id && record.kind === 'character').length || activeWorkspace.value.moduleCounts.characters)
 const contentCount = computed<number>(() => studioData.document.value.contents.filter(entry => entry.workspaceId === activeWorkspace.value.id).length)
-const activeView = computed<'overview' | 'outline' | 'characters' | 'world-settings' | 'world-map' | 'content' | 'materials' | 'assistant'>(() => {
+const activeView = computed<'overview' | 'outline' | 'characters' | 'world-settings' | 'world-map' | 'content' | 'materials' | 'assistant-chat' | 'assistant'>(() => {
   if (currentHash.value === '#outline')
     return 'outline'
 
@@ -36,6 +37,9 @@ const activeView = computed<'overview' | 'outline' | 'characters' | 'world-setti
 
   if (currentHash.value === '#materials')
     return 'materials'
+
+  if (currentHash.value === '#assistant-chat')
+    return 'assistant-chat'
 
   if (currentHash.value === '#assistant')
     return 'assistant'
@@ -75,6 +79,8 @@ onUnmounted(() => {
     <ContentWorkspace v-else-if="activeView === 'content'" />
 
     <MaterialWorkspace v-else-if="activeView === 'materials'" />
+
+    <AssistantChatWorkspace v-else-if="activeView === 'assistant-chat'" />
 
     <AssistantWorkspace v-else-if="activeView === 'assistant'" />
 
@@ -207,10 +213,10 @@ onUnmounted(() => {
 
           <section id="assistant" class="border-border/70 rounded-lg border p-5">
             <h2 class="text-lg font-semibold">
-              {{ t('nav.assistant') }}
+              {{ t('nav.assistantChat') }}
             </h2>
             <p class="text-muted-foreground mt-3 text-sm">
-              {{ t('assistant.prompts') }}
+              {{ t('assistant.chatHint') }}
             </p>
           </section>
         </div>

@@ -9,6 +9,7 @@
     "dev": "turbo run dev",
     "lint": "turbo run lint",
     "prepare": "simple-git-hooks",
+    "tauri:dev": "pnpm --filter @story-studio/studio tauri:dev",
     "test": "turbo run test",
     "typecheck": "turbo run typecheck",
     "log": "git log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --decorate --date=short | devmoji --log"

@@ -15,6 +15,7 @@ import {
   setFeatureBinding,
   updateAssistantSettings,
   updateAssistantStoryStyle,
+  updateDefaultAssistantStoryStyle,
   updateProvider,
 } from './assistant'
 
@@ -24,6 +25,7 @@ export function useAssistant(): {
   settings: ComputedRef<AssistantSettings>
   providers: ComputedRef<AiProviderConfig[]>
   storyStyles: ComputedRef<AssistantStoryStyle[]>
+  defaultStoryStyle: ComputedRef<AssistantStoryStyle>
   features: readonly AssistantFeatureKey[]
   addProvider: (kind: AiProviderKind) => AiProviderConfig
   updateProviderById: (providerId: string, input: UpdateProviderInput) => void
@@ -32,7 +34,8 @@ export function useAssistant(): {
   updateStoryStyleById: (styleId: string, input: Omit<Parameters<typeof updateAssistantStoryStyle>[2], 'now'>) => void
   removeStoryStyleById: (styleId: string) => void
   getDefaultStoryStyle: () => AssistantStoryStyle
-  resolveStoryStyle: (styleId: string | undefined) => AssistantStoryStyle
+  resolveStoryStyle: (styleId?: string) => AssistantStoryStyle
+  updateDefaultStoryStyle: (styleId: string) => void
   updateDefaults: (input: Parameters<typeof updateAssistantSettings>[1]) => void
   updateFeatureBinding: (input: Parameters<typeof setFeatureBinding>[1]) => void
   clearFeatureBinding: (feature: AssistantFeatureKey) => void
@@ -42,6 +45,7 @@ export function useAssistant(): {
   const settings = computed<AssistantSettings>(() => studioData.document.value.assistantSettings)
   const providers = computed<AiProviderConfig[]>(() => settings.value.providers)
   const storyStyles = computed<AssistantStoryStyle[]>(() => settings.value.storyStyles)
+  const defaultStoryStyle = computed<AssistantStoryStyle>(() => getDefaultAssistantStoryStyle(settings.value))
 
   function addProvider(kind: AiProviderKind): AiProviderConfig {
     const provider = createProvider({
@@ -114,9 +118,6 @@ export function useAssistant(): {
   function removeStoryStyleById(styleId: string): void {
     studioData.updateDocument((document) => {
       document.assistantSettings = removeAssistantStoryStyle(document.assistantSettings, styleId)
-      document.workspaces = document.workspaces.map(workspace => workspace.storyStyleId === styleId
-        ? { ...workspace, storyStyleId: undefined }
-        : workspace)
     })
   }
 
@@ -124,8 +125,16 @@ export function useAssistant(): {
     return getDefaultAssistantStoryStyle(settings.value)
   }
 
-  function resolveStoryStyle(styleId: string | undefined): AssistantStoryStyle {
+  function resolveStoryStyle(styleId?: string): AssistantStoryStyle {
     return resolveAssistantStoryStyle(settings.value, styleId)
+  }
+
+  function updateDefaultStoryStyle(styleId: string): void {
+    studioData.updateDocument((document) => {
+      document.assistantSettings = updateDefaultAssistantStoryStyle(document.assistantSettings, {
+        defaultStoryStyleId: styleId,
+      })
+    })
   }
 
   function updateDefaults(input: Parameters<typeof updateAssistantSettings>[1]): void {
@@ -154,6 +163,7 @@ export function useAssistant(): {
     settings,
     providers,
     storyStyles,
+    defaultStoryStyle,
     features: getAssistantFeatures(),
     addProvider,
     updateProviderById,
@@ -163,6 +173,7 @@ export function useAssistant(): {
     removeStoryStyleById,
     getDefaultStoryStyle,
     resolveStoryStyle,
+    updateDefaultStoryStyle,
     updateDefaults,
     updateFeatureBinding,
     clearFeatureBinding,

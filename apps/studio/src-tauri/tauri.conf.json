@@ -5,7 +5,7 @@
   "identifier": "com.storystudio.desktop",
   "build": {
     "beforeDevCommand": "pnpm dev",
-    "devUrl": "http://127.0.0.1:3322",
+    "devUrl": "http://127.0.0.1:4433",
     "beforeBuildCommand": "pnpm build",
     "frontendDist": "../dist"
   },

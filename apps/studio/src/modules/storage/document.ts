@@ -1,11 +1,11 @@
 import type { AssistantChatMessage, AssistantChatThread, EntityRecord, MaterialAsset, MaterialTag, PropertyDefinition, StudioDataDocument, StudioPreferences, WorkspaceContentEntry, WorkspaceOutline, WorkspaceWorld, WorldSettingGroup } from '@story-studio/types'
-import { createAssistantSettings, normalizeAssistantSettings } from '../assistant/assistant'
+import { createAssistantSettings, normalizeAssistantSettings, updateDefaultAssistantStoryStyle } from '../assistant/assistant'
 import { defaultPropertyDefinitions } from '../properties/properties'
 import { seedWorkspaces } from '../workspaces/workspaces'
 import { createWorkspaceWorld } from '../worlds/world'
 import { createDefaultEntityRecords, createDefaultOutlines, createDefaultWorlds, isLegacyPrototypeSeedDocument } from './defaultContent'
 
-export const STUDIO_DATA_SCHEMA_VERSION = 11
+export const STUDIO_DATA_SCHEMA_VERSION = 12
 
 export const LEGACY_LOCALE_STORAGE_KEY = 'story-studio:locale'
 export const LEGACY_THEME_MODE_STORAGE_KEY = 'story-studio:theme-mode'
@@ -80,8 +80,9 @@ function migrateStudioDataDocument(document: StudioDataDocument): StudioDataDocu
   const contents = normalizeContentEntries(sourceDocument.contents ?? [], outlines)
   const materials = normalizeMaterials(sourceDocument.materials ?? [])
   const materialTags = normalizeMaterialTags(sourceDocument.materialTags ?? [])
-  const assistantSettings = normalizeAssistantSettings(sourceDocument.assistantSettings)
-  const storyStyleIds = new Set(assistantSettings.storyStyles.map(style => style.id))
+  const normalizedAssistantSettings = normalizeAssistantSettings(sourceDocument.assistantSettings)
+  const storyStyleIds = new Set(normalizedAssistantSettings.storyStyles.map(style => style.id))
+  const assistantSettings = resolveMigratedAssistantSettings(sourceDocument, normalizedAssistantSettings, storyStyleIds)
   const workspaceIds = new Set(sourceDocument.workspaces.map(workspace => workspace.id))
   const assistantChatThreads = normalizeAssistantChatThreads(sourceDocument.assistantChatThreads ?? [], workspaceIds, sourceDocument.updatedAt)
   const propertyDefinitions = mergeDefaultPropertyDefinitions(sourceDocument.propertyDefinitions ?? [])
@@ -90,7 +91,7 @@ function migrateStudioDataDocument(document: StudioDataDocument): StudioDataDocu
   return {
     ...sourceDocument,
     schemaVersion: STUDIO_DATA_SCHEMA_VERSION,
-    workspaces: sourceDocument.workspaces.map(workspace => normalizeWorkspace(workspace, storyStyleIds, contents, entityRecords)),
+    workspaces: sourceDocument.workspaces.map(workspace => normalizeWorkspace(workspace, contents, entityRecords)),
     propertyDefinitions: propertyDefinitions.filter(property => String(property.kind) !== 'task' && String(property.kind) !== 'outline'),
     entityRecords: entityRecords.filter(record => String(record.kind) !== 'task' && String(record.kind) !== 'outline'),
     outlines,
@@ -106,15 +107,15 @@ function migrateStudioDataDocument(document: StudioDataDocument): StudioDataDocu
 
 function normalizeWorkspace(
   workspace: StudioDataDocument['workspaces'][number],
-  storyStyleIds: Set<string>,
   contents: WorkspaceContentEntry[],
   entityRecords: EntityRecord[],
 ): StudioDataDocument['workspaces'][number] {
-  const storyStyleId = normalizeStorageText(workspace.storyStyleId)
+  const { storyStyleId: _legacyStoryStyleId, ...workspaceWithoutStoryStyle } = workspace as StudioDataDocument['workspaces'][number] & {
+    storyStyleId?: string
+  }
 
   return {
-    ...workspace,
-    ...(storyStyleId && storyStyleIds.has(storyStyleId) ? { storyStyleId } : { storyStyleId: undefined }),
+    ...workspaceWithoutStoryStyle,
     moduleCounts: {
       outline: workspace.moduleCounts.outline,
       characters: entityRecords.filter(record => record.workspaceId === workspace.id && record.kind === 'character').length,
@@ -122,6 +123,52 @@ function normalizeWorkspace(
       content: contents.filter(entry => entry.workspaceId === workspace.id).length,
     },
   }
+}
+
+function resolveMigratedAssistantSettings(
+  document: StudioDataDocument,
+  assistantSettings: StudioDataDocument['assistantSettings'],
+  storyStyleIds: Set<string>,
+): StudioDataDocument['assistantSettings'] {
+  const sourceSettings = document.assistantSettings as StudioDataDocument['assistantSettings'] & {
+    defaultStoryStyleId?: string
+  } | undefined
+  const sourceDefaultStoryStyleId = normalizeStorageText(sourceSettings?.defaultStoryStyleId)
+  const sourceSchemaVersion = Number((document as StudioDataDocument & { schemaVersion?: number }).schemaVersion ?? 0)
+  const workspaceStoryStyleId = findFirstWorkspaceStoryStyleId(document.workspaces, storyStyleIds)
+
+  if (sourceSchemaVersion < STUDIO_DATA_SCHEMA_VERSION && workspaceStoryStyleId) {
+    return updateDefaultAssistantStoryStyle(assistantSettings, {
+      defaultStoryStyleId: workspaceStoryStyleId,
+    })
+  }
+
+  if (storyStyleIds.has(sourceDefaultStoryStyleId))
+    return assistantSettings
+
+  if (!workspaceStoryStyleId)
+    return assistantSettings
+
+  return updateDefaultAssistantStoryStyle(assistantSettings, {
+    defaultStoryStyleId: workspaceStoryStyleId,
+  })
+}
+
+function findFirstWorkspaceStoryStyleId(
+  workspaces: StudioDataDocument['workspaces'],
+  storyStyleIds: Set<string>,
+): string {
+  for (const workspace of workspaces) {
+    const legacyWorkspace = workspace as StudioDataDocument['workspaces'][number] & {
+      storyStyleId?: string
+    }
+    const storyStyleId = normalizeStorageText(legacyWorkspace.storyStyleId)
+
+    if (storyStyleIds.has(storyStyleId))
+      return storyStyleId
+  }
+
+  return ''
 }
 
 function normalizeAssistantChatThreads(threads: AssistantChatThread[], workspaceIds: Set<string>, fallbackUpdatedAt: string): AssistantChatThread[] {
