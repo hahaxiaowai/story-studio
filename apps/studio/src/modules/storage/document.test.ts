@@ -32,7 +32,7 @@ describe('studio data document', () => {
       assistantChatThreads: [],
       assistantSettings: {
         defaultProviderId: 'provider-codex-terminal',
-        defaultModel: '',
+        defaultModel: '5.5',
         defaultStoryStyleId: 'story-style-general',
         providers: [
           {
@@ -41,7 +41,7 @@ describe('studio data document', () => {
             name: 'Codex',
             baseUrl: '',
             apiKey: '',
-            model: '',
+            model: '5.5',
             terminalCommand: 'if [ -n "$STORY_STUDIO_MODEL" ]; then codex exec -m "$STORY_STUDIO_MODEL" -; else codex exec -; fi',
             enabled: true,
             createdAt: '2026-01-01T00:00:00.000Z',
@@ -363,7 +363,7 @@ describe('studio data document', () => {
     expect(document.schemaVersion).toBe(12)
     expect(document.assistantSettings).toEqual({
       defaultProviderId: 'provider-codex-terminal',
-      defaultModel: '',
+      defaultModel: '5.5',
       defaultStoryStyleId: 'story-style-general',
       providers: [
         {
@@ -372,7 +372,7 @@ describe('studio data document', () => {
           name: 'Codex',
           baseUrl: '',
           apiKey: '',
-          model: '',
+          model: '5.5',
           terminalCommand: 'if [ -n "$STORY_STUDIO_MODEL" ]; then codex exec -m "$STORY_STUDIO_MODEL" -; else codex exec -; fi',
           enabled: true,
           createdAt: '2026-01-01T00:00:00.000Z',

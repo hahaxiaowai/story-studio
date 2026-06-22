@@ -21,7 +21,7 @@ describe('assistant settings', () => {
   it('creates Codex terminal settings by default', () => {
     expect(createAssistantSettings()).toEqual({
       defaultProviderId: 'provider-codex-terminal',
-      defaultModel: '',
+      defaultModel: '5.5',
       defaultStoryStyleId: 'story-style-general',
       providers: [
         {
@@ -30,7 +30,7 @@ describe('assistant settings', () => {
           name: 'Codex',
           baseUrl: '',
           apiKey: '',
-          model: '',
+          model: '5.5',
           terminalCommand: 'if [ -n "$STORY_STUDIO_MODEL" ]; then codex exec -m "$STORY_STUDIO_MODEL" -; else codex exec -; fi',
           enabled: true,
           createdAt: '2026-01-01T00:00:00.000Z',
@@ -250,7 +250,7 @@ describe('assistant settings', () => {
     expect(provider).toMatchObject({
       kind: 'local-terminal',
       name: 'Codex',
-      model: '',
+      model: '5.5',
       terminalCommand: 'if [ -n "$STORY_STUDIO_MODEL" ]; then codex exec -m "$STORY_STUDIO_MODEL" -; else codex exec -; fi',
       enabled: true,
     })

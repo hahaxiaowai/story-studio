@@ -57,6 +57,7 @@ export interface ResolvedFeatureBinding {
 const ASSISTANT_FEATURES = ['outline', 'characters', 'world', 'content', 'materials'] as const satisfies readonly AssistantFeatureKey[]
 const DEFAULT_CODEX_PROVIDER_ID = 'provider-codex-terminal'
 const DEFAULT_CODEX_PROVIDER_CREATED_AT = '2026-01-01T00:00:00.000Z'
+const DEFAULT_CODEX_MODEL = '5.5'
 const DEFAULT_CODEX_TERMINAL_COMMAND = 'if [ -n "$STORY_STUDIO_MODEL" ]; then codex exec -m "$STORY_STUDIO_MODEL" -; else codex exec -; fi'
 const DEFAULT_STORY_STYLE_ID = 'story-style-general'
 const BUILT_IN_STORY_STYLE_CREATED_AT = '2026-01-01T00:00:00.000Z'
@@ -114,7 +115,7 @@ export function createAssistantSettings(): AssistantSettings {
 
   return {
     defaultProviderId: defaultProvider.id,
-    defaultModel: '',
+    defaultModel: defaultProvider.model,
     defaultStoryStyleId: DEFAULT_STORY_STYLE_ID,
     providers: [defaultProvider],
     featureBindings: [],
@@ -398,7 +399,7 @@ function createDefaultCodexProvider(now = DEFAULT_CODEX_PROVIDER_CREATED_AT): Ai
     name: 'Codex',
     baseUrl: '',
     apiKey: '',
-    model: '',
+    model: DEFAULT_CODEX_MODEL,
     terminalCommand: DEFAULT_CODEX_TERMINAL_COMMAND,
     enabled: true,
     createdAt: now,
