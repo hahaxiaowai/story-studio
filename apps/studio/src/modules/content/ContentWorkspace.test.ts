@@ -44,4 +44,9 @@ describe('content workspace chapter reorder wiring', () => {
     expect(componentSource).toContain('allEntries.value.some(entry => entry.id === suggestedEntryId)')
     expect(componentSource).toContain('v-for="entry in allEntries"')
   })
+
+  it('routes content AI actions to the assistant chat workspace', () => {
+    expect(componentSource).toContain('window.location.hash = \'#assistant-chat\'')
+    expect(componentSource).not.toContain('window.location.hash = \'#assistant\'')
+  })
 })

@@ -167,7 +167,7 @@ function sendSelectedEntryToAssistant(action: ContentAssistantAction): void {
   })
 
   if (typeof window !== 'undefined')
-    window.location.hash = '#assistant'
+    window.location.hash = '#assistant-chat'
 }
 
 function readEventValue(event: Event): string {
