@@ -54,7 +54,7 @@ onUnmounted(() => {
 <template>
   <SidebarProvider>
     <AppSidebar v-if="isLoaded" />
-    <SidebarInset>
+    <SidebarInset class="min-h-svh overflow-hidden">
       <header class="flex h-16 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
         <div class="flex items-center gap-2 px-4">
           <SidebarTrigger class="-ml-1" />
@@ -78,12 +78,14 @@ onUnmounted(() => {
         </div>
         <AppHeaderActions />
       </header>
-      <div v-if="!isLoaded" class="flex flex-1 items-center justify-center p-6">
+      <div v-if="!isLoaded" class="flex min-h-0 flex-1 items-center justify-center p-6">
         <p class="text-muted-foreground text-sm">
           {{ loadError ? t('project.empty') : t('project.sync') }}
         </p>
       </div>
-      <slot v-else />
+      <div v-else class="min-h-0 flex-1 overflow-hidden">
+        <slot />
+      </div>
     </SidebarInset>
   </SidebarProvider>
 </template>

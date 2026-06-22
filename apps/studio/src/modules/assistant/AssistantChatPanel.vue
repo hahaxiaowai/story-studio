@@ -1,6 +1,7 @@
 <script setup lang="ts">
+import type { AssistantChatMessage } from '@story-studio/types'
 import { CopyIcon, FileInputIcon, MessageSquarePlusIcon, RotateCcwIcon, SendIcon, SquareIcon, Trash2Icon } from '@lucide/vue'
-import { computed, nextTick, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { useLocale } from '@/composables/useLocale'
@@ -17,22 +18,13 @@ const { entries: contentEntries } = useContent()
 const chat = useAssistantChat({ settings, providers })
 const messageList = ref<HTMLElement>()
 const sourceContentEntryId = ref('')
+const typewriterMessages = ref<Record<string, string>>({})
+const typewriterTimer = ref<number>()
 const canRetry = computed(() => Boolean(chat.activeThread.value?.messages.some(message => message.role === 'user')))
-const providerSummary = computed(() => {
-  const provider = chat.provider.value
-
-  if (!provider)
-    return t('assistant.providerUnset')
-
-  const kind = provider.kind === 'openai-compatible'
-    ? t('assistant.apiProvider')
-    : t('assistant.terminalProvider')
-  const model = provider.model || t('assistant.modelUnset')
-
-  return `${provider.name} · ${kind} · ${model}`
-})
 
 watch(() => chat.activeThread.value?.messages.map(message => `${message.id}:${message.content}:${message.status}`).join('|'), () => {
+  syncTypewriterMessages()
+
   void nextTick(() => {
     if (!messageList.value)
       return
@@ -48,6 +40,10 @@ onMounted(() => {
     chat.inputMessage.value = draftPrompt.prompt
     sourceContentEntryId.value = draftPrompt.sourceContentEntryId ?? ''
   }
+})
+
+onBeforeUnmount(() => {
+  stopTypewriterTimer()
 })
 
 function handleComposerKeydown(event: KeyboardEvent): void {
@@ -103,11 +99,79 @@ function formatSourceContentLabel(sourceContentEntryId: string | undefined): str
 
   return label === 'missing' ? t('assistant.sourceContentMissing') : label
 }
+
+function getDisplayMessageContent(message: AssistantChatMessage): string {
+  if (message.role !== 'assistant' || message.status !== 'streaming')
+    return message.content
+
+  return typewriterMessages.value[message.id] ?? ''
+}
+
+function syncTypewriterMessages(): void {
+  const messages = chat.activeThread.value?.messages ?? []
+  const nextMessages: Record<string, string> = {}
+
+  for (const message of messages) {
+    if (message.role !== 'assistant') {
+      continue
+    }
+
+    if (message.status !== 'streaming') {
+      nextMessages[message.id] = message.content
+      continue
+    }
+
+    const displayed = typewriterMessages.value[message.id] ?? ''
+    nextMessages[message.id] = displayed.length > message.content.length
+      ? message.content
+      : displayed
+  }
+
+  typewriterMessages.value = nextMessages
+  startTypewriterTimer()
+}
+
+function startTypewriterTimer(): void {
+  if (typewriterTimer.value !== undefined)
+    return
+
+  typewriterTimer.value = window.setInterval(() => {
+    const messages = chat.activeThread.value?.messages ?? []
+    let hasPendingText = false
+    const nextMessages = { ...typewriterMessages.value }
+
+    for (const message of messages) {
+      if (message.role !== 'assistant' || message.status !== 'streaming')
+        continue
+
+      const displayed = nextMessages[message.id] ?? ''
+
+      if (displayed.length >= message.content.length)
+        continue
+
+      hasPendingText = true
+      nextMessages[message.id] = message.content.slice(0, displayed.length + 3)
+    }
+
+    typewriterMessages.value = nextMessages
+
+    if (!hasPendingText)
+      stopTypewriterTimer()
+  }, 24)
+}
+
+function stopTypewriterTimer(): void {
+  if (typewriterTimer.value === undefined)
+    return
+
+  window.clearInterval(typewriterTimer.value)
+  typewriterTimer.value = undefined
+}
 </script>
 
 <template>
-  <section class="grid min-h-[42rem] overflow-hidden rounded-lg border lg:grid-cols-[17rem_minmax(0,1fr)]">
-    <aside class="border-border/70 bg-muted/20 grid max-h-[42rem] grid-rows-[auto_minmax(0,1fr)] border-b lg:border-r lg:border-b-0">
+  <section class="grid h-full min-h-0 overflow-hidden rounded-lg border lg:grid-cols-[17rem_minmax(0,1fr)]">
+    <aside class="border-border/70 bg-muted/20 grid min-h-0 grid-rows-[auto_minmax(0,1fr)] overflow-hidden border-b lg:border-r lg:border-b-0">
       <div class="border-border/70 flex items-center justify-between gap-2 border-b p-3">
         <div>
           <h2 class="text-sm font-semibold">
@@ -122,7 +186,7 @@ function formatSourceContentLabel(sourceContentEntryId: string | undefined): str
         </Button>
       </div>
 
-      <div class="min-h-40 overflow-auto p-2">
+      <div class="min-h-0 overflow-y-auto p-2">
         <button
           v-for="thread in chat.threads.value"
           :key="thread.id"
@@ -143,7 +207,7 @@ function formatSourceContentLabel(sourceContentEntryId: string | undefined): str
       </div>
     </aside>
 
-    <div class="grid min-h-[42rem] grid-rows-[auto_minmax(0,1fr)_auto]">
+    <div class="grid min-h-0 grid-rows-[auto_minmax(0,1fr)_auto]">
       <header class="border-border/70 flex flex-col gap-3 border-b p-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h2 class="text-lg font-semibold">
@@ -152,6 +216,11 @@ function formatSourceContentLabel(sourceContentEntryId: string | undefined): str
           <p class="text-muted-foreground mt-1 text-sm">
             {{ t('assistant.chatHint') }}
           </p>
+          <div class="text-muted-foreground mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs">
+            <span>{{ t('assistant.currentModel') }} {{ chat.activeModelSummary.value.label }}</span>
+            <span>{{ t('assistant.contextUsage') }} {{ chat.activeContextUsageSummary.value.label }}</span>
+            <span v-if="chat.generationStatusSummary.value.label">{{ t('assistant.generationStatus') }} {{ chat.generationStatusSummary.value.label }}</span>
+          </div>
         </div>
 
         <div class="flex flex-wrap items-center gap-2">
@@ -174,7 +243,7 @@ function formatSourceContentLabel(sourceContentEntryId: string | undefined): str
         </div>
       </header>
 
-      <div ref="messageList" class="bg-background min-h-0 overflow-auto p-4">
+      <div ref="messageList" class="bg-background min-h-0 overflow-y-auto p-4">
         <div v-if="chat.activeThread.value?.messages.length" class="grid gap-4">
           <article
             v-for="message in chat.activeThread.value.messages"
@@ -186,7 +255,7 @@ function formatSourceContentLabel(sourceContentEntryId: string | undefined): str
               class="max-w-[min(44rem,100%)] rounded-lg border px-3 py-2 text-sm whitespace-pre-wrap"
               :class="message.role === 'user' ? 'bg-primary text-primary-foreground border-primary' : 'bg-muted/50'"
             >
-              {{ message.content || (message.status === 'streaming' ? t('assistant.chatThinking') : '') }}
+              {{ getDisplayMessageContent(message) || (message.status === 'streaming' ? t('assistant.chatThinking') : '') }}
             </div>
 
             <div class="flex items-center gap-1 opacity-70 transition group-hover:opacity-100">
@@ -223,7 +292,7 @@ function formatSourceContentLabel(sourceContentEntryId: string | undefined): str
         </div>
       </div>
 
-      <footer class="border-border/70 bg-background border-t p-4">
+      <footer class="border-border/70 bg-background shrink-0 border-t p-4">
         <p v-if="chat.error.value || chat.disabledReason.value" class="mb-2 text-sm" :class="chat.error.value ? 'text-destructive' : 'text-muted-foreground'">
           {{ chat.error.value || chat.disabledReason.value }}
         </p>
@@ -239,7 +308,13 @@ function formatSourceContentLabel(sourceContentEntryId: string | undefined): str
 
           <div class="flex flex-wrap items-center justify-between gap-2">
             <span class="text-muted-foreground text-xs">
-              {{ providerSummary }}
+              {{ t('assistant.currentModel') }} {{ chat.activeModelSummary.value.label }}
+            </span>
+            <span class="text-muted-foreground text-xs">
+              {{ t('assistant.contextUsage') }} {{ chat.activeContextUsageSummary.value.label }}
+            </span>
+            <span v-if="chat.generationStatusSummary.value.label" class="text-muted-foreground text-xs">
+              {{ t('assistant.generationStatus') }} {{ chat.generationStatusSummary.value.label }}
             </span>
 
             <div class="flex gap-2">

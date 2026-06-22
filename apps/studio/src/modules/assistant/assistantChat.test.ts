@@ -2,12 +2,15 @@ import type { AiProviderConfig, AssistantChatThread, AssistantStoryStyle, Worksp
 import { describe, expect, it } from 'vitest'
 import {
   appendAssistantChunk,
+  buildAssistantContextUsageSummary,
   completeAssistantMessage,
   createAssistantThread,
+  createAssistantTransportContextUsage,
   createUserAssistantTurn,
   failAssistantMessage,
   filterAssistantThreadsByWorkspace,
   formatAssistantMessageSourceLabel,
+  formatAssistantModelSummary,
   getAssistantChatDisabledReason,
   normalizeOpenAiCompatibleBaseUrl,
   prepareLocalTerminalPrompt,
@@ -266,6 +269,74 @@ describe('assistant chat state', () => {
       { role: 'user', content: '写一个开头' },
       { role: 'assistant', content: '开头内容' },
     ])
+  })
+
+  it('estimates context usage from injected context and request history', () => {
+    const thread = createThread({
+      messages: [
+        createMessage({ id: 'user-1', role: 'user', content: '写一个开头' }),
+        createMessage({ id: 'assistant-1', role: 'assistant', content: '开头内容', status: 'complete' }),
+      ],
+    })
+
+    const usage = createAssistantTransportContextUsage({
+      provider: createApiProvider(),
+      thread,
+      workspace: createWorkspace(),
+      moduleName: '助手',
+      storyStyle: createStoryStyle({ description: '', constraints: '' }),
+      userMessage: '继续写',
+    })
+
+    expect(usage).toMatchObject({
+      source: 'estimate',
+      messageCount: 4,
+      characterCount: 55,
+      estimatedTokens: 14,
+    })
+  })
+
+  it('formats estimated and actual context usage summaries', () => {
+    expect(buildAssistantContextUsageSummary({
+      source: 'estimate',
+      messageCount: 3,
+      characterCount: 40,
+      estimatedTokens: 10,
+    })).toEqual({
+      source: 'estimate',
+      label: '3 条消息 · 40 字符 · 约 10 tokens',
+    })
+
+    expect(buildAssistantContextUsageSummary({
+      source: 'actual',
+      promptTokens: 120,
+      completionTokens: 30,
+      totalTokens: 150,
+    })).toEqual({
+      source: 'actual',
+      label: 'Prompt 120 · Completion 30 · Total 150 tokens',
+    })
+  })
+
+  it('formats current model summaries for provider types and missing providers', () => {
+    expect(formatAssistantModelSummary(createApiProvider())).toEqual({
+      providerName: 'API 模型',
+      providerKind: 'API 模型',
+      modelName: 'gpt-4.1-mini',
+      label: 'API 模型 · API 模型 · gpt-4.1-mini',
+    })
+    expect(formatAssistantModelSummary(createProvider({ model: '   ' }))).toEqual({
+      providerName: 'Codex',
+      providerKind: '本地 Terminal',
+      modelName: '未设置模型',
+      label: 'Codex · 本地 Terminal · 未设置模型',
+    })
+    expect(formatAssistantModelSummary(undefined)).toEqual({
+      providerName: '未选择 Provider',
+      providerKind: '',
+      modelName: '未设置模型',
+      label: '未选择 Provider',
+    })
   })
 })
 

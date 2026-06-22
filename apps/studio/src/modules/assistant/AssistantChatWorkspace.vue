@@ -7,8 +7,8 @@ const { t } = useLocale()
 </script>
 
 <template>
-  <section class="border-border/70 bg-background min-h-[calc(100svh-12rem)] rounded-lg border shadow-sm">
-    <div class="border-border/70 flex flex-col gap-3 border-b px-5 py-4 md:flex-row md:items-center md:justify-between">
+  <section class="border-border/70 bg-background flex h-full min-h-0 flex-col overflow-hidden rounded-lg border shadow-sm">
+    <div class="border-border/70 flex shrink-0 flex-col gap-3 border-b px-5 py-4 md:flex-row md:items-center md:justify-between">
       <div>
         <p class="text-muted-foreground text-xs font-medium uppercase">
           assistant chat
@@ -20,7 +20,7 @@ const { t } = useLocale()
       <MessageSquareIcon class="text-muted-foreground size-5" />
     </div>
 
-    <div class="p-5">
+    <div class="flex min-h-0 flex-1 overflow-hidden p-5">
       <AssistantChatPanel />
     </div>
   </section>

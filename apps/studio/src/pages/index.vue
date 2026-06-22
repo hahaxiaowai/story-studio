@@ -46,6 +46,12 @@ const activeView = computed<'overview' | 'outline' | 'characters' | 'world-setti
 
   return 'overview'
 })
+const projectLayoutClass = computed<string>(() => {
+  if (activeView.value === 'assistant-chat')
+    return 'flex h-full min-h-0 flex-col gap-4 overflow-hidden p-4 pt-0'
+
+  return 'flex h-full min-h-0 flex-col gap-4 overflow-y-auto p-4 pt-0'
+})
 
 function getCurrentHash(): string {
   return typeof window === 'undefined' ? '' : window.location.hash
@@ -66,7 +72,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <main id="project" class="flex flex-1 flex-col gap-4 p-4 pt-0" :aria-label="t('project.aria.workspace')">
+  <main id="project" :class="projectLayoutClass" :aria-label="t('project.aria.workspace')">
     <EntityWorkspace
       v-if="activeView === 'characters'"
       kind="character"

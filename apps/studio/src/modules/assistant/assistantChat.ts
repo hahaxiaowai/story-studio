@@ -41,6 +41,40 @@ export interface AssistantChatContextInput {
   storyStyle: AssistantStoryStyle | undefined
 }
 
+export interface AssistantContextUsageEstimate {
+  source: 'estimate'
+  messageCount: number
+  characterCount: number
+  estimatedTokens: number
+}
+
+export interface AssistantActualTokenUsage {
+  source: 'actual'
+  promptTokens?: number
+  completionTokens?: number
+  totalTokens?: number
+}
+
+export type AssistantContextUsage = AssistantContextUsageEstimate | AssistantActualTokenUsage
+
+export interface AssistantContextUsageSummary {
+  source: AssistantContextUsage['source']
+  label: string
+}
+
+export interface AssistantModelSummary {
+  providerName: string
+  providerKind: string
+  modelName: string
+  label: string
+}
+
+export interface CreateAssistantTransportContextUsageInput extends AssistantChatContextInput {
+  provider: AiProviderConfig | undefined
+  thread: AssistantChatThread | undefined
+  userMessage: string
+}
+
 export interface AssistantMessageSourceContentEntry {
   id: string
   volume: string
@@ -176,6 +210,70 @@ export function toAssistantChatRequestMessages(thread: AssistantChatThread, cont
   return contextMessage ? [contextMessage, ...historyMessages] : historyMessages
 }
 
+export function createAssistantTransportContextUsage(input: CreateAssistantTransportContextUsageInput): AssistantContextUsageEstimate {
+  if (input.provider?.kind === 'local-terminal') {
+    return estimateAssistantContextUsage([
+      prepareLocalTerminalPrompt({
+        workspace: input.workspace,
+        provider: input.provider,
+        storyStyle: input.storyStyle,
+        moduleName: input.moduleName,
+        userMessage: input.userMessage,
+      }),
+    ], 2)
+  }
+
+  const messages = createAssistantUsageRequestMessages(input)
+
+  return estimateAssistantContextUsage(messages.map(message => message.content), messages.length)
+}
+
+export function buildAssistantContextUsageSummary(usage: AssistantContextUsage | undefined): AssistantContextUsageSummary {
+  if (!usage) {
+    return {
+      source: 'estimate',
+      label: '上下文用量待计算',
+    }
+  }
+
+  if (usage.source === 'actual') {
+    return {
+      source: 'actual',
+      label: [
+        `Prompt ${usage.promptTokens ?? '未知'}`,
+        `Completion ${usage.completionTokens ?? '未知'}`,
+        `Total ${usage.totalTokens ?? '未知'} tokens`,
+      ].join(' · '),
+    }
+  }
+
+  return {
+    source: 'estimate',
+    label: `${usage.messageCount} 条消息 · ${usage.characterCount} 字符 · 约 ${usage.estimatedTokens} tokens`,
+  }
+}
+
+export function formatAssistantModelSummary(provider: AiProviderConfig | undefined): AssistantModelSummary {
+  if (!provider) {
+    return {
+      providerName: '未选择 Provider',
+      providerKind: '',
+      modelName: '未设置模型',
+      label: '未选择 Provider',
+    }
+  }
+
+  const providerKind = provider.kind === 'openai-compatible' ? 'API 模型' : '本地 Terminal'
+  const modelName = provider.model.trim() || '未设置模型'
+
+  return {
+    providerName: provider.name,
+    providerKind,
+    modelName,
+    label: `${provider.name} · ${providerKind} · ${modelName}`,
+  }
+}
+
 export function getAssistantChatDisabledReason(input: {
   isTauri: boolean
   loading: boolean
@@ -252,6 +350,51 @@ function createAssistantChatContextMessage(input: AssistantChatContextInput): As
   return {
     role: 'system',
     content,
+  }
+}
+
+function createAssistantUsageRequestMessages(input: CreateAssistantTransportContextUsageInput): AssistantChatRequestMessage[] {
+  const thread = input.thread ?? createAssistantThread({
+    workspaceId: input.workspace?.id ?? '',
+    providerId: input.provider?.id ?? '',
+    model: input.provider?.model ?? '',
+    now: '',
+  })
+  const requestMessages = toAssistantChatRequestMessages(thread, {
+    workspace: input.workspace,
+    moduleName: input.moduleName,
+    storyStyle: input.storyStyle,
+  })
+  const userMessage = input.userMessage.trim()
+
+  if (!userMessage)
+    return requestMessages
+
+  const lastUserMessage = [...requestMessages].reverse().find(message => message.role === 'user')
+
+  if (lastUserMessage?.content === userMessage)
+    return requestMessages
+
+  return [
+    ...requestMessages,
+    {
+      role: 'user',
+      content: userMessage,
+    },
+  ]
+}
+
+function estimateAssistantContextUsage(contents: string[], messageCount: number): AssistantContextUsageEstimate {
+  const characterCount = contents
+    .join('')
+    .replace(/\s/g, '')
+    .length
+
+  return {
+    source: 'estimate',
+    messageCount,
+    characterCount,
+    estimatedTokens: Math.ceil(characterCount / 4),
   }
 }
 

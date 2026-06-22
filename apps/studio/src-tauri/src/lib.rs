@@ -38,9 +38,21 @@ struct LocalTerminalChatStreamEvent {
     event: String,
     stream: Option<String>,
     chunk: Option<String>,
+    usage: Option<AssistantChatTokenUsage>,
     exit_code: Option<i32>,
     duration_ms: Option<u128>,
     error: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, serde::Deserialize, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+struct AssistantChatTokenUsage {
+    #[serde(rename = "promptTokens", alias = "prompt_tokens")]
+    prompt_tokens: Option<u64>,
+    #[serde(rename = "completionTokens", alias = "completion_tokens")]
+    completion_tokens: Option<u64>,
+    #[serde(rename = "totalTokens", alias = "total_tokens")]
+    total_tokens: Option<u64>,
 }
 
 #[derive(Debug, PartialEq, serde::Serialize)]
@@ -68,6 +80,12 @@ struct OpenAiCompatibleChatRequest {
     model: String,
     messages: Vec<OpenAiCompatibleChatMessage>,
     stream: bool,
+    stream_options: OpenAiCompatibleStreamOptions,
+}
+
+#[derive(Debug, serde::Serialize)]
+struct OpenAiCompatibleStreamOptions {
+    include_usage: bool,
 }
 
 enum StreamReaderEvent {
@@ -460,6 +478,7 @@ where
         event: "done".to_string(),
         stream: None,
         chunk: None,
+        usage: None,
         exit_code: result.exit_code,
         duration_ms: Some(result.duration_ms),
         error: None,
@@ -529,6 +548,9 @@ where
         model: model.trim().to_string(),
         messages,
         stream: true,
+        stream_options: OpenAiCompatibleStreamOptions {
+            include_usage: true,
+        },
     };
     let mut response = client
         .post(url)
@@ -582,6 +604,7 @@ where
         event: "done".to_string(),
         stream: None,
         chunk: None,
+        usage: None,
         exit_code: result.exit_code,
         duration_ms: Some(result.duration_ms),
         error: None,
@@ -625,8 +648,14 @@ where
 
     let data = line.trim_start_matches("data:").trim();
 
-    if let Some(chunk) = parse_openai_compatible_sse_data(data)? {
+    let event = parse_openai_compatible_sse_event(data)?;
+
+    if let Some(chunk) = event.chunk {
         emit_event(stream_chunk_event(run_id, "stdout", chunk));
+    }
+
+    if let Some(usage) = event.usage {
+        emit_event(stream_usage_event(run_id, usage));
     }
 
     Ok(())
@@ -643,19 +672,23 @@ fn openai_compatible_chat_completions_url(base_url: &str) -> Result<String, Stri
 }
 
 fn parse_openai_compatible_sse_data(data: &str) -> Result<Option<String>, String> {
+    Ok(parse_openai_compatible_sse_event(data)?.chunk)
+}
+
+fn parse_openai_compatible_sse_event(data: &str) -> Result<OpenAiCompatibleParsedStreamEvent, String> {
     let data = data.trim();
 
     if data.is_empty() || data == "[DONE]" {
-        return Ok(None);
+        return Ok(OpenAiCompatibleParsedStreamEvent::default());
     }
 
     let event: OpenAiCompatibleStreamResponse = serde_json::from_str(data)
         .map_err(|error| format!("API 流式响应不是有效 JSON：{error}"))?;
 
-    Ok(event
-        .choices
-        .into_iter()
-        .find_map(|choice| choice.delta.content))
+    Ok(OpenAiCompatibleParsedStreamEvent {
+        chunk: event.choices.into_iter().find_map(|choice| choice.delta.content),
+        usage: event.usage,
+    })
 }
 
 fn openai_compatible_error_message(status: u16, body: &str) -> String {
@@ -678,7 +711,9 @@ fn openai_compatible_error_message(status: u16, body: &str) -> String {
 
 #[derive(Debug, serde::Deserialize)]
 struct OpenAiCompatibleStreamResponse {
+    #[serde(default)]
     choices: Vec<OpenAiCompatibleStreamChoice>,
+    usage: Option<AssistantChatTokenUsage>,
 }
 
 #[derive(Debug, serde::Deserialize)]
@@ -699,6 +734,12 @@ struct OpenAiCompatibleErrorResponse {
 #[derive(Debug, serde::Deserialize)]
 struct OpenAiCompatibleError {
     message: Option<String>,
+}
+
+#[derive(Default)]
+struct OpenAiCompatibleParsedStreamEvent {
+    chunk: Option<String>,
+    usage: Option<AssistantChatTokenUsage>,
 }
 
 fn drain_stream_events<E>(
@@ -778,6 +819,20 @@ fn stream_chunk_event(run_id: &str, stream: &str, chunk: String) -> LocalTermina
         event: "chunk".to_string(),
         stream: Some(stream.to_string()),
         chunk: Some(chunk),
+        usage: None,
+        exit_code: None,
+        duration_ms: None,
+        error: None,
+    }
+}
+
+fn stream_usage_event(run_id: &str, usage: AssistantChatTokenUsage) -> LocalTerminalChatStreamEvent {
+    LocalTerminalChatStreamEvent {
+        run_id: run_id.to_string(),
+        event: "chunk".to_string(),
+        stream: None,
+        chunk: None,
+        usage: Some(usage),
         exit_code: None,
         duration_ms: None,
         error: None,
@@ -790,6 +845,7 @@ fn stream_error_event(run_id: &str, error: String, duration_ms: u128) -> LocalTe
         event: "error".to_string(),
         stream: None,
         chunk: None,
+        usage: None,
         exit_code: None,
         duration_ms: Some(duration_ms),
         error: Some(error),
@@ -827,8 +883,9 @@ fn join_reader(
 mod tests {
     use super::*;
     use serde_json::json;
-    use std::io::{BufRead, BufReader};
+    use std::io::{BufRead, BufReader, Read};
     use std::net::TcpListener;
+    use std::sync::{Arc, Mutex};
     use std::time::{SystemTime, UNIX_EPOCH};
 
     #[test]
@@ -1081,6 +1138,71 @@ mod tests {
     }
 
     #[test]
+    fn openai_compatible_chat_request_includes_usage_stream_options() {
+        let (base_url, request_body) = serve_openai_stream_response_with_request_body(
+            ["data: [DONE]\n\n"],
+            Duration::from_millis(0),
+        );
+        let mut events = Vec::new();
+
+        run_openai_compatible_chat_stream_process(
+            "run-api",
+            "provider-api",
+            &base_url,
+            "sk-test",
+            "gpt-test",
+            vec![OpenAiCompatibleChatMessage {
+                role: "user".to_string(),
+                content: "续写".to_string(),
+            }],
+            || false,
+            |event| events.push(event),
+        )
+        .unwrap();
+
+        let body: Value = serde_json::from_str(&request_body.lock().unwrap()).unwrap();
+
+        assert_eq!(body["stream_options"]["include_usage"], true);
+    }
+
+    #[test]
+    fn openai_compatible_sse_usage_only_chunk_emits_usage_without_text() {
+        let base_url = serve_openai_stream_response(
+            [
+                "data: {\"choices\":[],\"usage\":{\"prompt_tokens\":120,\"completion_tokens\":30,\"total_tokens\":150}}\n\n",
+                "data: [DONE]\n\n",
+            ],
+            Duration::from_millis(0),
+        );
+        let mut events = Vec::new();
+
+        run_openai_compatible_chat_stream_process(
+            "run-api",
+            "provider-api",
+            &base_url,
+            "sk-test",
+            "gpt-test",
+            vec![OpenAiCompatibleChatMessage {
+                role: "user".to_string(),
+                content: "续写".to_string(),
+            }],
+            || false,
+            |event| events.push(event),
+        )
+        .unwrap();
+
+        assert!(!events.iter().any(|event| event.event == "chunk" && event.chunk.is_some()));
+        assert!(events.iter().any(|event| {
+            event.event == "chunk"
+                && event.usage.as_ref().is_some_and(|usage| {
+                    usage.prompt_tokens == Some(120)
+                        && usage.completion_tokens == Some(30)
+                        && usage.total_tokens == Some(150)
+                })
+        }));
+    }
+
+    #[test]
     fn openai_compatible_chat_stream_stops_writing_after_cancel() {
         let base_url = serve_openai_stream_response(
             [
@@ -1137,21 +1259,42 @@ mod tests {
         chunks: [&'static str; N],
         chunk_delay: Duration,
     ) -> String {
+        serve_openai_stream_response_with_request_body(chunks, chunk_delay).0
+    }
+
+    fn serve_openai_stream_response_with_request_body<const N: usize>(
+        chunks: [&'static str; N],
+        chunk_delay: Duration,
+    ) -> (String, Arc<Mutex<String>>) {
         let listener = TcpListener::bind("127.0.0.1:0").unwrap();
         let address = listener.local_addr().unwrap();
+        let request_body = Arc::new(Mutex::new(String::new()));
+        let thread_request_body = Arc::clone(&request_body);
 
         thread::spawn(move || {
             let (mut stream, _) = listener.accept().unwrap();
             let mut reader = BufReader::new(stream.try_clone().unwrap());
             let mut line = String::new();
+            let mut content_length = 0usize;
 
             loop {
                 line.clear();
                 reader.read_line(&mut line).unwrap();
 
+                if line.to_ascii_lowercase().starts_with("content-length:") {
+                    let value = line.split_once(':').map(|(_, value)| value).unwrap_or_default();
+                    content_length = value.trim().parse::<usize>().unwrap();
+                }
+
                 if line == "\r\n" || line.is_empty() {
                     break;
                 }
+            }
+
+            let mut body_buffer = vec![0; content_length];
+            if content_length > 0 {
+                reader.read_exact(&mut body_buffer).unwrap();
+                *thread_request_body.lock().unwrap() = String::from_utf8(body_buffer).unwrap();
             }
 
             stream
@@ -1170,6 +1313,6 @@ mod tests {
             }
         });
 
-        format!("http://{address}")
+        (format!("http://{address}"), request_body)
     }
 }
