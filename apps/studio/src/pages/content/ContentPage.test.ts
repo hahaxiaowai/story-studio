@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 
-const componentSource = readFileSync(fileURLToPath(new URL('./ContentWorkspace.vue', import.meta.url)), 'utf8')
+const componentSource = readFileSync(fileURLToPath(new URL('./ContentPage.vue', import.meta.url)), 'utf8')
 
 describe('content workspace chapter reorder wiring', () => {
   it('binds move buttons to content ordering state', () => {

@@ -23,6 +23,10 @@ export interface AddPlotLineInput {
   now: string
 }
 
+export interface UpdatePlotLineInput extends Partial<Pick<PlotLine, 'title' | 'kind' | 'color'>> {
+  now: string
+}
+
 export interface AddOutlineEventTagInput {
   label: string
   color: string
@@ -149,6 +153,63 @@ export function addPlotLine(outline: WorkspaceOutline, input: AddPlotLineInput):
   }
 }
 
+export function updatePlotLine(
+  outline: WorkspaceOutline,
+  plotLineId: string,
+  input: UpdatePlotLineInput,
+): WorkspaceOutline {
+  if (!outline.plotLines.some(plotLine => plotLine.id === plotLineId))
+    return outline
+
+  return {
+    ...outline,
+    plotLines: outline.plotLines.map(plotLine => plotLine.id === plotLineId
+      ? {
+          ...plotLine,
+          ...(input.title !== undefined ? { title: input.title.trim() || plotLine.title } : {}),
+          ...(input.kind !== undefined ? { kind: input.kind } : {}),
+          ...(input.color !== undefined ? { color: input.color } : {}),
+        }
+      : plotLine),
+    updatedAt: input.now,
+  }
+}
+
+export function replacePlotLines(
+  outline: WorkspaceOutline,
+  plotLines: PlotLine[],
+  now: string,
+): WorkspaceOutline {
+  if (!plotLines.length)
+    return outline
+
+  return {
+    ...outline,
+    plotLines: normalizePlotLineOrder(plotLines.map(plotLine => ({
+      ...plotLine,
+      title: plotLine.title.trim() || '新线路',
+    }))),
+    updatedAt: now,
+  }
+}
+
+export function removePlotLine(outline: WorkspaceOutline, plotLineId: string, now: string): WorkspaceOutline {
+  if (outline.plotLines.length <= 1)
+    return outline
+
+  if (!outline.plotLines.some(plotLine => plotLine.id === plotLineId))
+    return outline
+
+  if (outline.beats.some(beat => beat.plotLineIds.includes(plotLineId)))
+    return outline
+
+  return {
+    ...outline,
+    plotLines: normalizePlotLineOrder(outline.plotLines.filter(plotLine => plotLine.id !== plotLineId)),
+    updatedAt: now,
+  }
+}
+
 export function addOutlineEventTag(outline: WorkspaceOutline, input: AddOutlineEventTagInput): WorkspaceOutline {
   const eventTag: OutlineEventTag = {
     id: createOptionId('tag'),
@@ -167,6 +228,10 @@ export function addOutlineEventTag(outline: WorkspaceOutline, input: AddOutlineE
 
 export function normalizeBeatOrder(beats: TimelineBeat[]): TimelineBeat[] {
   return beats.map((beat, order) => ({ ...beat, order }))
+}
+
+export function normalizePlotLineOrder(plotLines: PlotLine[]): PlotLine[] {
+  return plotLines.map((plotLine, order) => ({ ...plotLine, order }))
 }
 
 function createTimelineId(prefix: string, now: string): string {

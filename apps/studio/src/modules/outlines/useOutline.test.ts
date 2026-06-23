@@ -108,6 +108,38 @@ describe('useOutline', () => {
       ]),
     }))
   })
+
+  it('saves plot line drafts inside the active workspace outline', async () => {
+    const driver = createDriver(createDefaultStudioDataDocument())
+    const studioData = useStudioData(driver)
+    await studioData.ready
+    const outline = useOutline()
+
+    outline.savePlotLines([
+      { id: 'plot-alliance-horde', title: '阵营战争线', kind: 'branch', color: '#dc2626', order: 1 },
+      { id: 'plot-main', title: '艾泽拉斯核心线', kind: 'main', color: '#2563eb', order: 0 },
+    ])
+    await nextTick()
+
+    expect(outline.plotLines.value.slice(0, 2).map(line => ({
+      id: line.id,
+      title: line.title,
+      order: line.order,
+    }))).toEqual([
+      { id: 'plot-alliance-horde', title: '阵营战争线', order: 0 },
+      { id: 'plot-main', title: '艾泽拉斯核心线', order: 1 },
+    ])
+    expect(studioData.document.value.outlines[0]?.plotLines[0]?.title).toBe('阵营战争线')
+    expect(driver.save).toHaveBeenLastCalledWith(expect.objectContaining({
+      outlines: expect.arrayContaining([
+        expect.objectContaining({
+          plotLines: expect.arrayContaining([
+            expect.objectContaining({ id: 'plot-main', title: '艾泽拉斯核心线', order: 1 }),
+          ]),
+        }),
+      ]),
+    }))
+  })
 })
 
 function createDriver(document: StudioDataDocument | undefined): StudioStorageDriver & {

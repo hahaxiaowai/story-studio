@@ -3,8 +3,8 @@ import { computed } from 'vue'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { useLocale } from '@/composables/useLocale'
-import { useAssistant } from './useAssistant'
-import { useAssistantRunner } from './useAssistantRunner'
+import { useAssistant } from '@/modules/assistant/useAssistant'
+import { useAssistantRunner } from '@/modules/assistant/useAssistantRunner'
 
 const { t } = useLocale()
 const { settings, providers } = useAssistant()

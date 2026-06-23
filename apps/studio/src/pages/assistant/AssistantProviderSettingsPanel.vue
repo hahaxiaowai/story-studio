@@ -6,7 +6,7 @@ import { computed, ref, watch } from 'vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useLocale } from '@/composables/useLocale'
-import { useAssistant } from './useAssistant'
+import { useAssistant } from '@/modules/assistant/useAssistant'
 
 const { t } = useLocale()
 const {

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { MoreHorizontalIcon, PlusIcon } from '@lucide/vue'
+import { ListTreeIcon, MoreHorizontalIcon, PlusIcon } from '@lucide/vue'
 import { ref } from 'vue'
 import { Button } from '@/components/ui/button'
 import {
@@ -9,36 +9,28 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { useLocale } from '@/composables/useLocale'
+import { useOutline } from '@/modules/outlines/useOutline'
 import OutlineChronicleMode from './OutlineChronicleMode.vue'
 import OutlineInputMode from './OutlineInputMode.vue'
-import { useOutline } from './useOutline'
+import OutlineLineManagerDialog from './OutlineLineManagerDialog.vue'
 
 type OutlineMode = 'input' | 'chronicle'
 
 const { t } = useLocale()
 const {
   beats,
-  plotLines,
   eventTags,
   addBeat,
-  addLine,
   addEventTag,
 } = useOutline()
 
 const mode = ref<OutlineMode>('chronicle')
 const selectedBeatId = ref<string>()
+const lineManagerOpen = ref(false)
 
 function createBeat(): void {
   const beat = addBeat()
   selectedBeatId.value = beat.id
-}
-
-function createLine(): void {
-  addLine({
-    title: `${t('outline.branch')} ${plotLines.value.length}`,
-    kind: 'branch',
-    color: '#db2777',
-  })
 }
 
 function createEventTag(): void {
@@ -88,9 +80,9 @@ function openInputMode(): void {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem @click="createLine">
-              <PlusIcon class="size-4" />
-              {{ t('outline.addLine') }}
+            <DropdownMenuItem @click="lineManagerOpen = true">
+              <ListTreeIcon class="size-4" />
+              {{ t('outline.manageLines') }}
             </DropdownMenuItem>
             <DropdownMenuItem @click="createEventTag">
               <PlusIcon class="size-4" />
@@ -116,5 +108,6 @@ function openInputMode(): void {
       @add-beat="createBeat"
       @edit-details="openInputMode"
     />
+    <OutlineLineManagerDialog v-model:open="lineManagerOpen" />
   </section>
 </template>

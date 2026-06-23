@@ -4,9 +4,9 @@ import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 
-const settingsWorkspaceSource = readFileSync(fileURLToPath(new URL('./AssistantWorkspace.vue', import.meta.url)), 'utf8')
+const settingsWorkspaceSource = readFileSync(fileURLToPath(new URL('./AssistantSettingsPage.vue', import.meta.url)), 'utf8')
 const runnerPanelSource = readFileSync(fileURLToPath(new URL('./AssistantRunnerPanel.vue', import.meta.url)), 'utf8')
-const chatWorkspaceSource = readFileSync(fileURLToPath(new URL('./AssistantChatWorkspace.vue', import.meta.url)), 'utf8')
+const chatPageSource = readFileSync(fileURLToPath(new URL('./AssistantChatPage.vue', import.meta.url)), 'utf8')
 
 describe('assistant workspace wiring', () => {
   it('keeps the settings workspace focused on settings panels', () => {
@@ -21,13 +21,13 @@ describe('assistant workspace wiring', () => {
   })
 
   it('keeps the chat workspace connected to the chat panel', () => {
-    expect(chatWorkspaceSource).toContain('AssistantChatPanel')
-    expect(chatWorkspaceSource).toContain('assistant.chatTitle')
+    expect(chatPageSource).toContain('AssistantChatPanel')
+    expect(chatPageSource).toContain('assistant.chatTitle')
   })
 
   it('lets the chat workspace fill the scroll viewport', () => {
-    expect(chatWorkspaceSource).toContain('class="border-border/70 bg-background flex h-full min-h-0 flex-col overflow-hidden rounded-lg border shadow-sm"')
-    expect(chatWorkspaceSource).toContain('class="flex min-h-0 flex-1 overflow-hidden p-5"')
+    expect(chatPageSource).toContain('class="border-border/70 bg-background flex h-full min-h-0 flex-col overflow-hidden rounded-lg border shadow-sm"')
+    expect(chatPageSource).toContain('class="flex min-h-0 flex-1 overflow-hidden p-5"')
   })
 
   it('keeps the chat panel connected to model, context usage, and typewriter display state', () => {
@@ -51,7 +51,7 @@ describe('assistant workspace wiring', () => {
   })
 
   it('keeps the local terminal test panel connected to the assistant runner', () => {
-    expect(runnerPanelSource).toContain('import { useAssistantRunner } from \'./useAssistantRunner\'')
+    expect(runnerPanelSource).toContain('import { useAssistantRunner } from \'@/modules/assistant/useAssistantRunner\'')
     expect(runnerPanelSource).toContain('const runner = useAssistantRunner(settings)')
     expect(runnerPanelSource).toContain('t(\'assistant.runnerTitle\')')
     expect(runnerPanelSource).toContain('runner.run')

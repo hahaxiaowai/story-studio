@@ -1,18 +1,18 @@
 <script setup lang="ts">
 import type { WorkspaceContentEntry } from '@story-studio/types'
-import type { AssistantDraftInsertMode, ContentAssistantAction } from './contentAssistant'
+import type { AssistantDraftInsertMode, ContentAssistantAction } from '@/modules/content/contentAssistant'
 import { ArrowDownIcon, ArrowUpIcon, PenLineIcon, PlusIcon, ShieldCheckIcon, SparklesIcon, Trash2Icon } from '@lucide/vue'
 import { computed, onMounted, ref, watch } from 'vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { useLocale } from '@/composables/useLocale'
+import { consumeAssistantContentDraftPayload } from '@/modules/assistant/assistantContentDraft'
+import { queueAssistantDraftPrompt } from '@/modules/assistant/assistantDraft'
+import { buildContentAssistantPrompt, countContentWords, insertAssistantDraftIntoContentEntries } from '@/modules/content/contentAssistant'
+import { useContent } from '@/modules/content/useContent'
+import { useOutline } from '@/modules/outlines/useOutline'
 import { useWorkspaces } from '@/modules/workspaces/useWorkspaces'
-import { consumeAssistantContentDraftPayload } from '../assistant/assistantContentDraft'
-import { queueAssistantDraftPrompt } from '../assistant/assistantDraft'
-import { useOutline } from '../outlines/useOutline'
-import { buildContentAssistantPrompt, countContentWords, insertAssistantDraftIntoContentEntries } from './contentAssistant'
-import { useContent } from './useContent'
 
 const { t } = useLocale()
 const { searchQuery, entries, allEntries, entryCounts, addEntry, updateEntry, linkEntryToBeat, moveEntry, removeEntry } = useContent()

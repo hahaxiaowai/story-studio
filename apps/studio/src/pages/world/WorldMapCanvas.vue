@@ -10,8 +10,8 @@ import {
 } from '@story-studio/fantasy-map'
 import { computed, markRaw, nextTick, onMounted, onUnmounted, ref, shallowRef, watch } from 'vue'
 import { useLocale } from '@/composables/useLocale'
-import { useWorld } from './useWorld'
-import { createWorldMapStrokeHandler } from './worldMapRenderer'
+import { useWorld } from '@/modules/worlds/useWorld'
+import { createWorldMapStrokeHandler } from '@/modules/worlds/worldMapRenderer'
 
 const { t } = useLocale()
 const { activeMap, addMapStroke, clearMap } = useWorld()

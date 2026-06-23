@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useLocale } from '@/composables/useLocale'
-import EntityWorkspace from '../entities/EntityWorkspace.vue'
+import EntityWorkspace from '@/pages/entities/EntityWorkspace.vue'
 
 const { t } = useLocale()
 </script>

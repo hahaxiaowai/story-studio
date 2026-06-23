@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import SidebarLayout from './layouts/SidebarLayout.vue'
-import IndexPage from './pages/index.vue'
+import ProjectPage from './pages/project/index.vue'
 </script>
 
 <template>
   <SidebarLayout>
-    <IndexPage />
+    <ProjectPage />
   </SidebarLayout>
 </template>

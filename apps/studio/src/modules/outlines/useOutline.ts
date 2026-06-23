@@ -10,6 +10,7 @@ import {
   createWorkspaceOutline,
   moveTimelineBeat,
   removeTimelineBeat,
+  replacePlotLines,
   updateTimelineBeat,
 } from './outline'
 
@@ -25,6 +26,7 @@ export function useOutline(): {
   removeBeat: (beatId: string) => void
   moveBeat: (beatId: string, direction: 'up' | 'down') => void
   addLine: (input: Omit<Parameters<typeof addPlotLine>[1], 'now'>) => void
+  savePlotLines: (plotLines: PlotLine[]) => void
   addEventTag: (input: Omit<Parameters<typeof addOutlineEventTag>[1], 'now'>) => void
 } {
   const studioData = useStudioData()
@@ -86,6 +88,10 @@ export function useOutline(): {
     }))
   }
 
+  function savePlotLines(plotLines: PlotLine[]): void {
+    replaceActiveOutline(replacePlotLines(ensureWorkspaceOutline(), plotLines, new Date().toISOString()))
+  }
+
   function addEventTag(input: Omit<Parameters<typeof addOutlineEventTag>[1], 'now'>): void {
     replaceActiveOutline(addOutlineEventTag(ensureWorkspaceOutline(), {
       ...input,
@@ -132,6 +138,7 @@ export function useOutline(): {
     removeBeat,
     moveBeat,
     addLine,
+    savePlotLines,
     addEventTag,
   }
 }

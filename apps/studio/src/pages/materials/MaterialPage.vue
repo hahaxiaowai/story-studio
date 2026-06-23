@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import type { MaterialAsset } from '@story-studio/types'
-import type { MaterialKindFilter } from './materials'
+import type { MaterialKindFilter } from '@/modules/materials/materials'
 import { ImageIcon, LinkIcon, PlusIcon, TagsIcon, Trash2Icon } from '@lucide/vue'
 import { computed, ref, watch } from 'vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { useLocale } from '@/composables/useLocale'
-import { useMaterials } from './useMaterials'
+import { useMaterials } from '@/modules/materials/useMaterials'
 
 const { t } = useLocale()
 const {

@@ -11,13 +11,13 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet'
 import { useLocale } from '@/composables/useLocale'
-import { useContent } from '../content/useContent'
-import { getEntityTitle } from '../entities/entities'
-import { useStudioData } from '../storage/useStudioData'
-import { useWorkspaces } from '../workspaces/useWorkspaces'
-import { createInputModeBeatCards } from './input-mode'
+import { useContent } from '@/modules/content/useContent'
+import { getEntityTitle } from '@/modules/entities/entities'
+import { createInputModeBeatCards } from '@/modules/outlines/input-mode'
+import { useOutline } from '@/modules/outlines/useOutline'
+import { useStudioData } from '@/modules/storage/useStudioData'
+import { useWorkspaces } from '@/modules/workspaces/useWorkspaces'
 import OutlineBeatEditor from './OutlineBeatEditor.vue'
-import { useOutline } from './useOutline'
 
 const props = defineProps<{
   selectedBeatId?: string

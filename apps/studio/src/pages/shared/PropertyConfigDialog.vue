@@ -20,8 +20,8 @@ import {
   removeCustomProperty,
   removePropertyOption,
   updateProperty,
-} from './properties'
-import { useProperties } from './useProperties'
+} from '@/modules/properties/properties'
+import { useProperties } from '@/modules/properties/useProperties'
 
 const props = defineProps<{
   kind: EntityKind

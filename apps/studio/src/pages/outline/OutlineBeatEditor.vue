@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { BeatEvent, CharacterChange, CharacterChangeCategory, OutlineEventTag, PlotLine, TimelineBeat, WorkspaceContentEntry } from '@story-studio/types'
-import type { UpdateBeatInput } from './useOutline'
+import type { UpdateBeatInput } from '@/modules/outlines/useOutline'
 import { ArrowDownIcon, ArrowUpIcon, PlusIcon, Trash2Icon } from '@lucide/vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'

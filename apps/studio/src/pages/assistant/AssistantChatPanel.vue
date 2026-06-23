@@ -5,12 +5,12 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { useLocale } from '@/composables/useLocale'
-import { useContent } from '../content/useContent'
-import { formatAssistantMessageSourceLabel } from './assistantChat'
-import { queueAssistantContentDraft } from './assistantContentDraft'
-import { consumeAssistantDraftPromptPayload } from './assistantDraft'
-import { useAssistant } from './useAssistant'
-import { useAssistantChat } from './useAssistantChat'
+import { formatAssistantMessageSourceLabel } from '@/modules/assistant/assistantChat'
+import { queueAssistantContentDraft } from '@/modules/assistant/assistantContentDraft'
+import { consumeAssistantDraftPromptPayload } from '@/modules/assistant/assistantDraft'
+import { useAssistant } from '@/modules/assistant/useAssistant'
+import { useAssistantChat } from '@/modules/assistant/useAssistantChat'
+import { useContent } from '@/modules/content/useContent'
 
 const { t } = useLocale()
 const { settings, providers } = useAssistant()

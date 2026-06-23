@@ -11,11 +11,11 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet'
 import { useLocale } from '@/composables/useLocale'
-import { getEntityTitle } from '../entities/entities'
-import { useStudioData } from '../storage/useStudioData'
-import { useWorkspaces } from '../workspaces/useWorkspaces'
-import { createChronicleMobileCards, createChronicleModel } from './chronicle'
-import { useOutline } from './useOutline'
+import { getEntityTitle } from '@/modules/entities/entities'
+import { createChronicleMobileCards, createChronicleModel } from '@/modules/outlines/chronicle'
+import { useOutline } from '@/modules/outlines/useOutline'
+import { useStudioData } from '@/modules/storage/useStudioData'
+import { useWorkspaces } from '@/modules/workspaces/useWorkspaces'
 
 const props = defineProps<{
   selectedBeatId?: string

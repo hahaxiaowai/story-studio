@@ -6,10 +6,10 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { useLocale } from '@/composables/useLocale'
-import PropertyConfigDialog from '../properties/PropertyConfigDialog.vue'
-import { useProperties } from '../properties/useProperties'
-import { getEntityTitle, getMissingRequiredProperties } from './entities'
-import { useEntities } from './useEntities'
+import { getEntityTitle, getMissingRequiredProperties } from '@/modules/entities/entities'
+import { useEntities } from '@/modules/entities/useEntities'
+import { useProperties } from '@/modules/properties/useProperties'
+import PropertyConfigDialog from '@/pages/shared/PropertyConfigDialog.vue'
 
 const props = defineProps<{
   kind: EntityKind

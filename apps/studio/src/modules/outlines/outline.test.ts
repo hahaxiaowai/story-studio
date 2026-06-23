@@ -6,7 +6,10 @@ import {
   createTimelineBeat,
   createWorkspaceOutline,
   moveTimelineBeat,
+  removePlotLine,
   removeTimelineBeat,
+  replacePlotLines,
+  updatePlotLine,
   updateTimelineBeat,
 } from './outline'
 
@@ -146,6 +149,93 @@ describe('outline model', () => {
       system: false,
       order: 4,
     })
+  })
+
+  it('updates plot line title, color, and kind without changing references', () => {
+    const outline = {
+      ...createWorkspaceOutline('workspace-a', '2026-05-25T10:00:00.000Z'),
+      beats: [createBeat('beat-a', 0)],
+    }
+
+    const updated = updatePlotLine(outline, 'plot-main', {
+      title: '核心主线',
+      color: '#0f766e',
+      kind: 'branch',
+      now: '2026-05-25T11:00:00.000Z',
+    })
+
+    expect(updated.plotLines[0]).toMatchObject({
+      id: 'plot-main',
+      title: '核心主线',
+      color: '#0f766e',
+      kind: 'branch',
+      order: 0,
+    })
+    expect(updated.beats[0]?.plotLineIds).toEqual(['plot-main'])
+    expect(updated.updatedAt).toBe('2026-05-25T11:00:00.000Z')
+  })
+
+  it('keeps the previous plot line title when an update title is blank', () => {
+    const outline = createWorkspaceOutline('workspace-a', '2026-05-25T10:00:00.000Z')
+
+    const updated = updatePlotLine(outline, 'plot-main', {
+      title: '   ',
+      now: '2026-05-25T11:00:00.000Z',
+    })
+
+    expect(updated.plotLines[0]?.title).toBe('主线')
+  })
+
+  it('replaces plot lines with normalized draft order', () => {
+    const outline = {
+      ...createWorkspaceOutline('workspace-a', '2026-05-25T10:00:00.000Z'),
+      plotLines: [
+        { id: 'plot-main', title: '主线', kind: 'main' as const, color: '#2563eb', order: 0 },
+        { id: 'plot-branch', title: '支线', kind: 'branch' as const, color: '#db2777', order: 1 },
+      ],
+    }
+
+    const updated = replacePlotLines(outline, [
+      { id: 'plot-branch', title: '情感线', kind: 'branch', color: '#be185d', order: 9 },
+      { id: 'plot-main', title: '核心线', kind: 'main', color: '#2563eb', order: 4 },
+    ], '2026-05-25T11:00:00.000Z')
+
+    expect(updated.plotLines).toEqual([
+      { id: 'plot-branch', title: '情感线', kind: 'branch', color: '#be185d', order: 0 },
+      { id: 'plot-main', title: '核心线', kind: 'main', color: '#2563eb', order: 1 },
+    ])
+  })
+
+  it('does not replace plot lines with an empty draft', () => {
+    const outline = createWorkspaceOutline('workspace-a', '2026-05-25T10:00:00.000Z')
+
+    expect(replacePlotLines(outline, [], '2026-05-25T11:00:00.000Z')).toEqual(outline)
+  })
+
+  it('removes only unreferenced plot lines and keeps at least one line', () => {
+    const outline = {
+      ...createWorkspaceOutline('workspace-a', '2026-05-25T10:00:00.000Z'),
+      plotLines: [
+        { id: 'plot-main', title: '主线', kind: 'main' as const, color: '#2563eb', order: 0 },
+        { id: 'plot-branch', title: '支线', kind: 'branch' as const, color: '#db2777', order: 1 },
+        { id: 'plot-unused', title: '废弃线', kind: 'branch' as const, color: '#64748b', order: 2 },
+      ],
+      beats: [
+        createBeat('beat-a', 0),
+        { ...createBeat('beat-b', 1), plotLineIds: ['plot-branch'] },
+      ],
+    }
+
+    expect(removePlotLine(outline, 'plot-main', '2026-05-25T11:00:00.000Z')).toEqual(outline)
+    expect(removePlotLine(createWorkspaceOutline('workspace-a', '2026-05-25T10:00:00.000Z'), 'plot-main', '2026-05-25T11:00:00.000Z')).toEqual(createWorkspaceOutline('workspace-a', '2026-05-25T10:00:00.000Z'))
+
+    const updated = removePlotLine(outline, 'plot-unused', '2026-05-25T11:00:00.000Z')
+
+    expect(updated.plotLines.map(line => ({ id: line.id, order: line.order }))).toEqual([
+      { id: 'plot-main', order: 0 },
+      { id: 'plot-branch', order: 1 },
+    ])
+    expect(updated.updatedAt).toBe('2026-05-25T11:00:00.000Z')
   })
 })
 
