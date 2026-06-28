@@ -214,6 +214,7 @@ export interface WorkspaceContentEntry {
   outlineBeatId?: string
   volume: string
   chapter: string
+  fineOutline: string
   body: string
   order: number
   createdAt: string
@@ -288,7 +289,7 @@ export interface AssistantChatThread {
   updatedAt: string
 }
 
-export type StudioDataSchemaVersion = 12
+export type StudioDataSchemaVersion = 13
 
 export interface StudioPreferences {
   locale: 'zh-CN' | 'en-US'

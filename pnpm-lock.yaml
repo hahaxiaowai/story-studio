@@ -122,6 +122,9 @@ importers:
       '@story-studio/fantasy-map':
         specifier: workspace:*
         version: link:../../packages/fantasy-map
+      '@story-studio/outline-timeline-canvas':
+        specifier: workspace:*
+        version: link:../../packages/outline-timeline-canvas
       '@story-studio/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -197,6 +200,25 @@ importers:
         version: 4.1.6(@types/node@22.19.19)(vite@7.3.3(@types/node@22.19.19)(jiti@2.7.0)(lightningcss@1.32.0)(yaml@2.9.0))
 
   packages/fantasy-map:
+    dependencies:
+      three:
+        specifier: catalog:prod
+        version: 0.184.0
+    devDependencies:
+      '@story-studio/config':
+        specifier: workspace:*
+        version: link:../config
+      '@types/three':
+        specifier: catalog:dev
+        version: 0.184.1
+      typescript:
+        specifier: catalog:dev
+        version: 6.0.3
+      vitest:
+        specifier: catalog:dev
+        version: 4.1.6(@types/node@22.19.19)(vite@7.3.3(@types/node@22.19.19)(jiti@2.7.0)(lightningcss@1.32.0)(yaml@2.9.0))
+
+  packages/outline-timeline-canvas:
     dependencies:
       three:
         specifier: catalog:prod

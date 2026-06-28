@@ -17,6 +17,7 @@
   "dependencies": {
     "@lucide/vue": "catalog:prod",
     "@story-studio/fantasy-map": "workspace:*",
+    "@story-studio/outline-timeline-canvas": "workspace:*",
     "@story-studio/types": "workspace:*",
     "@story-studio/utils": "workspace:*",
     "@tauri-apps/api": "catalog:tauri",

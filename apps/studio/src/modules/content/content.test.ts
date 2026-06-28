@@ -23,6 +23,7 @@ describe('content entries', () => {
       volume: '第一卷',
       chapter: '第1章',
       body: '',
+      fineOutline: '',
       order: 0,
       createdAt: '2026-05-28T10:00:00.000Z',
       updatedAt: '2026-05-28T10:00:00.000Z',
@@ -31,7 +32,7 @@ describe('content entries', () => {
     expect(entry.id).toMatch(/^content-20260528100000-/)
   })
 
-  it('updates volume, chapter, body, and updatedAt', () => {
+  it('updates volume, chapter, fine outline, body, and updatedAt', () => {
     const entry = createEntry({
       id: 'content-1',
       volume: '第一卷',
@@ -43,13 +44,31 @@ describe('content entries', () => {
     expect(updateContentEntry(entry, {
       volume: '第二卷',
       chapter: '第二章',
+      fineOutline: '1. 开场\n2. 冲突升级',
       body: '# 标题',
       now: '2026-05-28T11:00:00.000Z',
     })).toMatchObject({
       volume: '第二卷',
       chapter: '第二章',
+      fineOutline: '1. 开场\n2. 冲突升级',
       body: '# 标题',
       updatedAt: '2026-05-28T11:00:00.000Z',
+    })
+  })
+
+  it('updates fine outline without changing body or linked beat', () => {
+    const entry = createEntry({
+      body: '旧正文',
+      outlineBeatId: 'beat-one',
+    })
+
+    expect(updateContentEntry(entry, {
+      fineOutline: '1. 开场\n2. 冲突升级',
+      now: '2026-05-28T11:00:00.000Z',
+    })).toMatchObject({
+      body: '旧正文',
+      fineOutline: '1. 开场\n2. 冲突升级',
+      outlineBeatId: 'beat-one',
     })
   })
 
@@ -217,6 +236,7 @@ function createEntry(input: Partial<WorkspaceContentEntry>): WorkspaceContentEnt
     volume: input.volume ?? '第一卷',
     chapter: input.chapter ?? '第一章',
     body: input.body ?? '',
+    fineOutline: input.fineOutline ?? '',
     order: input.order ?? 0,
     createdAt: input.createdAt ?? '2026-05-28T10:00:00.000Z',
     updatedAt: input.updatedAt ?? '2026-05-28T10:00:00.000Z',

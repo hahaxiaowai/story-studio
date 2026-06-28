@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { WorkspaceContentEntry } from '@story-studio/types'
-import type { AssistantDraftInsertMode, ContentAssistantAction } from '@/modules/content/contentAssistant'
-import { ArrowDownIcon, ArrowUpIcon, PenLineIcon, PlusIcon, ShieldCheckIcon, SparklesIcon, Trash2Icon } from '@lucide/vue'
+import type { AssistantDraftInsertMode, ContentAssistantAction, ContentInlineAssistantTarget } from '@/modules/content/contentAssistant'
+import { ArrowDownIcon, ArrowUpIcon, CheckIcon, PenLineIcon, PlusIcon, ShieldCheckIcon, SparklesIcon, SquareIcon, Trash2Icon, XIcon } from '@lucide/vue'
 import { computed, onMounted, ref, watch } from 'vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -9,18 +9,28 @@ import { Textarea } from '@/components/ui/textarea'
 import { useLocale } from '@/composables/useLocale'
 import { consumeAssistantContentDraftPayload } from '@/modules/assistant/assistantContentDraft'
 import { queueAssistantDraftPrompt } from '@/modules/assistant/assistantDraft'
-import { buildContentAssistantPrompt, countContentWords, insertAssistantDraftIntoContentEntries } from '@/modules/content/contentAssistant'
+import { useAssistant } from '@/modules/assistant/useAssistant'
+import { applyContentInlineAssistantSuggestion, buildContentAssistantPrompt, buildContentInlineAssistantPrompt, countContentWords, createContentInlineAssistantTarget, insertAssistantDraftIntoContentEntries } from '@/modules/content/contentAssistant'
 import { useContent } from '@/modules/content/useContent'
+import { useContentInlineAssistant } from '@/modules/content/useContentInlineAssistant'
 import { useOutline } from '@/modules/outlines/useOutline'
 import { useWorkspaces } from '@/modules/workspaces/useWorkspaces'
 
 const { t } = useLocale()
 const { searchQuery, entries, allEntries, entryCounts, addEntry, updateEntry, linkEntryToBeat, moveEntry, removeEntry } = useContent()
+const { settings } = useAssistant()
 const { activeWorkspace } = useWorkspaces()
 const { beats } = useOutline()
+const inlineAssistant = useContentInlineAssistant({ settings })
 const selectedEntryId = ref<string>()
 const pendingAssistantContent = ref('')
 const assistantDraftTargetEntryId = ref('')
+const inlineAssistantInstruction = ref('')
+const inlineAssistantBodySelection = ref({ start: 0, end: 0 })
+const inlineAssistantSelectionAnchor = ref({ top: 56, left: 24 })
+const inlineAssistantPanelOpen = ref(false)
+const inlineAssistantActiveTarget = ref<ContentInlineAssistantTarget>()
+const inlineAssistantActiveEntryId = ref('')
 
 const selectedEntry = computed<WorkspaceContentEntry | undefined>(() => entries.value.find(entry => entry.id === selectedEntryId.value) ?? entries.value[0])
 const selectedEntryIndex = computed<number>(() => selectedEntry.value ? entries.value.findIndex(entry => entry.id === selectedEntry.value?.id) : -1)
@@ -46,8 +56,68 @@ const selectedLinkedBeat = computed(() => {
 
   return beats.value.find(beat => beat.id === selectedEntry.value?.outlineBeatId)
 })
+const hasSelectedFineOutline = computed<boolean>(() => {
+  return !!selectedEntry.value?.fineOutline.trim()
+})
 const assistantDraftTargetEntry = computed(() => {
   return allEntries.value.find(entry => entry.id === assistantDraftTargetEntryId.value)
+})
+const currentInlineAssistantTarget = computed<ContentInlineAssistantTarget>(() => {
+  return createContentInlineAssistantTarget(
+    selectedEntry.value?.body ?? '',
+    inlineAssistantBodySelection.value.start,
+    inlineAssistantBodySelection.value.end,
+  )
+})
+const displayedInlineAssistantTarget = computed<ContentInlineAssistantTarget>(() => {
+  return inlineAssistantActiveTarget.value ?? currentInlineAssistantTarget.value
+})
+const inlineAssistantTargetLabel = computed<string>(() => {
+  return displayedInlineAssistantTarget.value.kind === 'selection'
+    ? t('content.inlineAssistantTargetSelection')
+    : t('content.inlineAssistantTargetChapter')
+})
+const inlineAssistantTargetPreview = computed<string>(() => {
+  return createInlineAssistantTargetPreview(displayedInlineAssistantTarget.value.text)
+})
+const showInlineAssistantToolbar = computed<boolean>(() => {
+  return !!selectedEntry.value
+    && currentInlineAssistantTarget.value.kind === 'selection'
+    && !inlineAssistantPanelOpen.value
+})
+const inlineAssistantToolbarStyle = computed<Record<string, string>>(() => {
+  return createInlineAssistantFloatingStyle(inlineAssistantSelectionAnchor.value, 144)
+})
+const inlineAssistantPanelStyle = computed<Record<string, string>>(() => {
+  return createInlineAssistantFloatingStyle(inlineAssistantSelectionAnchor.value, 360)
+})
+const inlineAssistantPrompt = computed<string>(() => {
+  if (!selectedEntry.value)
+    return ''
+
+  return buildContentInlineAssistantPrompt({
+    workspaceTitle: activeWorkspace.value.title,
+    entry: selectedEntry.value,
+    linkedBeat: selectedLinkedBeat.value,
+    target: currentInlineAssistantTarget.value,
+    instruction: inlineAssistantInstruction.value,
+  })
+})
+const inlineAssistantRunDisabledReason = computed<string>(() => {
+  if (!selectedEntry.value)
+    return t('content.empty')
+
+  if (!inlineAssistantInstruction.value.trim())
+    return t('content.inlineAssistantInstructionRequired')
+
+  return inlineAssistant.getDisabledReason(inlineAssistantPrompt.value)
+})
+const canApplyInlineAssistantSuggestion = computed<boolean>(() => {
+  return !!selectedEntry.value
+    && inlineAssistantActiveEntryId.value === selectedEntry.value.id
+    && !!inlineAssistantActiveTarget.value
+    && !!inlineAssistant.output.value.trim()
+    && !inlineAssistant.loading.value
 })
 
 watch(entries, (nextEntries) => {
@@ -59,6 +129,16 @@ watch(entries, (nextEntries) => {
   if (!selectedEntryId.value || !nextEntries.some(entry => entry.id === selectedEntryId.value))
     selectedEntryId.value = nextEntries[0]?.id
 }, { immediate: true })
+
+watch(() => selectedEntry.value?.id, () => {
+  inlineAssistantBodySelection.value = { start: 0, end: 0 }
+  inlineAssistantSelectionAnchor.value = { top: 56, left: 24 }
+  inlineAssistantPanelOpen.value = false
+  inlineAssistantInstruction.value = ''
+  inlineAssistantActiveTarget.value = undefined
+  inlineAssistantActiveEntryId.value = ''
+  inlineAssistant.reset()
+})
 
 onMounted(() => {
   const contentDraft = consumeAssistantContentDraftPayload()
@@ -76,7 +156,7 @@ function createEntry(): void {
   selectedEntryId.value = entry.id
 }
 
-function updateSelectedEntry(input: { volume?: string, chapter?: string, body?: string }): void {
+function updateSelectedEntry(input: { volume?: string, chapter?: string, fineOutline?: string, body?: string }): void {
   if (!selectedEntry.value)
     return
 
@@ -153,6 +233,59 @@ function dismissAssistantContent(): void {
   assistantDraftTargetEntryId.value = ''
 }
 
+function captureBodySelection(event: Event): void {
+  if (!(event.target instanceof HTMLTextAreaElement))
+    return
+
+  inlineAssistantBodySelection.value = {
+    start: event.target.selectionStart,
+    end: event.target.selectionEnd,
+  }
+  inlineAssistantSelectionAnchor.value = resolveTextareaSelectionAnchor(event.target)
+
+  if (event.target.selectionStart === event.target.selectionEnd && !inlineAssistant.loading.value)
+    inlineAssistantPanelOpen.value = false
+}
+
+function openInlineAssistantPanel(): void {
+  if (currentInlineAssistantTarget.value.kind !== 'selection')
+    return
+
+  inlineAssistantPanelOpen.value = true
+}
+
+async function runInlineAssistant(): Promise<void> {
+  if (!selectedEntry.value || inlineAssistantRunDisabledReason.value)
+    return
+
+  inlineAssistantActiveTarget.value = currentInlineAssistantTarget.value
+  inlineAssistantActiveEntryId.value = selectedEntry.value.id
+
+  await inlineAssistant.run(inlineAssistantPrompt.value)
+}
+
+function applyInlineAssistantSuggestion(): void {
+  if (!selectedEntry.value || !inlineAssistantActiveTarget.value || inlineAssistantActiveEntryId.value !== selectedEntry.value.id)
+    return
+
+  const nextBody = applyContentInlineAssistantSuggestion({
+    body: selectedEntry.value.body,
+    target: inlineAssistantActiveTarget.value,
+    suggestion: inlineAssistant.output.value,
+  })
+
+  updateSelectedEntry({ body: nextBody })
+  dismissInlineAssistantSuggestion()
+  inlineAssistantInstruction.value = ''
+}
+
+function dismissInlineAssistantSuggestion(): void {
+  inlineAssistantPanelOpen.value = false
+  inlineAssistantActiveTarget.value = undefined
+  inlineAssistantActiveEntryId.value = ''
+  inlineAssistant.reset()
+}
+
 function sendSelectedEntryToAssistant(action: ContentAssistantAction): void {
   if (!selectedEntry.value)
     return
@@ -179,6 +312,39 @@ function getDefaultAssistantDraftTargetEntryId(suggestedEntryId: string | undefi
     return suggestedEntryId
 
   return selectedEntry.value?.id ?? allEntries.value[0]?.id ?? ''
+}
+
+function createInlineAssistantTargetPreview(text: string): string {
+  const preview = text.trim().replace(/\s+/g, ' ')
+
+  if (!preview)
+    return t('content.inlineAssistantTargetEmpty')
+
+  return preview.length > 120 ? `${preview.slice(0, 120)}...` : preview
+}
+
+function resolveTextareaSelectionAnchor(textarea: HTMLTextAreaElement): { top: number, left: number } {
+  const valueBeforeSelection = textarea.value.slice(0, textarea.selectionStart)
+  const lines = valueBeforeSelection.split('\n')
+  const currentLine = lines.length - 1
+  const currentColumn = lines.at(-1)?.length ?? 0
+  const lineHeight = 28
+  const estimatedCharacterWidth = 8
+  const top = clampNumber(44 + currentLine * lineHeight - textarea.scrollTop, 44, Math.max(textarea.clientHeight - 72, 44))
+  const left = clampNumber(20 + currentColumn * estimatedCharacterWidth - textarea.scrollLeft, 20, Math.max(textarea.clientWidth - 180, 20))
+
+  return { top, left }
+}
+
+function createInlineAssistantFloatingStyle(anchor: { top: number, left: number }, width: number): Record<string, string> {
+  return {
+    left: `min(${anchor.left}px, calc(100% - ${width + 16}px))`,
+    top: `${anchor.top}px`,
+  }
+}
+
+function clampNumber(value: number, min: number, max: number): number {
+  return Math.min(Math.max(value, min), max)
 }
 </script>
 
@@ -297,14 +463,113 @@ function getDefaultAssistantDraftTargetEntryId(suggestedEntryId: string | undefi
             </label>
 
             <label class="grid gap-1.5 md:col-span-2">
-              <span class="text-muted-foreground text-sm">{{ t('content.body') }}</span>
+              <span class="text-muted-foreground text-sm">{{ t('content.fineOutline') }}</span>
               <Textarea
-                class="min-h-[28rem] font-serif text-base leading-7"
-                :model-value="selectedEntry.body"
-                :placeholder="t('content.bodyPlaceholder')"
-                @update:model-value="updateSelectedEntry({ body: String($event) })"
+                class="min-h-36 text-sm leading-6"
+                :model-value="selectedEntry.fineOutline"
+                :placeholder="t('content.fineOutlinePlaceholder')"
+                @update:model-value="updateSelectedEntry({ fineOutline: String($event) })"
               />
+              <span class="text-muted-foreground text-xs">
+                {{ t('content.fineOutlineHint') }}
+              </span>
             </label>
+
+            <div class="grid gap-1.5 md:col-span-2">
+              <span class="text-muted-foreground text-sm">{{ t('content.body') }}</span>
+              <div class="relative">
+                <Textarea
+                  class="min-h-[28rem] font-serif text-base leading-7"
+                  :model-value="selectedEntry.body"
+                  :placeholder="t('content.bodyPlaceholder')"
+                  @click="captureBodySelection"
+                  @keyup="captureBodySelection"
+                  @mouseup="captureBodySelection"
+                  @select="captureBodySelection"
+                  @update:model-value="updateSelectedEntry({ body: String($event) })"
+                />
+
+                <div
+                  v-if="showInlineAssistantToolbar"
+                  class="absolute z-20"
+                  :style="inlineAssistantToolbarStyle"
+                >
+                  <Button
+                    type="button"
+                    size="sm"
+                    class="shadow-lg"
+                    @mousedown.prevent
+                    @click="openInlineAssistantPanel"
+                  >
+                    <SparklesIcon class="size-4" />
+                    {{ t('content.inlineAssistant') }}
+                  </Button>
+                </div>
+
+                <div
+                  v-if="inlineAssistantPanelOpen"
+                  class="bg-background border-border absolute z-30 grid w-[min(22.5rem,calc(100%-1rem))] gap-3 rounded-lg border p-4 shadow-xl"
+                  :style="inlineAssistantPanelStyle"
+                  @mousedown.stop
+                  @click.stop
+                >
+                  <div class="flex items-start justify-between gap-3">
+                    <div class="min-w-0">
+                      <h3 class="text-sm font-semibold">
+                        {{ t('content.inlineAssistant') }}
+                      </h3>
+                      <p class="text-muted-foreground mt-1 text-xs">
+                        {{ inlineAssistantTargetLabel }}
+                      </p>
+                    </div>
+                    <Button type="button" variant="ghost" size="icon-xs" :aria-label="t('content.inlineAssistantDismiss')" @click="dismissInlineAssistantSuggestion">
+                      <XIcon class="size-3" />
+                    </Button>
+                  </div>
+
+                  <p class="bg-muted/50 line-clamp-3 rounded-md border px-3 py-2 text-xs leading-5">
+                    {{ inlineAssistantTargetPreview }}
+                  </p>
+
+                  <label class="grid gap-1.5">
+                    <span class="text-muted-foreground text-xs">{{ t('content.inlineAssistantInstruction') }}</span>
+                    <Textarea
+                      class="min-h-20 text-sm leading-6"
+                      :model-value="inlineAssistantInstruction"
+                      :placeholder="t('content.inlineAssistantInstructionPlaceholder')"
+                      @update:model-value="inlineAssistantInstruction = String($event)"
+                    />
+                  </label>
+
+                  <p v-if="inlineAssistant.error.value" class="text-destructive text-sm">
+                    {{ inlineAssistant.error.value }}
+                  </p>
+                  <p v-else-if="inlineAssistantInstruction.trim() && inlineAssistantRunDisabledReason" class="text-muted-foreground text-sm">
+                    {{ inlineAssistantRunDisabledReason }}
+                  </p>
+
+                  <div v-if="inlineAssistant.output.value || inlineAssistant.loading.value" class="grid gap-1.5">
+                    <span class="text-muted-foreground text-xs">{{ t('content.inlineAssistantSuggestion') }}</span>
+                    <pre class="bg-muted/50 max-h-48 overflow-auto rounded-md border p-3 text-sm whitespace-pre-wrap">{{ inlineAssistant.output.value || t('content.inlineAssistantThinking') }}</pre>
+                  </div>
+
+                  <div class="flex flex-wrap gap-2">
+                    <Button v-if="inlineAssistant.loading.value" type="button" size="sm" variant="outline" @click="inlineAssistant.stop">
+                      <SquareIcon class="size-4" />
+                      {{ t('content.inlineAssistantStop') }}
+                    </Button>
+                    <Button v-else type="button" size="sm" :disabled="Boolean(inlineAssistantRunDisabledReason)" @click="runInlineAssistant">
+                      <SparklesIcon class="size-4" />
+                      {{ t('content.inlineAssistantGenerate') }}
+                    </Button>
+                    <Button type="button" size="sm" variant="outline" :disabled="!canApplyInlineAssistantSuggestion" @click="applyInlineAssistantSuggestion">
+                      <CheckIcon class="size-4" />
+                      {{ t('content.inlineAssistantApply') }}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
           </form>
 
           <section v-if="pendingAssistantContent" class="grid gap-3 rounded-lg border p-4">
@@ -356,6 +621,10 @@ function getDefaultAssistantDraftTargetEntryId(suggestedEntryId: string | undefi
             </div>
 
             <div class="flex flex-wrap gap-2">
+              <Button size="sm" variant="outline" :disabled="!hasSelectedFineOutline" @click="sendSelectedEntryToAssistant('draft-full-chapter')">
+                <SparklesIcon class="size-4" />
+                {{ t('content.aiDraftFullChapter') }}
+              </Button>
               <Button size="sm" variant="outline" @click="sendSelectedEntryToAssistant('continue')">
                 <SparklesIcon class="size-4" />
                 {{ t('content.aiContinue') }}
@@ -369,6 +638,9 @@ function getDefaultAssistantDraftTargetEntryId(suggestedEntryId: string | undefi
                 {{ t('content.aiCheckConsistency') }}
               </Button>
             </div>
+            <p v-if="!hasSelectedFineOutline" class="text-muted-foreground text-xs">
+              {{ t('content.fineOutlineRequired') }}
+            </p>
           </section>
         </div>
 

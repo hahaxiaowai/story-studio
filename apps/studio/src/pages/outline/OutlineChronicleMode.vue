@@ -12,10 +12,11 @@ import {
 } from '@/components/ui/sheet'
 import { useLocale } from '@/composables/useLocale'
 import { getEntityTitle } from '@/modules/entities/entities'
-import { createChronicleMobileCards, createChronicleModel } from '@/modules/outlines/chronicle'
+import { createChronicleCanvasModel, createChronicleMobileCards, createChronicleModel } from '@/modules/outlines/chronicle'
 import { useOutline } from '@/modules/outlines/useOutline'
 import { useStudioData } from '@/modules/storage/useStudioData'
 import { useWorkspaces } from '@/modules/workspaces/useWorkspaces'
+import OutlineChronicleCanvas from './OutlineChronicleCanvas.vue'
 
 const props = defineProps<{
   selectedBeatId?: string
@@ -39,13 +40,19 @@ const {
 } = useOutline()
 
 type ChronicleDensity = 'compact' | 'standard' | 'expanded'
+type ChronicleView = 'board' | 'canvas'
 
 const selectedBeatIdModel = computed<string | undefined>({
   get: () => props.selectedBeatId,
   set: value => emit('update:selectedBeatId', value),
 })
 const density = ref<ChronicleDensity>('standard')
+const chronicleView = ref<ChronicleView>('board')
 const mobileInspectorOpen = ref(false)
+const chronicleViewOptions = computed<Array<{ value: ChronicleView, label: string }>>(() => [
+  { value: 'board', label: t('outline.boardTimelineView') },
+  { value: 'canvas', label: t('outline.canvasTimelineView') },
+])
 const densityOptions = computed<Array<{ value: ChronicleDensity, label: string }>>(() => [
   { value: 'compact', label: t('outline.densityCompact') },
   { value: 'standard', label: t('outline.densityStandard') },
@@ -59,6 +66,7 @@ const chronicle = computed(() => createChronicleModel({
   characters: characterRecords.value,
   getCharacterTitle: character => getEntityTitle(character, studioData.document.value.propertyDefinitions),
 }))
+const chronicleCanvasModel = computed(() => createChronicleCanvasModel(chronicle.value))
 const mobileCards = computed(() => createChronicleMobileCards(chronicle.value))
 const selectedBeat = computed<TimelineBeat | undefined>(() => {
   return chronicle.value.columns.find(beat => beat.id === selectedBeatIdModel.value) ?? chronicle.value.columns[0]
@@ -191,19 +199,39 @@ function getColumnWidth(value: ChronicleDensity): string {
               {{ t('outline.boardViewHint') }}
             </p>
           </div>
-          <div class="border-border bg-background grid shrink-0 grid-cols-3 rounded-md border p-1">
-            <Button
-              v-for="option in densityOptions"
-              :key="option.value"
-              size="sm"
-              :variant="density === option.value ? 'default' : 'ghost'"
-              @click="density = option.value"
-            >
-              {{ option.label }}
-            </Button>
+          <div class="flex shrink-0 items-center gap-2">
+            <div class="border-border bg-background grid grid-cols-2 rounded-md border p-1">
+              <Button
+                v-for="option in chronicleViewOptions"
+                :key="option.value"
+                size="sm"
+                :variant="chronicleView === option.value ? 'default' : 'ghost'"
+                @click="chronicleView = option.value"
+              >
+                {{ option.label }}
+              </Button>
+            </div>
+            <div class="border-border bg-background grid grid-cols-3 rounded-md border p-1">
+              <Button
+                v-for="option in densityOptions"
+                :key="option.value"
+                size="sm"
+                :variant="density === option.value ? 'default' : 'ghost'"
+                @click="density = option.value"
+              >
+                {{ option.label }}
+              </Button>
+            </div>
           </div>
         </div>
-        <div class="grid min-w-max" :style="timelineGridStyle">
+        <OutlineChronicleCanvas
+          v-if="chronicleView === 'canvas'"
+          :density="density"
+          :model="chronicleCanvasModel"
+          :selected-beat-id="selectedBeat?.id"
+          @select-beat="selectBeat"
+        />
+        <div v-else class="grid min-w-max" :style="timelineGridStyle">
           <div class="bg-background sticky top-0 left-0 z-20 border-r border-b p-3">
             <p class="text-muted-foreground text-xs font-medium uppercase">
               {{ t('outline.chronicleAxis') }}

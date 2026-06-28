@@ -102,6 +102,7 @@ describe('useContent', () => {
         workspaceId: 'workspace-other',
         volume: '第一卷',
         chapter: '外部章节',
+        fineOutline: '',
         body: '',
         order: 0,
         createdAt: '2026-05-28T10:00:00.000Z',

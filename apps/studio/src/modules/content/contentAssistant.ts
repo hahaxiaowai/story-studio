@@ -1,7 +1,8 @@
 import type { TimelineBeat, WorkspaceContentEntry } from '@story-studio/types'
 
-export type ContentAssistantAction = 'continue' | 'polish' | 'check-consistency'
+export type ContentAssistantAction = 'continue' | 'polish' | 'check-consistency' | 'draft-full-chapter'
 export type AssistantDraftInsertMode = 'append' | 'replace'
+export type ContentInlineAssistantTargetKind = 'selection' | 'chapter'
 
 export interface BuildContentAssistantPromptInput {
   action: ContentAssistantAction
@@ -23,15 +24,38 @@ export interface InsertAssistantDraftIntoContentEntriesInput {
   now: string
 }
 
+export interface ContentInlineAssistantTarget {
+  kind: ContentInlineAssistantTargetKind
+  start: number
+  end: number
+  text: string
+}
+
+export interface BuildContentInlineAssistantPromptInput {
+  workspaceTitle: string
+  entry: WorkspaceContentEntry
+  target: ContentInlineAssistantTarget
+  instruction: string
+  linkedBeat?: TimelineBeat
+}
+
+export interface ApplyContentInlineAssistantSuggestionInput {
+  body: string
+  target: ContentInlineAssistantTarget
+  suggestion: string
+}
+
 const ACTION_GOALS = {
   'check-consistency': '检查一致性',
   'continue': '续写当前章节',
+  'draft-full-chapter': '按细纲完整生成本章',
   'polish': '润色当前章节',
 } as const satisfies Record<ContentAssistantAction, string>
 
 const ACTION_INSTRUCTIONS = {
   'check-consistency': '请检查当前章节和既有设定可能存在的时间线、人物动机、世界规则或情绪节奏冲突，并按问题列出修改建议。',
   'continue': '请延续当前章节的叙事节奏继续写作，保持人物动机、场景氛围和前后信息一致。',
+  'draft-full-chapter': '请以章节细纲为主完整写出本章内容，补足场景、动作、对话、心理和段落节奏；当前正文仅作为风格和连续性参考，不要只续写、摘要或列提纲。',
   'polish': '请在不改变核心情节的前提下润色当前章节，提升语言质感、段落节奏和人物表达。',
 } as const satisfies Record<ContentAssistantAction, string>
 
@@ -97,6 +121,15 @@ export function buildContentAssistantPrompt(input: BuildContentAssistantPromptIn
   ]
 
   const linkedBeatSection = input.linkedBeat ? formatLinkedBeat(input.linkedBeat) : ''
+  const fineOutlineSection = formatFineOutline(input.entry.fineOutline)
+
+  if (fineOutlineSection) {
+    sections.push(
+      '',
+      '章节细纲：',
+      fineOutlineSection,
+    )
+  }
 
   if (linkedBeatSection) {
     sections.push(
@@ -113,6 +146,107 @@ export function buildContentAssistantPrompt(input: BuildContentAssistantPromptIn
   )
 
   return sections.join('\n')
+}
+
+export function createContentInlineAssistantTarget(
+  body: string,
+  selectionStart: number,
+  selectionEnd: number,
+): ContentInlineAssistantTarget {
+  const start = clampTextOffset(selectionStart, body.length)
+  const end = clampTextOffset(selectionEnd, body.length)
+  const normalizedStart = Math.min(start, end)
+  const normalizedEnd = Math.max(start, end)
+
+  if (normalizedStart !== normalizedEnd) {
+    return {
+      kind: 'selection',
+      start: normalizedStart,
+      end: normalizedEnd,
+      text: body.slice(normalizedStart, normalizedEnd),
+    }
+  }
+
+  return {
+    kind: 'chapter',
+    start: 0,
+    end: body.length,
+    text: body,
+  }
+}
+
+export function buildContentInlineAssistantPrompt(input: BuildContentInlineAssistantPromptInput): string {
+  const body = input.entry.body.trim()
+  const targetText = input.target.text.trim()
+  const fineOutlineSection = formatFineOutline(input.entry.fineOutline)
+  const linkedBeatSection = input.linkedBeat ? formatLinkedBeat(input.linkedBeat) : ''
+
+  const sections = [
+    '请执行 Story Studio 正文内 AI 批注改写。',
+    '只输出改写后的正文片段，不要解释、不要加标题、不要使用 Markdown 代码块。',
+    '',
+    `作品：${input.workspaceTitle || '未命名作品'}`,
+    `章节：${input.entry.volume || '未命名卷'} / ${input.entry.chapter || '未命名章'}`,
+    `改写范围：${input.target.kind === 'selection' ? '选中文本' : '整章正文'}`,
+    `批注要求：${input.instruction.trim()}`,
+  ]
+
+  if (fineOutlineSection) {
+    sections.push(
+      '',
+      '章节细纲：',
+      fineOutlineSection,
+    )
+  }
+
+  if (linkedBeatSection) {
+    sections.push(
+      '',
+      '关联情节点：',
+      linkedBeatSection,
+    )
+  }
+
+  sections.push(
+    '',
+    '目标原文：',
+    targetText || '当前目标为空。',
+  )
+
+  if (input.target.kind === 'selection') {
+    sections.push(
+      '',
+      '整章上下文：',
+      body || '当前章节暂无正文。',
+    )
+  }
+
+  return sections.join('\n')
+}
+
+export function applyContentInlineAssistantSuggestion(input: ApplyContentInlineAssistantSuggestionInput): string {
+  const suggestion = input.suggestion.trim()
+
+  if (!suggestion)
+    return input.body
+
+  const start = clampTextOffset(input.target.start, input.body.length)
+  const end = clampTextOffset(input.target.end, input.body.length)
+  const normalizedStart = Math.min(start, end)
+  const normalizedEnd = Math.max(start, end)
+
+  return `${input.body.slice(0, normalizedStart)}${suggestion}${input.body.slice(normalizedEnd)}`
+}
+
+function formatFineOutline(fineOutline: string): string {
+  return fineOutline.trim()
+}
+
+function clampTextOffset(value: number, max: number): number {
+  if (!Number.isFinite(value))
+    return 0
+
+  return Math.min(Math.max(Math.trunc(value), 0), max)
 }
 
 function resolveActionGoal(action: ContentAssistantAction, body: string, linkedBeat: TimelineBeat | undefined): string {
