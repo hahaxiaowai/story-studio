@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { WorkspaceContentEntry } from '@story-studio/types'
 import type { AssistantDraftInsertMode, ContentAssistantAction, ContentInlineAssistantTarget } from '@/modules/content/contentAssistant'
-import { ArrowDownIcon, ArrowUpIcon, CheckIcon, PenLineIcon, PlusIcon, ShieldCheckIcon, SparklesIcon, SquareIcon, Trash2Icon, XIcon } from '@lucide/vue'
+import { ArrowDownIcon, ArrowUpIcon, CheckIcon, PenLineIcon, PlusIcon, RotateCcwIcon, ShieldCheckIcon, SparklesIcon, SquareIcon, Trash2Icon, XIcon } from '@lucide/vue'
 import { computed, onMounted, ref, watch } from 'vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -31,6 +31,11 @@ const inlineAssistantSelectionAnchor = ref({ top: 56, left: 24 })
 const inlineAssistantPanelOpen = ref(false)
 const inlineAssistantActiveTarget = ref<ContentInlineAssistantTarget>()
 const inlineAssistantActiveEntryId = ref('')
+const inlineAssistantUndoSnapshot = ref<{
+  entryId: string
+  previousBody: string
+  nextBody: string
+}>()
 
 const selectedEntry = computed<WorkspaceContentEntry | undefined>(() => entries.value.find(entry => entry.id === selectedEntryId.value) ?? entries.value[0])
 const selectedEntryIndex = computed<number>(() => selectedEntry.value ? entries.value.findIndex(entry => entry.id === selectedEntry.value?.id) : -1)
@@ -129,6 +134,11 @@ const inlineAssistantSuggestionPreview = computed(() => {
     suggestion: inlineAssistant.output.value,
   })
 })
+const canUndoInlineAssistantSuggestion = computed<boolean>(() => {
+  return !!selectedEntry.value
+    && inlineAssistantUndoSnapshot.value?.entryId === selectedEntry.value.id
+    && inlineAssistantUndoSnapshot.value.nextBody === selectedEntry.value.body
+})
 
 watch(entries, (nextEntries) => {
   if (!nextEntries.length) {
@@ -147,6 +157,7 @@ watch(() => selectedEntry.value?.id, () => {
   inlineAssistantInstruction.value = ''
   inlineAssistantActiveTarget.value = undefined
   inlineAssistantActiveEntryId.value = ''
+  inlineAssistantUndoSnapshot.value = undefined
   inlineAssistant.reset()
 })
 
@@ -293,9 +304,22 @@ function applyInlineAssistantSuggestion(): void {
     suggestion: inlineAssistant.output.value,
   })
 
+  inlineAssistantUndoSnapshot.value = {
+    entryId: selectedEntry.value.id,
+    previousBody: selectedEntry.value.body,
+    nextBody,
+  }
   updateSelectedEntry({ body: nextBody })
   dismissInlineAssistantSuggestion()
   inlineAssistantInstruction.value = ''
+}
+
+function undoInlineAssistantSuggestion(): void {
+  if (!selectedEntry.value || !canUndoInlineAssistantSuggestion.value || !inlineAssistantUndoSnapshot.value)
+    return
+
+  updateSelectedEntry({ body: inlineAssistantUndoSnapshot.value.previousBody })
+  inlineAssistantUndoSnapshot.value = undefined
 }
 
 function dismissInlineAssistantSuggestion(): void {
@@ -616,6 +640,15 @@ function clampNumber(value: number, min: number, max: number): number {
                     </Button>
                   </div>
                 </div>
+              </div>
+              <div v-if="canUndoInlineAssistantSuggestion" class="bg-muted/40 border-border flex flex-wrap items-center justify-between gap-2 rounded-md border px-3 py-2">
+                <p class="text-muted-foreground text-sm">
+                  {{ t('content.inlineAssistantUndoHint') }}
+                </p>
+                <Button type="button" size="sm" variant="outline" @click="undoInlineAssistantSuggestion">
+                  <RotateCcwIcon class="size-4" />
+                  {{ t('content.inlineAssistantUndo') }}
+                </Button>
               </div>
             </div>
           </form>

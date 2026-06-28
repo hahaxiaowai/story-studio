@@ -32,8 +32,12 @@
    - 根据选区与批注构造 prompt。
    - 展示流式建议和应用/取消按钮。
    - 应用时通过 `updateSelectedEntry({ body })` 写回。
-7. [x] 补充 `useLocale.ts` 中英文文案。
-8. [x] 运行目标测试、类型检查和 lint。
+7. [x] 补充最近一次 AI 改写撤销：
+   - 应用改写时记录章节 id、应用前正文和应用后正文。
+   - 正文仍停留在应用后版本时显示撤销入口。
+   - 撤销后恢复应用前正文并清空撤销快照。
+8. [x] 补充 `useLocale.ts` 中英文文案。
+9. [x] 运行目标测试、类型检查和 lint。
 
 ## 验证
 
@@ -50,3 +54,4 @@
 - 2026-06-28: `pnpm run typecheck`
 - 2026-06-28: `pnpm run test`
 - 2026-06-28: `pnpm run build`
+- 2026-06-28: `pnpm --filter @story-studio/studio test src/pages/content/ContentPage.test.ts src/composables/useLocale.test.ts`
