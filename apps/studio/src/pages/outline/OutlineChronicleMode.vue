@@ -42,12 +42,14 @@ const {
 type ChronicleDensity = 'compact' | 'standard' | 'expanded'
 type ChronicleView = 'board' | 'canvas'
 
+const CHRONICLE_DENSITY_STORAGE_KEY = 'story-studio:outline-chronicle-density'
+const CHRONICLE_VIEW_STORAGE_KEY = 'story-studio:outline-chronicle-view'
 const selectedBeatIdModel = computed<string | undefined>({
   get: () => props.selectedBeatId,
   set: value => emit('update:selectedBeatId', value),
 })
-const density = ref<ChronicleDensity>('standard')
-const chronicleView = ref<ChronicleView>('board')
+const density = ref<ChronicleDensity>(readStoredChronicleDensity())
+const chronicleView = ref<ChronicleView>(readStoredChronicleView())
 const mobileInspectorOpen = ref(false)
 const chronicleViewOptions = computed<Array<{ value: ChronicleView, label: string }>>(() => [
   { value: 'board', label: t('outline.boardTimelineView') },
@@ -92,6 +94,16 @@ function selectBeat(beatId: string): void {
 function openMobileInspector(beatId: string): void {
   selectBeat(beatId)
   mobileInspectorOpen.value = true
+}
+
+function updateChronicleView(view: ChronicleView): void {
+  chronicleView.value = view
+  writeStoredChronicleView(view)
+}
+
+function updateDensity(value: ChronicleDensity): void {
+  density.value = value
+  writeStoredChronicleDensity(value)
 }
 
 function updateSelectedBeat(patch: Parameters<typeof updateBeat>[1]): void {
@@ -141,6 +153,48 @@ function getColumnWidth(value: ChronicleDensity): string {
     return '20rem'
 
   return '16rem'
+}
+
+function readStoredChronicleDensity(): ChronicleDensity {
+  if (typeof localStorage === 'undefined')
+    return 'standard'
+
+  return parseChronicleDensity(localStorage.getItem(CHRONICLE_DENSITY_STORAGE_KEY))
+}
+
+function readStoredChronicleView(): ChronicleView {
+  if (typeof localStorage === 'undefined')
+    return 'board'
+
+  return parseChronicleView(localStorage.getItem(CHRONICLE_VIEW_STORAGE_KEY))
+}
+
+function writeStoredChronicleDensity(value: ChronicleDensity): void {
+  if (typeof localStorage === 'undefined')
+    return
+
+  localStorage.setItem(CHRONICLE_DENSITY_STORAGE_KEY, value)
+}
+
+function writeStoredChronicleView(view: ChronicleView): void {
+  if (typeof localStorage === 'undefined')
+    return
+
+  localStorage.setItem(CHRONICLE_VIEW_STORAGE_KEY, view)
+}
+
+function parseChronicleDensity(value: string | null): ChronicleDensity {
+  if (value === 'compact' || value === 'expanded')
+    return value
+
+  return 'standard'
+}
+
+function parseChronicleView(value: string | null): ChronicleView {
+  if (value === 'canvas')
+    return 'canvas'
+
+  return 'board'
 }
 </script>
 
@@ -206,7 +260,7 @@ function getColumnWidth(value: ChronicleDensity): string {
                 :key="option.value"
                 size="sm"
                 :variant="chronicleView === option.value ? 'default' : 'ghost'"
-                @click="chronicleView = option.value"
+                @click="updateChronicleView(option.value)"
               >
                 {{ option.label }}
               </Button>
@@ -217,7 +271,7 @@ function getColumnWidth(value: ChronicleDensity): string {
                 :key="option.value"
                 size="sm"
                 :variant="density === option.value ? 'default' : 'ghost'"
-                @click="density = option.value"
+                @click="updateDensity(option.value)"
               >
                 {{ option.label }}
               </Button>
