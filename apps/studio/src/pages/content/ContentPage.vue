@@ -577,6 +577,9 @@ function clampNumber(value: number, min: number, max: number): number {
                   </p>
                   <p v-else-if="inlineAssistantInstruction.trim() && inlineAssistantRunDisabledReason" class="text-muted-foreground text-sm">
                     {{ inlineAssistantRunDisabledReason }}
+                    <a class="text-primary underline-offset-4 hover:underline" href="#assistant">
+                      {{ t('content.inlineAssistantConfigure') }}
+                    </a>
                   </p>
 
                   <div v-if="inlineAssistant.output.value || inlineAssistant.loading.value" class="grid gap-1.5">

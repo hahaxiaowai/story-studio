@@ -67,6 +67,7 @@ const ACTION_INSTRUCTIONS = {
 
 const LINKED_BEAT_DRAFT_GOAL = '基于关联情节点生成章节初稿'
 const LINKED_BEAT_DRAFT_INSTRUCTION = '请根据关联情节点生成当前章节初稿，补足场景推进、人物行动和段落节奏，并保持与情节点摘要一致。'
+const INLINE_CONTEXT_EXCERPT_LIMIT = 420
 
 export function countContentWords(body: string): number {
   const plainText = body
@@ -182,7 +183,7 @@ export function createContentInlineAssistantTarget(
 }
 
 export function buildContentInlineAssistantPrompt(input: BuildContentInlineAssistantPromptInput): string {
-  const body = input.entry.body.trim()
+  const body = input.entry.body
   const targetText = input.target.text.trim()
   const fineOutlineSection = formatFineOutline(input.entry.fineOutline)
   const linkedBeatSection = input.linkedBeat ? formatLinkedBeat(input.linkedBeat) : ''
@@ -220,10 +221,12 @@ export function buildContentInlineAssistantPrompt(input: BuildContentInlineAssis
   )
 
   if (input.target.kind === 'selection') {
+    const contextExcerpt = createInlineAssistantContextExcerpt(body, input.target, INLINE_CONTEXT_EXCERPT_LIMIT)
+
     sections.push(
       '',
-      '整章上下文：',
-      body || '当前章节暂无正文。',
+      contextExcerpt.truncated ? '整章上下文节选：' : '整章上下文：',
+      contextExcerpt.text || '当前章节暂无正文。',
     )
   }
 
@@ -269,6 +272,34 @@ export function createContentFineOutlineDraftFromBeat(beat: TimelineBeat): strin
   ]
 
   return steps.map((step, index) => `${index + 1}. ${step}`).join('\n')
+}
+
+function createInlineAssistantContextExcerpt(
+  body: string,
+  target: ContentInlineAssistantTarget,
+  limit: number,
+): { text: string, truncated: boolean } {
+  const normalizedLimit = Math.max(Math.trunc(limit), target.text.length, 1)
+
+  if (body.length <= normalizedLimit) {
+    return {
+      text: body.trim(),
+      truncated: false,
+    }
+  }
+
+  const contextBudget = Math.max(normalizedLimit - target.text.length, 0)
+  const beforeBudget = Math.floor(contextBudget / 2)
+  const afterBudget = contextBudget - beforeBudget
+  const start = Math.max(target.start - beforeBudget, 0)
+  const end = Math.min(target.end + afterBudget, body.length)
+  const prefix = start > 0 ? '...（前文已省略）\n' : ''
+  const suffix = end < body.length ? '\n...（后文已省略）' : ''
+
+  return {
+    text: `${prefix}${body.slice(start, end).trim()}${suffix}`,
+    truncated: true,
+  }
 }
 
 function formatFineOutline(fineOutline: string): string {

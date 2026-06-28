@@ -76,6 +76,8 @@ describe('content workspace chapter reorder wiring', () => {
     expect(componentSource).toContain('content.inlineAssistant')
     expect(componentSource).toContain('content.inlineAssistantInstruction')
     expect(componentSource).toContain('content.inlineAssistantComparison')
+    expect(componentSource).toContain('content.inlineAssistantConfigure')
+    expect(componentSource).toContain('href="#assistant"')
     expect(componentSource).toContain('content.inlineAssistantApply')
     expect(componentSource).toContain('v-if="showInlineAssistantToolbar"')
     expect(componentSource).toContain('v-if="inlineAssistantPanelOpen"')

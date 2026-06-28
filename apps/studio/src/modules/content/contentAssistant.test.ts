@@ -220,6 +220,28 @@ describe('content assistant helpers', () => {
     expect(prompt).toContain('只输出改写后的正文片段')
   })
 
+  it('uses an excerpt instead of the full chapter when inline editing a selection in a long body', () => {
+    const body = [
+      `远处铺垫：${'远'.repeat(800)}`,
+      '风声穿过钟楼，门卫低声说话。',
+      `后续铺垫：${'后'.repeat(800)}`,
+    ].join('\n')
+    const start = body.indexOf('风声穿过')
+    const prompt = buildContentInlineAssistantPrompt({
+      workspaceTitle: '雾城档案',
+      entry: createEntry({ body }),
+      target: createContentInlineAssistantTarget(body, start, start + 6),
+      instruction: '让这段更有压迫感。',
+    })
+
+    expect(prompt).toContain('整章上下文节选：')
+    expect(prompt).toContain('风声穿过钟楼')
+    expect(prompt).toContain('...（前文已省略）')
+    expect(prompt).toContain('...（后文已省略）')
+    expect(prompt).not.toContain('远'.repeat(300))
+    expect(prompt).not.toContain('后'.repeat(300))
+  })
+
   it('applies an inline assistant suggestion to the selected text only', () => {
     const body = '风声穿过钟楼，门卫低声说话。'
     const target = createContentInlineAssistantTarget(body, 0, 6)
