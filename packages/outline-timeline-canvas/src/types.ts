@@ -62,6 +62,7 @@ export interface OutlineTimelineRenderer {
   setModel: (model: OutlineTimelineModel) => void
   setSelectedBeatId: (beatId: string | undefined) => void
   setDensity: (density: OutlineTimelineDensity) => void
+  setTextScale: (scale: number) => void
   resetView: () => void
   resize: () => void
   dispose: () => void
@@ -72,4 +73,5 @@ export interface CreateOutlineTimelineRendererOptions {
   model: OutlineTimelineModel
   onSelectBeat?: (beatId: string) => void
   selectedBeatId?: string
+  textScale?: number
 }

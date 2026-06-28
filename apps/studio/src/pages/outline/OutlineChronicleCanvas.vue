@@ -22,6 +22,7 @@ const emit = defineEmits<{
 const { t } = useLocale()
 const canvasContainer = ref<HTMLDivElement>()
 const renderer = shallowRef<OutlineTimelineRenderer>()
+const textScale = ref(1)
 
 onMounted(async () => {
   await nextTick()
@@ -34,6 +35,7 @@ onMounted(async () => {
     model: props.model,
     onSelectBeat: beatId => emit('selectBeat', beatId),
     selectedBeatId: props.selectedBeatId,
+    textScale: textScale.value,
   }))
 })
 
@@ -54,8 +56,19 @@ watch(() => props.density, (nextDensity) => {
   renderer.value?.setDensity(nextDensity)
 })
 
+watch(textScale, (nextScale) => {
+  renderer.value?.setTextScale(nextScale)
+})
+
 function resetView(): void {
   renderer.value?.resetView()
+}
+
+function updateTextScale(event: Event): void {
+  if (!(event.target instanceof HTMLInputElement))
+    return
+
+  textScale.value = Number(event.target.value)
 }
 </script>
 
@@ -70,9 +83,24 @@ function resetView(): void {
           {{ t('outline.canvasViewHint') }}
         </p>
       </div>
-      <Button type="button" size="sm" variant="outline" @click="resetView">
-        {{ t('outline.resetCanvasView') }}
-      </Button>
+      <div class="flex shrink-0 items-center gap-3">
+        <label class="text-muted-foreground flex items-center gap-2 text-xs">
+          <span>{{ t('outline.canvasTextScale') }}</span>
+          <input
+            class="accent-primary w-24"
+            type="range"
+            min="0.8"
+            max="1.4"
+            step="0.05"
+            :value="textScale"
+            :aria-label="t('outline.canvasTextScale')"
+            @input="updateTextScale"
+          >
+        </label>
+        <Button type="button" size="sm" variant="outline" @click="resetView">
+          {{ t('outline.resetCanvasView') }}
+        </Button>
+      </div>
     </div>
     <div class="bg-muted/30 p-4">
       <div

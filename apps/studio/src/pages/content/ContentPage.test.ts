@@ -55,6 +55,9 @@ describe('content workspace chapter reorder wiring', () => {
     expect(componentSource).toContain('fineOutline')
     expect(componentSource).toContain('draft-full-chapter')
     expect(componentSource).toContain('content.aiDraftFullChapter')
+    expect(componentSource).toContain('createContentFineOutlineDraftFromBeat')
+    expect(componentSource).toContain('draftFineOutlineFromLinkedBeat')
+    expect(componentSource).toContain('content.draftFineOutlineFromBeat')
   })
 
   it('contains inline AI annotation controls for revising body text in place', () => {
@@ -62,6 +65,8 @@ describe('content workspace chapter reorder wiring', () => {
     expect(componentSource).toContain('createContentInlineAssistantTarget')
     expect(componentSource).toContain('buildContentInlineAssistantPrompt')
     expect(componentSource).toContain('applyContentInlineAssistantSuggestion')
+    expect(componentSource).toContain('createContentInlineAssistantSuggestionPreview')
+    expect(componentSource).toContain('inlineAssistantSuggestionPreview')
     expect(componentSource).toContain('captureBodySelection')
     expect(componentSource).toContain('showInlineAssistantToolbar')
     expect(componentSource).toContain('openInlineAssistantPanel')
@@ -70,6 +75,7 @@ describe('content workspace chapter reorder wiring', () => {
     expect(componentSource).toContain('applyInlineAssistantSuggestion')
     expect(componentSource).toContain('content.inlineAssistant')
     expect(componentSource).toContain('content.inlineAssistantInstruction')
+    expect(componentSource).toContain('content.inlineAssistantComparison')
     expect(componentSource).toContain('content.inlineAssistantApply')
     expect(componentSource).toContain('v-if="showInlineAssistantToolbar"')
     expect(componentSource).toContain('v-if="inlineAssistantPanelOpen"')

@@ -10,7 +10,7 @@ import { useLocale } from '@/composables/useLocale'
 import { consumeAssistantContentDraftPayload } from '@/modules/assistant/assistantContentDraft'
 import { queueAssistantDraftPrompt } from '@/modules/assistant/assistantDraft'
 import { useAssistant } from '@/modules/assistant/useAssistant'
-import { applyContentInlineAssistantSuggestion, buildContentAssistantPrompt, buildContentInlineAssistantPrompt, countContentWords, createContentInlineAssistantTarget, insertAssistantDraftIntoContentEntries } from '@/modules/content/contentAssistant'
+import { applyContentInlineAssistantSuggestion, buildContentAssistantPrompt, buildContentInlineAssistantPrompt, countContentWords, createContentFineOutlineDraftFromBeat, createContentInlineAssistantSuggestionPreview, createContentInlineAssistantTarget, insertAssistantDraftIntoContentEntries } from '@/modules/content/contentAssistant'
 import { useContent } from '@/modules/content/useContent'
 import { useContentInlineAssistant } from '@/modules/content/useContentInlineAssistant'
 import { useOutline } from '@/modules/outlines/useOutline'
@@ -119,6 +119,16 @@ const canApplyInlineAssistantSuggestion = computed<boolean>(() => {
     && !!inlineAssistant.output.value.trim()
     && !inlineAssistant.loading.value
 })
+const inlineAssistantSuggestionPreview = computed(() => {
+  if (!selectedEntry.value || !inlineAssistantActiveTarget.value)
+    return undefined
+
+  return createContentInlineAssistantSuggestionPreview({
+    body: selectedEntry.value.body,
+    target: inlineAssistantActiveTarget.value,
+    suggestion: inlineAssistant.output.value,
+  })
+})
 
 watch(entries, (nextEntries) => {
   if (!nextEntries.length) {
@@ -168,6 +178,15 @@ function updateSelectedEntryBeat(event: Event): void {
     return
 
   linkEntryToBeat(selectedEntry.value.id, readEventValue(event))
+}
+
+function draftFineOutlineFromLinkedBeat(): void {
+  if (!selectedEntry.value || !selectedLinkedBeat.value)
+    return
+
+  updateSelectedEntry({
+    fineOutline: createContentFineOutlineDraftFromBeat(selectedLinkedBeat.value),
+  })
 }
 
 function deleteSelectedEntry(): void {
@@ -463,7 +482,19 @@ function clampNumber(value: number, min: number, max: number): number {
             </label>
 
             <label class="grid gap-1.5 md:col-span-2">
-              <span class="text-muted-foreground text-sm">{{ t('content.fineOutline') }}</span>
+              <span class="text-muted-foreground flex items-center justify-between gap-2 text-sm">
+                <span>{{ t('content.fineOutline') }}</span>
+                <Button
+                  v-if="selectedLinkedBeat"
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  @click="draftFineOutlineFromLinkedBeat"
+                >
+                  <SparklesIcon class="size-4" />
+                  {{ t('content.draftFineOutlineFromBeat') }}
+                </Button>
+              </span>
               <Textarea
                 class="min-h-36 text-sm leading-6"
                 :model-value="selectedEntry.fineOutline"
@@ -551,6 +582,20 @@ function clampNumber(value: number, min: number, max: number): number {
                   <div v-if="inlineAssistant.output.value || inlineAssistant.loading.value" class="grid gap-1.5">
                     <span class="text-muted-foreground text-xs">{{ t('content.inlineAssistantSuggestion') }}</span>
                     <pre class="bg-muted/50 max-h-48 overflow-auto rounded-md border p-3 text-sm whitespace-pre-wrap">{{ inlineAssistant.output.value || t('content.inlineAssistantThinking') }}</pre>
+                  </div>
+
+                  <div v-if="inlineAssistantSuggestionPreview && !inlineAssistantSuggestionPreview.unchanged" class="grid gap-2">
+                    <span class="text-muted-foreground text-xs">{{ t('content.inlineAssistantComparison') }}</span>
+                    <div class="grid gap-2 text-xs md:grid-cols-2">
+                      <div class="grid gap-1">
+                        <span class="text-muted-foreground">{{ t('content.inlineAssistantBefore') }}</span>
+                        <pre class="bg-muted/40 max-h-28 overflow-auto rounded-md border p-2 whitespace-pre-wrap">{{ inlineAssistantSuggestionPreview.before }}</pre>
+                      </div>
+                      <div class="grid gap-1">
+                        <span class="text-muted-foreground">{{ t('content.inlineAssistantAfter') }}</span>
+                        <pre class="bg-muted/40 max-h-28 overflow-auto rounded-md border p-2 whitespace-pre-wrap">{{ inlineAssistantSuggestionPreview.after }}</pre>
+                      </div>
+                    </div>
                   </div>
 
                   <div class="flex flex-wrap gap-2">

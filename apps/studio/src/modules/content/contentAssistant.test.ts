@@ -5,6 +5,8 @@ import {
   buildContentAssistantPrompt,
   buildContentInlineAssistantPrompt,
   countContentWords,
+  createContentFineOutlineDraftFromBeat,
+  createContentInlineAssistantSuggestionPreview,
   createContentInlineAssistantTarget,
   insertAssistantDraftIntoContentEntries,
   mergeAssistantDraftIntoContent,
@@ -248,6 +250,44 @@ describe('content assistant helpers', () => {
       target: createContentInlineAssistantTarget(body, 0, 2),
       suggestion: '   ',
     })).toBe(body)
+  })
+
+  it('creates a comparison preview before applying an inline assistant suggestion', () => {
+    const body = '风声穿过钟楼，门卫低声说话。'
+    const target = createContentInlineAssistantTarget(body, 0, 6)
+
+    expect(createContentInlineAssistantSuggestionPreview({
+      body,
+      target,
+      suggestion: '冷风像细针一样扎进钟楼',
+    })).toEqual({
+      before: '风声穿过钟楼',
+      after: '冷风像细针一样扎进钟楼',
+      unchanged: false,
+    })
+  })
+
+  it('marks blank inline assistant suggestion previews as unchanged', () => {
+    const body = '风声穿过钟楼。'
+
+    expect(createContentInlineAssistantSuggestionPreview({
+      body,
+      target: createContentInlineAssistantTarget(body, 0, 2),
+      suggestion: '   ',
+    })).toEqual({
+      before: '风声',
+      after: '',
+      unchanged: true,
+    })
+  })
+
+  it('creates a fine outline draft from a linked outline beat', () => {
+    expect(createContentFineOutlineDraftFromBeat(createBeat())).toBe([
+      '1. 开场：雨夜十一点，围绕“钟楼停摆”展开。',
+      '2. 关键推进：门卫听见地下齿轮反转，线索第一次出现。',
+      '3. 人物变化：character-keeper 隐瞒自己知道钥匙去向。',
+      '4. 章节落点：主角在钟楼发现时间异常。',
+    ].join('\n'))
   })
 })
 

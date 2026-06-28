@@ -45,6 +45,12 @@ export interface ApplyContentInlineAssistantSuggestionInput {
   suggestion: string
 }
 
+export interface ContentInlineAssistantSuggestionPreview {
+  before: string
+  after: string
+  unchanged: boolean
+}
+
 const ACTION_GOALS = {
   'check-consistency': '检查一致性',
   'continue': '续写当前章节',
@@ -236,6 +242,33 @@ export function applyContentInlineAssistantSuggestion(input: ApplyContentInlineA
   const normalizedEnd = Math.max(start, end)
 
   return `${input.body.slice(0, normalizedStart)}${suggestion}${input.body.slice(normalizedEnd)}`
+}
+
+export function createContentInlineAssistantSuggestionPreview(
+  input: ApplyContentInlineAssistantSuggestionInput,
+): ContentInlineAssistantSuggestionPreview {
+  return {
+    before: input.target.text,
+    after: input.suggestion.trim(),
+    unchanged: !input.suggestion.trim(),
+  }
+}
+
+export function createContentFineOutlineDraftFromBeat(beat: TimelineBeat): string {
+  const steps = [
+    `开场：${beat.timeLabel || '未设置时间'}，围绕“${beat.title || '未命名情节点'}”展开。`,
+    ...beat.events.map((event) => {
+      const description = event.description.trim()
+
+      return `关键推进：${event.title || '未命名事件'}${description ? `，${description}` : '。'}`
+    }),
+    ...beat.characterChanges.map((change) => {
+      return `人物变化：${change.characterId} ${change.summary || '补充人物状态变化。'}`
+    }),
+    `章节落点：${beat.summary || '补充本章收束和下一章钩子。'}`,
+  ]
+
+  return steps.map((step, index) => `${index + 1}. ${step}`).join('\n')
 }
 
 function formatFineOutline(fineOutline: string): string {

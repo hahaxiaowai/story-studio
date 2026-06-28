@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { createOutlineTimelineDisposeRegistry } from './renderer'
+import { createOutlineTimelineDisposeRegistry, normalizeOutlineTimelineTextScale } from './renderer'
 
 describe('outline timeline renderer utilities', () => {
   it('runs dispose callbacks once', () => {
@@ -21,5 +21,11 @@ describe('outline timeline renderer utilities', () => {
     registry.add(cleanup)
 
     expect(cleanup).toHaveBeenCalledTimes(1)
+  })
+
+  it('normalizes text scale into a readable canvas range', () => {
+    expect(normalizeOutlineTimelineTextScale(0)).toBe(0.8)
+    expect(normalizeOutlineTimelineTextScale(1.15)).toBe(1.15)
+    expect(normalizeOutlineTimelineTextScale(3)).toBe(1.4)
   })
 })

@@ -32,12 +32,21 @@ const CAMERA_DISTANCE = 1000
 const CLICK_DRAG_TOLERANCE = 4
 const MAX_ZOOM = 2.4
 const MIN_ZOOM = 0.28
+const MAX_TEXT_SCALE = 1.4
+const MIN_TEXT_SCALE = 0.8
 
 export function createOutlineTimelineRenderer(
   container: HTMLElement,
   options: CreateOutlineTimelineRendererOptions,
 ): OutlineTimelineRenderer {
   return new ThreeOutlineTimelineRenderer(container, options)
+}
+
+export function normalizeOutlineTimelineTextScale(scale: number): number {
+  if (!Number.isFinite(scale))
+    return 1
+
+  return clamp(scale, MIN_TEXT_SCALE, MAX_TEXT_SCALE)
 }
 
 export function createOutlineTimelineDisposeRegistry(): {
@@ -84,6 +93,7 @@ class ThreeOutlineTimelineRenderer implements OutlineTimelineRenderer {
   private pointerDown = new Vector2()
   private previousPanPointer = new Vector2()
   private selectedBeatId?: string
+  private textScale: number
 
   constructor(
     private readonly container: HTMLElement,
@@ -92,6 +102,7 @@ class ThreeOutlineTimelineRenderer implements OutlineTimelineRenderer {
     this.model = options.model
     this.density = options.density ?? 'standard'
     this.selectedBeatId = options.selectedBeatId
+    this.textScale = normalizeOutlineTimelineTextScale(options.textScale ?? 1)
     this.layout = createOutlineTimelineLayout(this.model, this.density)
 
     this.setupRenderer()
@@ -119,6 +130,16 @@ class ThreeOutlineTimelineRenderer implements OutlineTimelineRenderer {
     this.layout = createOutlineTimelineLayout(this.model, density)
     this.renderLayout()
     this.resetView()
+  }
+
+  setTextScale(scale: number): void {
+    const nextScale = normalizeOutlineTimelineTextScale(scale)
+
+    if (nextScale === this.textScale)
+      return
+
+    this.textScale = nextScale
+    this.renderLayout()
   }
 
   resetView(): void {
@@ -274,14 +295,14 @@ class ThreeOutlineTimelineRenderer implements OutlineTimelineRenderer {
 
     context.scale(scale, scale)
     context.fillStyle = selected ? '#0f172a' : '#111827'
-    context.font = '600 13px sans-serif'
+    context.font = `600 ${13 * this.textScale}px sans-serif`
     context.textBaseline = 'top'
     drawTextLine(context, node.title, 18, 14, node.width - 28)
 
     if (node.summary) {
       context.fillStyle = '#64748b'
-      context.font = '12px sans-serif'
-      drawTextLine(context, node.summary, 18, 34, node.width - 28)
+      context.font = `${12 * this.textScale}px sans-serif`
+      drawTextLine(context, node.summary, 18, 34 + (this.textScale - 1) * 8, node.width - 28)
     }
 
     const texture = new CanvasTexture(canvas)
