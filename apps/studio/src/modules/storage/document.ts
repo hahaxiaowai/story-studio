@@ -5,7 +5,7 @@ import { seedWorkspaces } from '../workspaces/workspaces'
 import { createWorkspaceWorld } from '../worlds/world'
 import { createDefaultEntityRecords, createDefaultOutlines, createDefaultWorlds, isLegacyPrototypeSeedDocument } from './defaultContent'
 
-export const STUDIO_DATA_SCHEMA_VERSION = 12
+export const STUDIO_DATA_SCHEMA_VERSION = 13
 
 export const LEGACY_LOCALE_STORAGE_KEY = 'story-studio:locale'
 export const LEGACY_THEME_MODE_STORAGE_KEY = 'story-studio:theme-mode'
@@ -228,6 +228,7 @@ function normalizeContentEntries(contents: WorkspaceContentEntry[], outlines: Wo
     outlineBeatId: normalizeContentOutlineBeatId(entry, beatWorkspaceById),
     volume: entry.volume ?? '',
     chapter: entry.chapter ?? '',
+    fineOutline: normalizeStorageText((entry as WorkspaceContentEntry & { fineOutline?: string }).fineOutline),
     body: entry.body ?? '',
     order: Number.isFinite(entry.order) ? entry.order : index,
   }))

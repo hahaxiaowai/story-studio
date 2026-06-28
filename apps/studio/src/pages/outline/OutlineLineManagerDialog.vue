@@ -28,6 +28,7 @@ const {
 const lineListRef = ref<HTMLElement | null>(null)
 const draftLines = ref<PlotLine[]>([])
 const hasSubmitted = ref(false)
+const pendingDeleteLineId = ref<string>()
 
 const lineKinds = computed<Array<{ value: PlotLineKind, label: string }>>(() => [
   { value: 'main', label: t('outline.mainLine') },
@@ -44,6 +45,9 @@ const referenceCountByLineId = computed<Record<string, number>>(() => {
   return counts
 })
 const hasBlankLineName = computed<boolean>(() => draftLines.value.some(line => !line.title.trim()))
+const pendingDeleteLineTitle = computed<string>(() => {
+  return draftLines.value.find(line => line.id === pendingDeleteLineId.value)?.title ?? ''
+})
 
 const lineDraggable = useDraggable<PlotLine>(lineListRef, draftLines, {
   animation: 150,
@@ -73,6 +77,7 @@ watch(plotLines, () => {
 function resetDraft(): void {
   draftLines.value = plotLines.value.map(line => ({ ...line }))
   hasSubmitted.value = false
+  pendingDeleteLineId.value = undefined
 }
 
 function addDraftLine(): void {
@@ -94,11 +99,27 @@ function updateDraftLine(plotLineId: string, patch: Partial<Pick<PlotLine, 'titl
     : line)
 }
 
-function removeDraftLine(plotLineId: string): void {
+function requestDeleteDraftLine(plotLineId: string): void {
   if (!canDeleteLine(plotLineId))
     return
 
-  draftLines.value = draftLines.value.filter(line => line.id !== plotLineId)
+  pendingDeleteLineId.value = plotLineId
+}
+
+function confirmDeleteDraftLine(): void {
+  const plotLineId = pendingDeleteLineId.value
+
+  if (!plotLineId)
+    return
+
+  if (canDeleteLine(plotLineId))
+    draftLines.value = draftLines.value.filter(line => line.id !== plotLineId)
+
+  pendingDeleteLineId.value = undefined
+}
+
+function cancelDeleteDraftLine(): void {
+  pendingDeleteLineId.value = undefined
 }
 
 function canDeleteLine(plotLineId: string): boolean {
@@ -200,7 +221,7 @@ function createDraftLineId(): string {
               size="icon"
               :disabled="!canDeleteLine(line.id)"
               :aria-label="t('outline.deleteLine')"
-              @click="removeDraftLine(line.id)"
+              @click="requestDeleteDraftLine(line.id)"
             >
               <Trash2Icon class="size-4" />
             </Button>
@@ -232,6 +253,26 @@ function createDraftLineId(): string {
         </Button>
         <Button type="button" @click="saveDraft">
           {{ t('outline.saveLines') }}
+        </Button>
+      </DialogFooter>
+    </DialogContent>
+  </Dialog>
+
+  <Dialog :open="!!pendingDeleteLineId" @update:open="cancelDeleteDraftLine">
+    <DialogContent>
+      <DialogHeader>
+        <DialogTitle>{{ t('outline.confirmDeleteLineTitle') }}</DialogTitle>
+        <DialogDescription>
+          {{ t('outline.confirmDeleteLineDescription') }}
+          <span v-if="pendingDeleteLineTitle" class="font-medium">{{ pendingDeleteLineTitle }}</span>
+        </DialogDescription>
+      </DialogHeader>
+      <DialogFooter>
+        <Button type="button" variant="outline" @click="cancelDeleteDraftLine">
+          {{ t('workspace.form.cancel') }}
+        </Button>
+        <Button type="button" variant="destructive" @click="confirmDeleteDraftLine">
+          {{ t('outline.deleteLine') }}
         </Button>
       </DialogFooter>
     </DialogContent>

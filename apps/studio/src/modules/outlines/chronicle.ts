@@ -1,3 +1,4 @@
+import type { OutlineTimelineModel } from '@story-studio/outline-timeline-canvas'
 import type { CharacterChange, EntityRecord, TimelineBeat, WorkspaceOutline } from '@story-studio/types'
 
 export interface ChronicleModelInput {
@@ -79,4 +80,57 @@ export function createChronicleMobileCards(model: ChronicleModel): ChronicleMobi
     eventCount: beat.events.length,
     characterChangeCount: model.characterLanes.reduce((count, lane) => count + (lane.changesByBeatId[beat.id]?.length ?? 0), 0),
   }))
+}
+
+export function createChronicleCanvasModel(model: ChronicleModel): OutlineTimelineModel {
+  return {
+    columns: model.columns.map(beat => ({
+      eventCount: beat.events.length,
+      id: beat.id,
+      summary: beat.summary,
+      timeLabel: beat.timeLabel,
+      title: beat.title,
+    })),
+    lanes: [
+      ...model.plotLineLanes.map(lane => ({
+        color: lane.color,
+        id: lane.id,
+        items: lane.beats.map(beat => ({
+          beatId: beat.id,
+          color: lane.color,
+          summary: beat.summary,
+          title: beat.title,
+        })),
+        kind: 'plot' as const,
+        title: lane.title,
+      })),
+      ...(model.characterLanes.length
+        ? model.characterLanes.map(lane => ({
+            color: '#64748b',
+            id: lane.id,
+            items: model.columns.flatMap((beat) => {
+              const changes = lane.changesByBeatId[beat.id] ?? []
+
+              if (!changes.length)
+                return []
+
+              return [{
+                beatId: beat.id,
+                color: '#64748b',
+                summary: changes.map(change => change.summary).filter(Boolean).join(' / '),
+                title: '人物变化',
+              }]
+            }),
+            kind: 'character' as const,
+            title: lane.title,
+          }))
+        : [{
+            color: '#94a3b8',
+            id: 'character-section-empty',
+            items: [],
+            kind: 'section' as const,
+            title: '人物发展',
+          }]),
+    ],
+  }
 }

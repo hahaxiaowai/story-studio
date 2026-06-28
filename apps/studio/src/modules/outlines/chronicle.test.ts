@@ -1,6 +1,6 @@
 import type { EntityRecord, TimelineBeat, WorkspaceOutline } from '@story-studio/types'
 import { describe, expect, it } from 'vitest'
-import { createChronicleMobileCards, createChronicleModel } from './chronicle'
+import { createChronicleCanvasModel, createChronicleMobileCards, createChronicleModel } from './chronicle'
 import { createWorkspaceOutline } from './outline'
 
 describe('chronicle model', () => {
@@ -106,6 +106,111 @@ describe('chronicle model', () => {
         characterChangeCount: 2,
       },
     ])
+  })
+
+  it('derives a canvas model with ordered columns and plot line lanes', () => {
+    const outline = createOutline([
+      createBeat('beat-b', 1, ['plot-main'], ['change-lin']),
+      createBeat('beat-a', 0, ['plot-main', 'plot-branch'], []),
+    ])
+    const model = createChronicleModel({
+      outline,
+      characters: [createCharacter('character-lin', '林澈')],
+      getCharacterTitle: record => String(record.values['character-name']),
+    })
+
+    const canvasModel = createChronicleCanvasModel(model)
+
+    expect(canvasModel.columns.map(column => column.id)).toEqual(['beat-a', 'beat-b'])
+    expect(canvasModel.lanes.filter(lane => lane.kind === 'plot').map(lane => ({
+      id: lane.id,
+      title: lane.title,
+      color: lane.color,
+      beatIds: lane.items.map(item => item.beatId),
+    }))).toEqual([
+      {
+        id: 'plot-main',
+        title: '主线',
+        color: '#2563eb',
+        beatIds: ['beat-a', 'beat-b'],
+      },
+      {
+        id: 'plot-branch',
+        title: '感情线',
+        color: '#db2777',
+        beatIds: ['beat-a'],
+      },
+    ])
+  })
+
+  it('derives canvas character lanes and keeps an empty character section stable', () => {
+    const outline = createOutline([
+      createBeat('beat-a', 0, ['plot-main'], []),
+      createBeat('beat-b', 1, ['plot-main'], ['change-lin-b', 'change-qiao']),
+    ])
+    const model = createChronicleModel({
+      outline,
+      characters: [
+        createCharacter('character-lin', '林澈'),
+        createCharacter('character-qiao', '乔安'),
+      ],
+      getCharacterTitle: record => String(record.values['character-name']),
+    })
+
+    const canvasModel = createChronicleCanvasModel(model)
+
+    expect(canvasModel.lanes.filter(lane => lane.kind === 'character').map(lane => ({
+      id: lane.id,
+      title: lane.title,
+      items: lane.items,
+    }))).toEqual([
+      {
+        id: 'character-lin',
+        title: '林澈',
+        items: [
+          {
+            beatId: 'beat-b',
+            title: '人物变化',
+            summary: 'change-lin-b',
+            color: '#64748b',
+          },
+        ],
+      },
+      {
+        id: 'character-qiao',
+        title: '乔安',
+        items: [
+          {
+            beatId: 'beat-b',
+            title: '人物变化',
+            summary: 'change-qiao',
+            color: '#64748b',
+          },
+        ],
+      },
+    ])
+  })
+
+  it('keeps canvas model dimensions stable when character lanes are empty', () => {
+    const outline = createOutline([
+      createBeat('beat-a', 0, ['plot-main'], []),
+    ])
+    const model = createChronicleModel({
+      outline,
+      characters: [],
+      getCharacterTitle: record => record.title,
+    })
+
+    const canvasModel = createChronicleCanvasModel(model)
+
+    expect(canvasModel.columns.map(column => column.id)).toEqual(['beat-a'])
+    expect(canvasModel.lanes.map(lane => lane.kind)).toEqual(['plot', 'plot', 'section'])
+    expect(canvasModel.lanes.at(-1)).toMatchObject({
+      id: 'character-section-empty',
+      kind: 'section',
+      title: '人物发展',
+      items: [],
+    })
   })
 })
 

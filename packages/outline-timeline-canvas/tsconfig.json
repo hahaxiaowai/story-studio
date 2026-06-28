@@ -1,0 +1,7 @@
+{
+  "extends": "@story-studio/config/tsconfig/base",
+  "compilerOptions": {
+    "lib": ["ESNext", "DOM", "DOM.Iterable"]
+  },
+  "include": ["src/**/*.ts"]
+}

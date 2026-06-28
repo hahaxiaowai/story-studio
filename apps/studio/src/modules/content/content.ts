@@ -10,6 +10,7 @@ export interface UpdateContentEntryInput {
   outlineBeatId?: string
   volume?: string
   chapter?: string
+  fineOutline?: string
   body?: string
   now: string
 }
@@ -32,6 +33,7 @@ export function createContentEntry(input: CreateContentEntryInput): WorkspaceCon
     workspaceId: input.workspaceId,
     volume: '第一卷',
     chapter: `第${input.order + 1}章`,
+    fineOutline: '',
     body: '',
     order: input.order,
     createdAt: input.now,
@@ -45,6 +47,7 @@ export function updateContentEntry(entry: WorkspaceContentEntry, input: UpdateCo
     ...(input.outlineBeatId !== undefined ? { outlineBeatId: normalizeOptionalId(input.outlineBeatId) } : {}),
     ...(input.volume !== undefined ? { volume: input.volume } : {}),
     ...(input.chapter !== undefined ? { chapter: input.chapter } : {}),
+    ...(input.fineOutline !== undefined ? { fineOutline: input.fineOutline } : {}),
     ...(input.body !== undefined ? { body: input.body } : {}),
     updatedAt: input.now,
   }
