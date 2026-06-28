@@ -8,8 +8,10 @@ const componentSource = readFileSync(fileURLToPath(new URL('./OutlineChronicleCa
 
 describe('outline chronicle canvas wiring', () => {
   it('binds text scale controls to the canvas renderer', () => {
-    expect(componentSource).toContain('const textScale = ref(1)')
+    expect(componentSource).toContain('const textScale = ref(readStoredCanvasTextScale())')
+    expect(componentSource).toContain('const CANVAS_TEXT_SCALE_STORAGE_KEY')
     expect(componentSource).toContain('textScale: textScale.value')
+    expect(componentSource).toContain('writeStoredCanvasTextScale(nextScale)')
     expect(componentSource).toContain('renderer.value?.setTextScale(nextScale)')
     expect(componentSource).toContain('outline.canvasTextScale')
     expect(componentSource).toContain('type="range"')

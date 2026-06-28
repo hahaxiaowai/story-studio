@@ -43,6 +43,7 @@
 - 编年史桌面端顶部保留当前密度切换。
 - 增加桌面端视图切换：故事板 / 画布。
 - Canvas 视图内部提供重置视图按钮。
+- Canvas 视图内部提供文字大小控制，并在本机持久化用户选择。
 - Canvas 容器使用固定高度和 `touch-none`，避免画布交互影响页面滚动。
 - 右侧轻量编辑器保持现有位置和功能。
 
@@ -61,6 +62,7 @@
 - [x] 点击 Canvas 中的情节点会同步右侧轻量编辑器。
 - [x] 当前选中情节点在 Canvas 中高亮。
 - [x] 线路改名、改色、排序后 Canvas 同步刷新。
+- [x] Canvas 文字大小调整后刷新页面仍保留本机偏好。
 - [x] 移动端仍使用现有纵向情节点卡片流。
 
 ## 验证命令
@@ -73,3 +75,4 @@
 ## 验证结果
 
 - 2026-06-28: 目标测试、`pnpm run lint`、`pnpm run typecheck`、`pnpm run test`、`pnpm run build` 均通过。
+- 2026-06-28: 补充 Canvas 文字大小本地持久化，目标测试 `pnpm --filter @story-studio/studio test src/pages/outline/OutlineChronicleCanvas.test.ts` 通过。

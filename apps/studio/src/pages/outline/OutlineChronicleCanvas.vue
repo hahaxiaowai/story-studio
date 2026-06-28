@@ -20,9 +20,10 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useLocale()
+const CANVAS_TEXT_SCALE_STORAGE_KEY = 'story-studio:outline-canvas-text-scale'
 const canvasContainer = ref<HTMLDivElement>()
 const renderer = shallowRef<OutlineTimelineRenderer>()
-const textScale = ref(1)
+const textScale = ref(readStoredCanvasTextScale())
 
 onMounted(async () => {
   await nextTick()
@@ -57,6 +58,7 @@ watch(() => props.density, (nextDensity) => {
 })
 
 watch(textScale, (nextScale) => {
+  writeStoredCanvasTextScale(nextScale)
   renderer.value?.setTextScale(nextScale)
 })
 
@@ -69,6 +71,32 @@ function updateTextScale(event: Event): void {
     return
 
   textScale.value = Number(event.target.value)
+}
+
+function readStoredCanvasTextScale(): number {
+  if (typeof localStorage === 'undefined')
+    return 1
+
+  const storedScale = Number(localStorage.getItem(CANVAS_TEXT_SCALE_STORAGE_KEY))
+
+  if (!Number.isFinite(storedScale))
+    return 1
+
+  return clampCanvasTextScale(storedScale)
+}
+
+function writeStoredCanvasTextScale(scale: number): void {
+  if (typeof localStorage === 'undefined')
+    return
+
+  localStorage.setItem(CANVAS_TEXT_SCALE_STORAGE_KEY, String(clampCanvasTextScale(scale)))
+}
+
+function clampCanvasTextScale(scale: number): number {
+  if (!Number.isFinite(scale))
+    return 1
+
+  return Math.min(Math.max(scale, 0.8), 1.4)
 }
 </script>
 

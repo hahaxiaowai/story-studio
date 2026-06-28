@@ -6,6 +6,7 @@
 - [x] 新增 `packages/outline-timeline-canvas`，先写 renderer/layout 工具测试。
 - [x] 实现 Canvas layout 纯函数和 Three renderer。
 - [x] 新增 `OutlineChronicleCanvas.vue`，接入 renderer 生命周期、选中状态和重置视图。
+- [x] Canvas 文字大小控制写入本机持久化，刷新后恢复用户选择。
 - [x] 修改 `OutlineChronicleMode.vue`，在桌面端新增故事板 / 画布视图切换，并保留移动端卡片流。
 - [x] 补充中英文文案。
 - [x] 运行 lint、typecheck、test、build。
@@ -36,3 +37,4 @@
 - 2026-06-28: `pnpm run typecheck`
 - 2026-06-28: `pnpm run test`
 - 2026-06-28: `pnpm run build`
+- 2026-06-28: `pnpm --filter @story-studio/studio test src/pages/outline/OutlineChronicleCanvas.test.ts`
