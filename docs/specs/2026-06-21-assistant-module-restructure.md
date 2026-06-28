@@ -53,12 +53,20 @@
 
 ## 验收标准
 
-- [ ] 侧边栏可分别进入 AI 对话和 AI 设置。
-- [ ] AI 对话页不显示 Provider 设置、风格表单或本地测试面板。
-- [ ] AI 设置页不显示聊天线程和消息流。
-- [ ] 全局风格选择会影响 API request messages 和本地 Terminal prompt。
-- [ ] 旧作品级风格选择迁移为全局默认风格，workspace 不再保留风格字段。
-- [ ] 现有聊天线程、Provider 配置和本地 Terminal 测试能力不回归。
+- [x] 侧边栏可分别进入 AI 对话和 AI 设置。
+- [x] AI 对话页不显示 Provider 设置、风格表单或本地测试面板。
+- [x] AI 设置页不显示聊天线程和消息流。
+- [x] 全局风格选择会影响 API request messages 和本地 Terminal prompt。
+- [x] 旧作品级风格选择迁移为全局默认风格，workspace 不再保留风格字段。
+- [x] 现有聊天线程、Provider 配置和本地 Terminal 测试能力不回归。
+
+## 当前实现
+
+- `AppSidebar.vue` 提供 `#assistant-chat` 和 `#assistant` 两个公共入口，`pages/project/index.vue` 分别渲染 `AssistantChatPage` 与 `AssistantSettingsPage`。
+- `AssistantChatPage.vue` 只组合 `AssistantChatPanel`；`AssistantSettingsPage.vue` 只组合 Provider 设置、本地 Terminal 测试和 AI 风格设置面板。
+- `useAssistantChat()` 通过 `resolveAssistantStoryStyle(settings)` 读取全局风格，并注入 API request messages 和本地 Terminal prompt。
+- 存储迁移会把旧 `workspace.storyStyleId` 迁移为 `assistantSettings.defaultStoryStyleId`，并在 `normalizeWorkspace()` 中移除 workspace 旧字段。
+- 本规格已由 `workspaces.test.ts`、`AssistantSettingsPage.test.ts`、`assistantChat.test.ts`、`useAssistantChat.test.ts` 和 `document.test.ts` 覆盖。
 
 ## 验证命令
 

@@ -38,13 +38,20 @@ AI 对话已经支持 Provider 选择、API/本地 Terminal 流式生成、多�
 
 ## 验收标准
 
-- [ ] 生成中 assistant 消息以打字机效果展示，复制和回填仍使用完整真实内容。
-- [ ] 聊天页能看到当前模型信息。
-- [ ] 输入消息时能看到上下文估算，发送后输入框清空但本轮估算保留。
-- [ ] 长时间没有 chunk 时，界面显示“等待首字”耗时，而不是让打字机效果看起来像最后才开始生成。
-- [ ] API 返回 usage 时显示真实 token 用量。
-- [ ] 不返回 usage 的 API 与本地 Terminal 对话不回归。
-- [ ] 相关前端测试、Rust 测试、类型检查和构建通过。
+- [x] 生成中 assistant 消息以打字机效果展示，复制和回填仍使用完整真实内容。
+- [x] 聊天页能看到当前模型信息。
+- [x] 输入消息时能看到上下文估算，发送后输入框清空但本轮估算保留。
+- [x] 长时间没有 chunk 时，界面显示“等待首字”耗时，而不是让打字机效果看起来像最后才开始生成。
+- [x] API 返回 usage 时显示真实 token 用量。
+- [x] 不返回 usage 的 API 与本地 Terminal 对话不回归。
+- [x] 相关前端测试、Rust 测试、类型检查和构建通过。
+
+## 当前实现
+
+- `AssistantChatPanel.vue` 使用页面私有 `typewriterMessages` 渲染 streaming assistant 消息，复制和正文回填仍读取真实 `message.content`。
+- `useAssistantChat()` 暴露 `activeModelSummary`、`activeContextUsageSummary` 和 `generationStatusSummary`，聊天页头部与输入区同步展示。
+- OpenAI-compatible Tauri 请求已发送 `stream_options.include_usage = true`，并把 usage-only SSE chunk 转换为 `assistant-chat-stream` 的 usage 事件。
+- 本规格已由 `assistantChat.test.ts`、`useAssistantChat.test.ts`、`AssistantSettingsPage.test.ts` 和 `src-tauri` 单测覆盖。
 
 ## 验证命令
 
