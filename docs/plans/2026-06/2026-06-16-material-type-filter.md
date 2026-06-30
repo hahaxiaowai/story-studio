@@ -1,5 +1,20 @@
 # 素材类型筛选实施计划
 
+## 状态
+
+- 当前状态：已完成。
+- 状态更新时间：2026-06-29 20:18 CST。
+- 对齐说明：本次仅补充计划状态和完成记录，不修改业务代码。
+
+## 完成记录
+
+- 纯数据类型筛选已存在：`apps/studio/src/modules/materials/materials.ts` 定义 `MaterialKindFilter`、`MaterialKindCounts`、类型筛选和计数逻辑。
+- 组合式状态已存在：`apps/studio/src/modules/materials/useMaterials.ts` 暴露 `selectedKind`、`kindCounts` 和过滤后的素材列表。
+- 页面接线已存在：`apps/studio/src/pages/materials/MaterialPage.vue` 绑定类型筛选按钮组，并展示 `kindCounts[filter.key]`。
+- 中英文文案已存在：`apps/studio/src/composables/useLocale.ts` 包含 `materials.typeFilter` 等类型筛选文案。
+- 回归测试已存在：`apps/studio/src/modules/materials/materials.test.ts`、`apps/studio/src/modules/materials/useMaterials.test.ts` 和 `apps/studio/src/pages/materials/MaterialPage.test.ts` 覆盖类型筛选、计数和页面接线。
+- 历史提交证据：`3901e76 feat: ✨ 增加素材类型筛选`、`ac67b04 feat: ✨ 增加素材类型计数`、`24bb8f4 feat: ✨ 增加素材标签计数`、`8d19ca9 docs: 📚️ 收口素材类型筛选计划`。
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** 在素材库列表中增加全部、文字、链接、图片四种类型筛选，并与现有标签和关键词搜索叠加。

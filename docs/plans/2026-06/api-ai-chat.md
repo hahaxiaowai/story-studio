@@ -1,5 +1,20 @@
 # API AI 对话模式实施计划
 
+## 状态
+
+- 当前状态：已完成。
+- 状态更新时间：2026-06-29 20:18 CST。
+- 对齐说明：本次仅补充计划状态和完成记录，不修改业务代码。
+
+## 完成记录
+
+- Tauri command 已存在：`apps/studio/src-tauri/src/lib.rs` 注册 `run_openai_compatible_chat_stream` 和 `cancel_openai_compatible_chat_stream`。
+- OpenAI-compatible 请求已存在：`apps/studio/src-tauri/src/lib.rs` 构造 `/chat/completions` 流式请求，并设置 `stream_options.include_usage`。
+- 前端调用已存在：`apps/studio/src/modules/assistant/useAssistantChat.ts` 按 Provider 类型选择 API stream command 和 cancel command。
+- 正文内联 AI 也复用 API 流：`apps/studio/src/modules/content/useContentInlineAssistant.ts` 调用 `run_openai_compatible_chat_stream` 并监听 `assistant-chat-stream`。
+- 回归测试已存在：`apps/studio/src/modules/assistant/assistantChat.test.ts`、`apps/studio/src/modules/assistant/useAssistantChat.test.ts`、`apps/studio/src/modules/content/useContentInlineAssistant.test.ts` 和 `apps/studio/src-tauri/src/lib.rs` 内 Rust 测试覆盖流式请求与错误处理。
+- 历史提交证据：`5c090a3 feat: ✨ 新增 API AI 对话模式`、`72d6bf7 docs: 📚️ 同步 API 对话验收状态`、`c8d2db3 test: 🚨 补充 API 流式对话验证`。
+
 ## 来源规格
 
 - `docs/specs/api-ai-chat.md`

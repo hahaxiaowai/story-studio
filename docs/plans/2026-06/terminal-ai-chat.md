@@ -1,5 +1,20 @@
 # AI 终端对话框实施计划
 
+## 状态
+
+- 当前状态：已完成。
+- 状态更新时间：2026-06-29 20:18 CST。
+- 对齐说明：本次仅补充计划状态和完成记录，不修改业务代码。
+
+## 完成记录
+
+- 关键实现已存在：`packages/types/src/types/story.ts` 定义 `AssistantChatThread`，`StudioDataDocument` 已包含 `assistantChatThreads`。
+- 存储与迁移已存在：`apps/studio/src/modules/storage/document.ts` 初始化和规范化 `assistantChatThreads`。
+- 前端对话流程已存在：`apps/studio/src/modules/assistant/useAssistantChat.ts` 管理线程、消息发送、停止、事件监听和运行态。
+- Tauri 流式事件已存在：`apps/studio/src-tauri/src/lib.rs` 使用 `assistant-chat-stream` 事件。
+- 回归测试已存在：`apps/studio/src/modules/storage/document.test.ts`、`apps/studio/src/modules/assistant/useAssistantChat.test.ts`、`apps/studio/src/modules/assistant/assistantChat.test.ts` 覆盖对话数据和流程。
+- 历史提交证据：`22d24d3 feat: ✨ 优化本地终端 AI 对话`、`209b0aa docs: 📚️ 同步终端对话验收状态`。
+
 ## 来源规格
 
 - `docs/specs/terminal-ai-chat.md`
