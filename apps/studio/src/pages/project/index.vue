@@ -7,6 +7,7 @@ import AssistantChatPage from '@/pages/assistant/AssistantChatPage.vue'
 import AssistantSettingsPage from '@/pages/assistant/AssistantSettingsPage.vue'
 import ContentPage from '@/pages/content/ContentPage.vue'
 import EntityWorkspace from '@/pages/entities/EntityWorkspace.vue'
+import IntegrityPage from '@/pages/integrity/IntegrityPage.vue'
 import MaterialPage from '@/pages/materials/MaterialPage.vue'
 import OutlinePage from '@/pages/outline/OutlinePage.vue'
 import WorldPage from '@/pages/world/WorldPage.vue'
@@ -20,7 +21,7 @@ const workspaceSlug = computed<string>(() => activeWorkspace.value.id.replace(/^
 const outlineCount = computed<number>(() => studioData.document.value.outlines.find(outline => outline.workspaceId === activeWorkspace.value.id)?.beats.length ?? 0)
 const characterCount = computed<number>(() => studioData.document.value.entityRecords.filter(record => record.workspaceId === activeWorkspace.value.id && record.kind === 'character').length || activeWorkspace.value.moduleCounts.characters)
 const contentCount = computed<number>(() => studioData.document.value.contents.filter(entry => entry.workspaceId === activeWorkspace.value.id).length)
-const activeView = computed<'overview' | 'outline' | 'characters' | 'world-settings' | 'world-map' | 'content' | 'materials' | 'assistant-chat' | 'assistant'>(() => {
+const activeView = computed<'overview' | 'outline' | 'characters' | 'world-settings' | 'world-map' | 'content' | 'materials' | 'assistant-chat' | 'assistant' | 'integrity'>(() => {
   if (currentHash.value === '#outline')
     return 'outline'
 
@@ -44,6 +45,9 @@ const activeView = computed<'overview' | 'outline' | 'characters' | 'world-setti
 
   if (currentHash.value === '#assistant')
     return 'assistant'
+
+  if (currentHash.value === '#integrity')
+    return 'integrity'
 
   return 'overview'
 })
@@ -90,6 +94,8 @@ onUnmounted(() => {
     <AssistantChatPage v-else-if="activeView === 'assistant-chat'" />
 
     <AssistantSettingsPage v-else-if="activeView === 'assistant'" />
+
+    <IntegrityPage v-else-if="activeView === 'integrity'" />
 
     <WorldPage
       v-else-if="activeView === 'world-settings' || activeView === 'world-map'"

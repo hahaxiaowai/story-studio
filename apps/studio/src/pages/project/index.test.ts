@@ -14,4 +14,10 @@ describe('project page layout', () => {
     expect(projectPageSource).toContain('flex h-full min-h-0 flex-col gap-4 overflow-y-auto p-4 pt-0')
     expect(projectPageSource).toContain('<main id="project" :class="projectLayoutClass"')
   })
+
+  it('routes the integrity hash to the integrity page', () => {
+    expect(projectPageSource).toContain('IntegrityPage')
+    expect(projectPageSource).toContain('currentHash.value === \'#integrity\'')
+    expect(projectPageSource).toContain('activeView === \'integrity\'')
+  })
 })

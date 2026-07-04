@@ -170,6 +170,7 @@ export function getNavigationLabelKey(hash: string): MessageKey {
     '#cast': 'nav.characters',
     '#characters': 'nav.characters',
     '#content': 'nav.content',
+    '#integrity': 'nav.integrity',
     '#maps': 'nav.world',
     '#materials': 'nav.materials',
     '#manuscript': 'nav.content',

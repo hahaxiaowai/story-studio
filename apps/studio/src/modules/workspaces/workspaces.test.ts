@@ -224,6 +224,7 @@ describe('workspaces', () => {
     expect(getNavigationLabelKey('#materials')).toBe('nav.materials')
     expect(getNavigationLabelKey('#assistant-chat')).toBe('nav.assistantChat')
     expect(getNavigationLabelKey('#assistant')).toBe('nav.assistantSettings')
+    expect(getNavigationLabelKey('#integrity')).toBe('nav.integrity')
     expect(getNavigationLabelKey('#unknown')).toBe('nav.content')
   })
 
@@ -231,6 +232,7 @@ describe('workspaces', () => {
     expect(isPublicNavigationHash('#materials')).toBe(true)
     expect(isPublicNavigationHash('#assistant-chat')).toBe(true)
     expect(isPublicNavigationHash('#assistant')).toBe(true)
+    expect(isPublicNavigationHash('#integrity')).toBe(false)
     expect(isPublicNavigationHash('#outline')).toBe(false)
     expect(isPublicNavigationHash('#manuscript')).toBe(false)
   })

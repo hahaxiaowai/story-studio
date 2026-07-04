@@ -6,6 +6,7 @@ import {
   MessageSquareIcon,
   PenLineIcon,
   SettingsIcon,
+  ShieldCheckIcon,
   UsersIcon,
 } from '@lucide/vue'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
@@ -29,6 +30,7 @@ const workspaceActiveHashes = {
   content: ['#content', '#manuscript'],
   outline: ['#outline'],
   characters: ['#cast', '#characters'],
+  integrity: ['#integrity'],
   world: ['#maps', '#world-settings', '#world-map'],
 } as const
 
@@ -110,6 +112,12 @@ const navMain = computed(() => [
         url: '#manuscript',
       },
     ],
+  },
+  {
+    title: t('nav.integrity'),
+    url: '#integrity',
+    icon: ShieldCheckIcon,
+    isActive: isHashActive(workspaceActiveHashes.integrity),
   },
 ])
 
