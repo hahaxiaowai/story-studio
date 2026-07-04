@@ -35,6 +35,7 @@
 - 已为 `terminal-ai-chat.md` 补充 `## 状态` 和 `## 完成记录`，引用类型、存储、前端对话流程、Tauri 流式事件、测试与历史提交证据。
 - 已为 `api-ai-chat.md` 补充 `## 状态` 和 `## 完成记录`，引用 OpenAI-compatible stream command、cancel command、前端调用、复用路径、测试与历史提交证据。
 - 已为 `2026-06-16-material-type-filter.md` 补充 `## 状态` 和 `## 完成记录`，引用类型筛选、计数、页面接线、文案、测试与历史提交证据。
+- 2026-07-04 已为 `2026-06-16-workspace-details.md` 补充 `## 状态` 和 `## 完成记录`，引用工作区详情纯函数、组合式保存入口、弹窗、侧边栏入口、文案和测试证据。
 - 本次未重写计划正文，未迁移 specs、README 或架构说明，未修改业务代码。
 - 2026-06-30 自动化补建月度索引 `TODO.md`，并新增 `2026-06-30-next-engineering-direction.md` 作为下一项工程推进的人工确认入口。
 
@@ -50,7 +51,8 @@
 ## 已确认事项
 
 - 已允许执行“旧计划状态对齐”这类 docs-only 清理。
-- 本次只处理当前已经有明确代码证据的三个计划：`terminal-ai-chat.md`、`api-ai-chat.md`、`2026-06-16-material-type-filter.md`。
+- 2026-06-29 只处理当时已有明确代码证据的三个计划：`terminal-ai-chat.md`、`api-ai-chat.md`、`2026-06-16-material-type-filter.md`。
+- 2026-07-04 继续处理已有明确代码证据的一个计划：`2026-06-16-workspace-details.md`。
 
 ## 验证方式
 

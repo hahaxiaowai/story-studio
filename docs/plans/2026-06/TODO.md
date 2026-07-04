@@ -6,12 +6,13 @@
 
 | 任务 | 状态 | 优先级 | 计划文件 | 最后更新 | 下一步 |
 | --- | --- | --- | --- | --- | --- |
-| 下一项工程推进方向确认 | 待人工确认 | P1 | [2026-06-30-next-engineering-direction.md](./2026-06-30-next-engineering-direction.md) | 2026-06-30 10:15 CST | 人工确认优先方向后再进入实现 |
 
 ## 已完成记录
 
 | 任务 | 状态 | 优先级 | 计划文件 | 最后更新 | 下一步 |
 | --- | --- | --- | --- | --- | --- |
+| 工作区详情编辑 | 已完成 | P2 | [2026-06-16-workspace-details.md](./2026-06-16-workspace-details.md) | 2026-07-04 00:00 CST | 无 |
+| 下一项工程推进方向确认 | 已完成 | P1 | [2026-06-30-next-engineering-direction.md](./2026-06-30-next-engineering-direction.md) | 2026-07-04 00:00 CST | 已确认继续进行 docs-only 计划状态核对 |
 | 旧计划状态对齐 | 已完成 | P1 | [2026-06-28-plan-status-reconciliation.md](./2026-06-28-plan-status-reconciliation.md) | 2026-06-30 10:15 CST | 等待本次 docs-only commit 记录 |
 | 计划目录月份化整理 | 已完成 | P1 | [2026-06-28-plan-directory-organization.md](./2026-06-28-plan-directory-organization.md) | 2026-06-28 22:41 CST | 无 |
 | 素材类型筛选 | 已完成 | P1 | [2026-06-16-material-type-filter.md](./2026-06-16-material-type-filter.md) | 2026-06-29 20:18 CST | 无 |
@@ -32,7 +33,6 @@
 | 素材关键词搜索 | 待状态核对 | P2 | [2026-06-16-material-search.md](./2026-06-16-material-search.md) | 待核对 | 仅在代码证据明确后补充状态 |
 | 大纲情节点关联章节 | 待状态核对 | P2 | [2026-06-16-outline-content-link.md](./2026-06-16-outline-content-link.md) | 待核对 | 仅在代码证据明确后补充状态 |
 | 工作区归档与恢复 | 待状态核对 | P2 | [2026-06-16-workspace-archive.md](./2026-06-16-workspace-archive.md) | 待核对 | 仅在代码证据明确后补充状态 |
-| 工作区详情编辑 | 待状态核对 | P2 | [2026-06-16-workspace-details.md](./2026-06-16-workspace-details.md) | 待核对 | 仅在代码证据明确后补充状态 |
 | AI 助手模块重组 | 待状态核对 | P2 | [2026-06-21-assistant-module-restructure.md](./2026-06-21-assistant-module-restructure.md) | 待核对 | 仅在代码证据明确后补充状态 |
 | Three Canvas 大纲时间轴 | 待状态核对 | P2 | [2026-06-23-outline-canvas-timeline.md](./2026-06-23-outline-canvas-timeline.md) | 待核对 | 仅在代码证据明确后补充状态 |
 | 大纲线路管理 | 待状态核对 | P2 | [2026-06-23-outline-line-management.md](./2026-06-23-outline-line-management.md) | 待核对 | 仅在代码证据明确后补充状态 |

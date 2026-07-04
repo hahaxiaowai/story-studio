@@ -1,5 +1,20 @@
 # 工作区详情编辑实施计划
 
+## 状态
+
+- 当前状态：已完成。
+- 状态更新时间：2026-07-04 00:00 CST。
+- 对齐说明：本次仅补充计划状态和完成记录，不修改业务代码。
+
+## 完成记录
+
+- 工作区详情纯函数已存在：`apps/studio/src/modules/workspaces/workspaces.ts` 定义 `updateWorkspaceDetails()`，支持标题和简介更新、清空简介、保留工作区 id，并校验空标题。
+- 组合式保存入口已存在：`apps/studio/src/modules/workspaces/useWorkspaces.ts` 暴露 `saveActiveWorkspaceDetails()`，通过 `studioData.updateDocument()` 写回当前工作区。
+- 弹窗 UI 已存在：`apps/studio/src/components/WorkspaceDetailsDialog.vue` 读取当前工作区标题和简介，并在提交时调用 `saveActiveWorkspaceDetails()`。
+- 侧边栏入口已存在：`apps/studio/src/components/TeamSwitcher.vue` 引入 `WorkspaceDetailsDialog`，并通过 `menu.editWorkspace` 打开编辑工作区弹窗。
+- 中英文文案已存在：`apps/studio/src/composables/useLocale.ts` 包含 `workspace.details.*` 和 `menu.editWorkspace`。
+- 回归测试已存在：`apps/studio/src/modules/workspaces/workspaces.test.ts`、`apps/studio/src/modules/workspaces/useWorkspaces.test.ts`、`apps/studio/src/components/WorkspaceDetailsDialog.test.ts` 和 `apps/studio/src/components/TeamSwitcher.test.ts` 覆盖纯函数、保存入口和 UI 接线。
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** 让用户可以从工作区切换器编辑当前工作区名称和简介，并写回统一本地文档。
