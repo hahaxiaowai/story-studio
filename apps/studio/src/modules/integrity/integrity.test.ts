@@ -39,6 +39,7 @@ describe('getWorkspaceIntegrityReport', () => {
       kind: 'missing-outline-beat',
       severity: 'error',
       sourceLabel: '第一卷 / 雨夜',
+      targetHash: '#content',
     }))
   })
 
@@ -62,6 +63,7 @@ describe('getWorkspaceIntegrityReport', () => {
       kind: 'missing-material',
       severity: 'warning',
       sourceLabel: 'missing-material',
+      targetHash: '#materials',
     }))
   })
 
@@ -81,6 +83,7 @@ describe('getWorkspaceIntegrityReport', () => {
       kind: 'duplicate-content-order',
       severity: 'warning',
       sourceLabel: '第一章、第二章',
+      targetHash: '#content',
     }))
   })
 })

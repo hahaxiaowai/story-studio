@@ -9,6 +9,7 @@ Story Studio 的正文、素材引用、大纲和工作区数据都存放在同�
 - 用户可以从工作区导航进入“数据检查”页面。
 - 系统可以针对当前工作区列出数据完整性问题。
 - 系统可以展示问题数量、错误数量、提醒数量，以及无问题时的通过状态。
+- 用户可以从每条问题跳转到对应的处理页面。
 - 本期先覆盖正文关联情节点缺失、素材引用缺失、章节排序重复三类检查。
 
 ## 非目标
@@ -25,6 +26,7 @@ Story Studio 的正文、素材引用、大纲和工作区数据都存放在同�
 3. 系统展示当前工作区的数据检查结果。
 4. 如果没有问题，页面显示通过状态。
 5. 如果存在问题，页面按列表展示问题标题、说明、来源和严重级别。
+6. 用户点击问题里的“前往处理”，系统跳转到对应的正文或素材页面。
 
 ## 数据模型
 
@@ -35,7 +37,7 @@ Story Studio 的正文、素材引用、大纲和工作区数据都存放在同�
 - `WorkspaceIntegrityIssue`
 - `WorkspaceIntegrityReport`
 
-检查输入直接使用 `StudioDataDocument` 和当前 `workspaceId`。
+检查输入直接使用 `StudioDataDocument` 和当前 `workspaceId`。每条 `WorkspaceIntegrityIssue` 额外带运行时 `targetHash`，用于页面跳转，不写入持久化数据。
 
 ## UI 结构
 
@@ -49,6 +51,7 @@ Story Studio 的正文、素材引用、大纲和工作区数据都存放在同�
 - `getWorkspaceIntegrityReport(document, workspaceId)` 只做纯数据检查，便于单元测试。
 - `useWorkspaceIntegrity()` 从 `useStudioData()` 和 `useWorkspaces()` 读取当前文档与工作区，返回 computed report。
 - 页面只展示报告，不负责计算业务规则。
+- 问题跳转通过 `targetHash` 指向现有页面，不引入路由库或新状态。
 - 导航使用 `#integrity`，并接入 `getNavigationLabelKey()` 的面包屑映射。
 
 ## 验收标准
@@ -58,6 +61,7 @@ Story Studio 的正文、素材引用、大纲和工作区数据都存放在同�
 - [x] 纯函数能发现当前工作区重复章节排序。
 - [x] 无问题时报告 `passed = true`。
 - [x] 侧边栏和项目页能进入“数据检查”页面。
+- [x] 每条问题能跳转到对应处理页面。
 - [x] 类型检查通过。
 - [x] 必要测试通过。
 

@@ -80,6 +80,12 @@ const issueIcon = computed(() => report.value.passed ? CheckCircle2Icon : AlertT
               <p class="text-muted-foreground mt-3 text-xs">
                 {{ t('integrity.source') }}：{{ issue.sourceLabel }}
               </p>
+              <a
+                class="text-primary mt-3 inline-flex text-sm font-medium underline-offset-4 hover:underline"
+                :href="issue.targetHash"
+              >
+                {{ t('integrity.resolve') }}
+              </a>
             </div>
           </div>
         </article>

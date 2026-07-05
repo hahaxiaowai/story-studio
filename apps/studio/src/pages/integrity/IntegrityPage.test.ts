@@ -15,4 +15,9 @@ describe('integrity page wiring', () => {
     expect(componentSource).toContain('report.issues')
     expect(componentSource).toContain('integrity.empty')
   })
+
+  it('renders issue navigation links to the owning workspace page', () => {
+    expect(componentSource).toContain(':href="issue.targetHash"')
+    expect(componentSource).toContain('integrity.resolve')
+  })
 })

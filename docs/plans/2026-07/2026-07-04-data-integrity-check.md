@@ -9,7 +9,8 @@
 - 当前状态：已完成。
 - 创建时间：2026-07-04 00:00 CST。
 - 完成时间：2026-07-04 00:00 CST。
-- 执行范围：新增当前工作区的数据完整性检查入口，不修改持久化 schema，不自动修复数据。
+- 最近更新时间：2026-07-05 00:00 CST。
+- 执行范围：新增当前工作区的数据完整性检查入口，并继续增强问题定位跳转；不修改持久化 schema，不自动修复数据。
 
 ## 完成记录
 
@@ -18,6 +19,7 @@
 - 已新增 `apps/studio/src/pages/integrity/IntegrityPage.vue`，展示通过状态、问题数量、错误数量、提醒数量和问题列表。
 - 已通过 `#integrity` 接入项目页分发、侧边栏导航、面包屑映射和中英文文案。
 - 本期未修改 `StudioDataDocument` schema，未增加自动修复入口。
+- 2026-07-05 已增强问题定位能力：为每条检查问题增加 `targetHash`，页面展示“前往处理”跳转。
 
 ## 实施步骤
 
@@ -27,6 +29,9 @@
 4. [x] 接入 `#integrity` 页面分发、侧边栏入口、面包屑文案和中英文文案。
 5. [x] 运行目标测试、类型检查和 lint。
 6. [x] 更新本计划和 `TODO.md` 的完成记录。
+7. [x] 为检查问题补充目标页面跳转。
+8. [x] 更新页面展示“前往处理”链接。
+9. [x] 重新运行目标测试、类型检查、lint 和构建。
 
 ## 影响文件
 
@@ -62,6 +67,9 @@ pnpm run build
 - 2026-07-04: `pnpm run typecheck` 通过。
 - 2026-07-04: `pnpm run lint` 通过。
 - 2026-07-04: `pnpm run build` 通过；保留既有 Rollup pure annotation、Tauri dynamic import 和 chunk size warning。
+- 2026-07-05: 定位增强目标测试通过，2 个测试文件、6 个测试通过。
+- 2026-07-05: 相关测试通过，6 个测试文件、26 个测试通过。
+- 2026-07-05: `pnpm run typecheck`、`pnpm run lint`、`pnpm run build` 通过；保留既有 Rollup pure annotation、Tauri dynamic import 和 chunk size warning。
 
 ## 风险与回滚
 

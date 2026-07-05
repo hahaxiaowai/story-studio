@@ -11,6 +11,7 @@ export interface WorkspaceIntegrityIssue {
   title: string
   description: string
   sourceLabel: string
+  targetHash: string
 }
 
 export interface WorkspaceIntegrityReport {
@@ -55,6 +56,7 @@ function getMissingOutlineBeatIssues(document: StudioDataDocument, workspaceId: 
       title: '正文关联的情节点不存在',
       description: `章节关联了不存在的情节点：${entry.outlineBeatId}`,
       sourceLabel: getContentEntryLabel(entry.volume, entry.chapter),
+      targetHash: '#content',
     }))
 }
 
@@ -70,6 +72,7 @@ function getMissingMaterialIssues(document: StudioDataDocument, workspaceId: str
       title: '素材引用缺少素材记录',
       description: `素材引用指向了不存在的素材：${materialRef.materialId}`,
       sourceLabel: materialRef.materialId,
+      targetHash: '#materials',
     }))
 }
 
@@ -91,6 +94,7 @@ function getDuplicateContentOrderIssues(document: StudioDataDocument, workspaceI
       title: '章节排序值重复',
       description: `有 ${entries.length} 个章节使用了同一个排序值：${order}`,
       sourceLabel: entries.map(entry => getContentEntryLabel('', entry.chapter)).join('、'),
+      targetHash: '#content',
     }))
 }
 
