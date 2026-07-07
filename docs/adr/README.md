@@ -43,6 +43,8 @@
 YYYY-MM-DD-short-title.md
 ```
 
+新建 ADR 时优先复制 `docs/adr/_template.md`。
+
 ## 建议结构
 
 - 背景
