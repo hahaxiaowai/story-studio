@@ -35,6 +35,7 @@
 - 选择验证命令时参考 `docs/ai/verification.md`。
 - 定位目标测试时参考 `docs/ai/test-map.md`。
 - 执行完整 SDD 任务时参考 `docs/ai/sdd-checklist.md`。
+- 外部通用 SDD 技能只能作为参考；Story Studio 以本仓库 `docs/specs/`、`docs/plans/YYYY-MM/` 和月度 `TODO.md` 体系为准。
 
 ## 收尾要求
 
