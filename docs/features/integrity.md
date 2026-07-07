@@ -42,3 +42,10 @@
 - `apps/studio/src/modules/integrity/integrity.test.ts`
 - `apps/studio/src/modules/integrity/useWorkspaceIntegrity.test.ts`
 - `apps/studio/src/pages/integrity/IntegrityPage.test.ts`
+
+## 追溯链接
+
+- 最近相关 Spec：`docs/specs/2026-07-04-data-integrity-check.md`
+- 最近相关 Plan：`docs/plans/2026-07/2026-07-04-data-integrity-check.md`
+- 相关 SDD 样例：`docs/ai/examples/data-integrity-check.md`
+- 测试锚点：`docs/ai/test-map.md` 的“完整性检查”小节。
