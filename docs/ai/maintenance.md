@@ -43,3 +43,5 @@ docs-only 改动至少检查：
 - 文档中引用的关键代码路径是否存在。
 - `git diff --check` 是否通过。
 - 是否残留 `TBD`、`TODO`、`fill in details` 等占位词。
+
+更多分类验证规则见 `docs/ai/verification.md`。

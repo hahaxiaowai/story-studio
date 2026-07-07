@@ -9,6 +9,7 @@
 3. 相关 `docs/features/*.md`
 4. 相关 `docs/specs/*.md`
 5. 相关 `docs/plans/YYYY-MM/*.md`
+6. `docs/ai/verification.md`
 
 ## 常见任务入口
 
@@ -27,6 +28,8 @@
 - 用户明确要“计划”或“先不改代码”时，只产出计划或 Spec，不实现。
 - 用户确认执行后，按 Spec/Plan 范围实现。
 - 用户要求“根据某会话在当前项目实现”时，先读取会话内容，只迁移与当前项目结构匹配的要求。
+- 新建 Spec 时优先复制 `docs/specs/_template.md`。
+- 选择验证命令时参考 `docs/ai/verification.md`。
 
 ## 收尾要求
 
