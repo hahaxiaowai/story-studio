@@ -4,6 +4,8 @@
 
 本检查单用于一次 Story Studio 任务从理解、规格、计划、实现、验证到文档回填的快速自检。更完整的流程说明见 `docs/ai/sdd-workflow.md`。
 
+可参考样例：`docs/ai/examples/data-integrity-check.md`。
+
 ## 1. 建立上下文
 
 - [ ] 已阅读 `AGENTS.md`。

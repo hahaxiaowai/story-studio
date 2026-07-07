@@ -24,6 +24,7 @@
 - 素材库：`docs/features/materials.md`
 - AI 对话、模型设置、生成链路：`docs/features/assistant.md`
 - 完整性检查：`docs/features/integrity.md`
+- SDD 样例：`docs/ai/examples/data-integrity-check.md`
 
 ## 何时使用计划和 Spec
 
