@@ -29,6 +29,18 @@ Story Studio 是一个 pnpm workspace monorepo，当前包含一个 Vue 3 + Vite
 - `packages/types`: 跨包共享类型。
 - `packages/utils`: 跨包共享工具函数。
 
+## AI 文档分层
+
+- `AGENTS.md`: 仓库级协作规则、代码约束和验证要求。
+- `docs/architecture.md`: 系统总览、模块边界、数据流和关键入口。
+- `docs/features/*.md`: 已落地功能的当前事实说明，包括入口、主流程、关键文件、数据结构、边界情况和验证入口。
+- `docs/specs/*.md`: SDD 规格文档，描述一次新增功能或较大行为调整的背景、目标、范围、方案、验收标准和完成记录。
+- `docs/plans/YYYY-MM/*.md`: 从规格拆出的实施计划、月度 TODO 和历史推进状态。
+- `docs/adr/*.md`: 长期架构决策记录。
+- `docs/ai/*.md`: AI 开发流程、文档维护规则和常见任务参考。
+
+处理任务时，先读 `AGENTS.md`；涉及代码结构或模块边界时再读 `docs/architecture.md`；涉及已有功能时先读对应 `docs/features/*.md`；涉及新增功能或较大行为调整时按 SDD 更新 `docs/specs/` 和 `docs/plans/`。
+
 ## Studio 前端结构
 
 `apps/studio/src` 参考 Vitesse 的目录风格：
@@ -121,11 +133,25 @@ Story Studio 是一个 pnpm workspace monorepo，当前包含一个 Vue 3 + Vite
 - 计划应从已批准的规格拆出具体步骤，标明涉及文件和验证方式。
 - 不要在规格未明确时直接扩大实现范围。
 - 小修小补可以不写完整规格，但仍应遵循 `AGENTS.md` 中的目录、风格和验证约定。
+- `docs/specs/` 记录变更，不替代 `docs/features/` 的功能现状说明。
+- 完成 SDD 变更后，在对应规格中回填实际完成内容、验证结果、完成时间、commit 或本地变更范围、未覆盖风险。
+
+## 文档同步要求
+
+功能更新后必须检查是否需要同步文档：
+
+- 改了功能现状、用户入口、主流程、状态流、数据结构、Tauri/Web 边界或验证入口：更新对应 `docs/features/*.md`。
+- 执行了一次 SDD 变更：更新对应 `docs/specs/*.md`，必要时同步 `docs/plans/YYYY-MM/*.md`。
+- 改变了长期架构决策：新增或更新 `docs/adr/*.md`。
+- 新增或调整 AI 开发流程：更新 `docs/ai/*.md`。
+
+docs-only 改动通常不需要跑业务 build/test，但需要做结构、路径引用、占位词和 whitespace 检查。
 
 ## 本地运行
 
-- Studio dev server 默认使用 `http://127.0.0.1:5173/`。
+- Studio dev server 默认使用 `http://127.0.0.1:4433/`。
 - `apps/studio` 的 `dev` 脚本是 `vite --host 127.0.0.1`。
+- `apps/studio/vite.config.ts` 启用了 `strictPort: true`，如果 `4433` 被占用，需要先释放端口或显式指定其他 Vite 端口。
 
 ## 当前重要上下文
 
