@@ -58,3 +58,4 @@ AI 在处理 Story Studio 任务时，优先按下面顺序建立上下文：
 代码或配置变更后按 `AGENTS.md` 的验证要求运行命令。docs-only 改动可使用结构清单、路径引用、占位词和 whitespace 检查。
 
 具体命令选择参考 `docs/ai/verification.md`。
+完整执行自检参考 `docs/ai/sdd-checklist.md`。

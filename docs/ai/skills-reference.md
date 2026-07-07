@@ -11,6 +11,7 @@
 5. 相关 `docs/plans/YYYY-MM/*.md`
 6. `docs/ai/verification.md`
 7. `docs/ai/test-map.md`
+8. `docs/ai/sdd-checklist.md`
 
 ## 常见任务入口
 
@@ -32,6 +33,7 @@
 - 新建 Spec 时优先复制 `docs/specs/_template.md`。
 - 选择验证命令时参考 `docs/ai/verification.md`。
 - 定位目标测试时参考 `docs/ai/test-map.md`。
+- 执行完整 SDD 任务时参考 `docs/ai/sdd-checklist.md`。
 
 ## 收尾要求
 

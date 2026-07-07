@@ -47,7 +47,7 @@ Story Studio 是一个 pnpm workspace monorepo，当前包含一个 Vue 3 + Vite
 
 - `main.ts`: 浏览器入口，挂载 Vue 应用。
 - `App.vue`: 根组件。
-- `pages/`: 页面级组件。当前首页是 `pages/index.vue`。
+- `pages/`: 页面级组件。当前主工作台是 `pages/project/index.vue`。
 - `styles/`: 全局样式。当前入口是 `styles/main.css`。
 - `constants/`: 应用侧常量。当前示例项目数据在 `constants/project.ts`。
 
