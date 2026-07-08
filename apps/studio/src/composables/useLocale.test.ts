@@ -16,6 +16,11 @@ describe('useLocale', () => {
     expect(translate('en-US', 'nav.project')).toBe('Project')
   })
 
+  it('uses workspace-oriented outline page titles without timeline wording', () => {
+    expect(translate('zh-CN', 'outline.title')).toBe('大纲工作台')
+    expect(translate('en-US', 'outline.title')).toBe('Outline workspace')
+  })
+
   it('recognizes supported locales', () => {
     expect(isLocale('zh-CN')).toBe(true)
     expect(isLocale('en-US')).toBe(true)

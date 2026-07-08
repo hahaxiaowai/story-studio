@@ -18,6 +18,7 @@
 | 素材类型筛选 | 已完成 | P1 | [2026-06-16-material-type-filter.md](./2026-06-16-material-type-filter.md) | 2026-06-29 20:18 CST | 无 |
 | API AI 对话模式 | 已完成 | P1 | [api-ai-chat.md](./api-ai-chat.md) | 2026-06-29 20:18 CST | 无 |
 | AI 终端对话框 | 已完成 | P1 | [terminal-ai-chat.md](./terminal-ai-chat.md) | 2026-06-29 20:18 CST | 无 |
+| 大纲页布局优化 | 已完成 | P2 | [outline-layout-optimization.md](./outline-layout-optimization.md) | 2026-07-07 00:00 CST | 已按当前代码证据完成状态收口 |
 
 ## 待梳理历史计划
 
@@ -39,4 +40,3 @@
 | 章节细纲与 AI 整章生成 | 待状态核对 | P2 | [2026-06-24-content-fine-outline-generation.md](./2026-06-24-content-fine-outline-generation.md) | 待核对 | 仅在代码证据明确后补充状态 |
 | 正文内 AI 批注改写 | 待状态核对 | P2 | [2026-06-24-content-inline-ai-annotation.md](./2026-06-24-content-inline-ai-annotation.md) | 待核对 | 仅在代码证据明确后补充状态 |
 | AI 助手故事风格约束 | 待状态核对 | P2 | [assistant-story-style.md](./assistant-story-style.md) | 待核对 | 仅在代码证据明确后补充状态 |
-| 大纲页布局优化 | 待状态核对 | P2 | [outline-layout-optimization.md](./outline-layout-optimization.md) | 待核对 | 仅在代码证据明确后补充状态 |
