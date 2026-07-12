@@ -79,6 +79,7 @@
 - `apps/studio/src/modules/content/contentAssistant.test.ts`
 - `apps/studio/src/modules/content/useContentInlineAssistant.test.ts`
 - `apps/studio/src/pages/content/ContentPage.test.ts`
+- `apps/studio/src/pages/content/ContentAiRevisionHistory.test.ts`
 
 ## 角色和属性
 

@@ -26,7 +26,7 @@
 
 ## 状态
 
-- 当前状态：已确认。
+- 当前状态：已完成。
 - 创建时间：2026-07-12。
 - 执行范围：章节内 AI 改写历史、恢复留痕、单条删除、schema 迁移和当前章节 UI；不做普通编辑历史或全局版本管理。
 
@@ -49,7 +49,7 @@
 - Produces: `StudioDataSchemaVersion = 14`
 - Produces: migration normalization capped at 20 records
 
-- [ ] **Step 1：写 schema 迁移失败测试**
+- [x] **Step 1：写 schema 迁移失败测试**
 
 在 `document.test.ts` 增加：
 
@@ -68,13 +68,13 @@ it('migrates content AI revision history to schema 14', () => {
 
 另一个用例构造 22 条记录，其中包含无 ID、非字符串正文和无效 target kind，断言过滤无效记录、无效 kind 回退 `chapter`、instruction trim，并只保留最后 20 条。
 
-- [ ] **Step 2：运行测试并确认 RED**
+- [x] **Step 2：运行测试并确认 RED**
 
 Run: `pnpm --filter @story-studio/studio test src/modules/storage/document.test.ts`
 
 Expected: FAIL，原因是 schema 仍为 13 或历史字段不存在。
 
-- [ ] **Step 3：增加共享类型并导出**
+- [x] **Step 3：增加共享类型并导出**
 
 ```ts
 export type ContentAiRevisionTargetKind = 'selection' | 'chapter'
@@ -91,7 +91,7 @@ export interface ContentAiRevision {
 
 将 `aiRevisionHistory` 加入 `WorkspaceContentEntry`，把 schema 类型改为 14，并从 `packages/types/src/index.ts` 导出两个新增类型。
 
-- [ ] **Step 4：实现迁移规范化**
+- [x] **Step 4：实现迁移规范化**
 
 把 `STUDIO_DATA_SCHEMA_VERSION` 改为 14。在 `normalizeContentEntries()` 为每章写入：
 
@@ -103,7 +103,7 @@ aiRevisionHistory: normalizeContentAiRevisionHistory(
 
 规范化函数只接收数组；过滤 `id`、`previousBody`、`nextBody`、`createdAt` 不是字符串或 ID/时间为空的项；保留空正文；最后 `.slice(-20)`。
 
-- [ ] **Step 5：运行测试并确认 GREEN**
+- [x] **Step 5：运行测试并确认 GREEN**
 
 Run: `pnpm --filter @story-studio/studio test src/modules/storage/document.test.ts`
 
@@ -125,7 +125,7 @@ Expected: PASS。
 - Produces: `restoreContentAiRevision(entry, input): WorkspaceContentEntry`
 - Produces: `removeContentAiRevision(entry, revisionId, now): WorkspaceContentEntry`
 
-- [ ] **Step 1：写新章节和应用改写失败测试**
+- [x] **Step 1：写新章节和应用改写失败测试**
 
 断言 `createContentEntry()` 默认 `aiRevisionHistory: []`，并覆盖：
 
@@ -147,30 +147,30 @@ expect(revised.aiRevisionHistory[0]).toMatchObject({
 })
 ```
 
-- [ ] **Step 2：运行测试并确认 RED**
+- [x] **Step 2：运行测试并确认 RED**
 
 Expected: FAIL，原因是历史字段或函数不存在。
 
-- [ ] **Step 3：实现追加与 20 条裁剪**
+- [x] **Step 3：实现追加与 20 条裁剪**
 
 `appendContentAiRevision()` 在正文相同时返回原对象；否则创建 `content-ai-revision-<timestamp>-<random>` ID，追加记录并 `.slice(-CONTENT_AI_REVISION_HISTORY_LIMIT)`，原子更新 `body` 和 `updatedAt`。
 
-- [ ] **Step 4：补容量、恢复、删除失败测试**
+- [x] **Step 4：补容量、恢复、删除失败测试**
 
 - 21 次实际改写后历史长度为 20，首条是第二次改写。
 - `restoreContentAiRevision()` 把正文改为目标记录 `previousBody`，新历史记录的 previous 是恢复前当前正文，next 是恢复后正文，instruction 为调用方传入的系统说明，target kind 为 chapter。
 - 目标不存在或恢复结果与当前正文相同时返回原对象。
 - `removeContentAiRevision()` 只删除目标记录并刷新 `updatedAt`；目标不存在返回原对象。
 
-- [ ] **Step 5：运行测试并确认 RED**
+- [x] **Step 5：运行测试并确认 RED**
 
 Expected: FAIL，原因是恢复或删除函数不存在。
 
-- [ ] **Step 6：实现恢复和删除**
+- [x] **Step 6：实现恢复和删除**
 
 恢复复用追加逻辑，避免两套容量裁剪；删除使用 filter，并以长度是否变化决定是否返回新对象。
 
-- [ ] **Step 7：运行测试并确认 GREEN**
+- [x] **Step 7：运行测试并确认 GREEN**
 
 Run: `pnpm --filter @story-studio/studio test src/modules/content/content.test.ts`
 
@@ -192,7 +192,7 @@ Expected: PASS。
 - Produces: `deleteAiRevision(entryId, revisionId): void`
 - Consumes: Task 2 纯逻辑函数
 
-- [ ] **Step 1：写 composable 写回失败测试**
+- [x] **Step 1：写 composable 写回失败测试**
 
 使用现有 mock driver 创建章节，依次调用三个新动作，断言：
 
@@ -201,17 +201,17 @@ Expected: PASS。
 - 删除动作只删除目标历史，正文保持恢复后的值。
 - 对其他章节不产生变化。
 
-- [ ] **Step 2：运行测试并确认 RED**
+- [x] **Step 2：运行测试并确认 RED**
 
 Run: `pnpm --filter @story-studio/studio test src/modules/content/useContent.test.ts`
 
 Expected: FAIL，原因是新动作不存在。
 
-- [ ] **Step 3：实现三个动作**
+- [x] **Step 3：实现三个动作**
 
 每个动作都在一次 `studioData.updateDocument()` 中 map `document.contents`。时间由动作内部 `new Date().toISOString()` 生成；`applyAiRevision` input 不允许页面传 previousBody，纯逻辑直接从章节当前 body 读取。
 
-- [ ] **Step 4：运行测试并确认 GREEN**
+- [x] **Step 4：运行测试并确认 GREEN**
 
 Run: `pnpm --filter @story-studio/studio test src/modules/content/useContent.test.ts src/modules/content/content.test.ts`
 
@@ -236,7 +236,7 @@ Expected: PASS。
 - Component emits: `restore(revisionId: string)`, `delete(revisionId: string)`
 - Consumes: Task 3 `applyAiRevision`、`restoreAiRevision`、`deleteAiRevision`
 
-- [ ] **Step 1：写组件和页面接线失败测试**
+- [x] **Step 1：写组件和页面接线失败测试**
 
 沿用源码静态测试，断言组件具有：新到旧展示、空状态、前后正文、记录内删除确认、restore/delete emit。正文页测试断言：
 
@@ -250,13 +250,13 @@ expect(componentSource).toContain('<ContentAiRevisionHistory')
 
 locale 测试覆盖入口、空状态、selection/chapter、恢复、删除确认和恢复系统说明。
 
-- [ ] **Step 2：运行测试并确认 RED**
+- [x] **Step 2：运行测试并确认 RED**
 
 Run: `pnpm --filter @story-studio/studio test src/pages/content/ContentAiRevisionHistory.test.ts src/pages/content/ContentPage.test.ts src/composables/useLocale.test.ts`
 
 Expected: FAIL，原因是组件、接线或文案不存在。
 
-- [ ] **Step 3：实现历史私有组件**
+- [x] **Step 3：实现历史私有组件**
 
 - 用 `Dialog` 展示历史，入口按钮显示 `revisions.length`。
 - computed 复制并 reverse，禁止原地修改 prop。
@@ -264,14 +264,14 @@ Expected: FAIL，原因是组件、接线或文案不存在。
 - 删除按钮第一次点击只设置 `pendingDeleteRevisionId`；随后显示确认/取消。
 - 对话框关闭时清理 pending delete。
 
-- [ ] **Step 4：接入正文页原子动作**
+- [x] **Step 4：接入正文页原子动作**
 
 - `applyInlineAssistantSuggestion()` 计算 nextBody 后调用 `applyAiRevision()`，传当前 instruction 和 target kind；保留现有即时 undo snapshot。
 - 历史 restore handler 调用 `restoreAiRevision()`，instruction 使用 `t('content.aiRevisionRestoreInstruction')`，随后清空即时 undo snapshot 和批注浮层状态。
 - delete handler 调用 `deleteAiRevision()`。
 - 组件绑定始终使用 `selectedEntry.aiRevisionHistory`，章节切换自然隔离。
 
-- [ ] **Step 5：补齐中英文文案并运行 GREEN**
+- [x] **Step 5：补齐中英文文案并运行 GREEN**
 
 Run: `pnpm --filter @story-studio/studio test src/pages/content/ContentAiRevisionHistory.test.ts src/pages/content/ContentPage.test.ts src/composables/useLocale.test.ts src/modules/content/content.test.ts src/modules/content/useContent.test.ts`
 
@@ -290,13 +290,13 @@ Expected: PASS。
 - Modify: `docs/plans/2026-07/2026-07-12-content-ai-revision-history.md`
 - Modify: `docs/plans/2026-07/TODO.md`
 
-- [ ] **Step 1：同步功能事实和测试索引**
+- [x] **Step 1：同步功能事实和测试索引**
 
 - `content.md` 增加持久历史流程、20 条边界、恢复留痕、即时撤销关系和新测试入口。
 - `storage.md` 更新 schema 14，并说明备份自动包含章节历史。
 - `test-map.md` 增加 `ContentAiRevisionHistory.test.ts`。
 
-- [ ] **Step 2：运行目标验证**
+- [x] **Step 2：运行目标验证**
 
 ```bash
 pnpm --filter @story-studio/studio test src/modules/content/content.test.ts src/modules/content/useContent.test.ts src/modules/storage/document.test.ts src/pages/content/ContentPage.test.ts src/pages/content/ContentAiRevisionHistory.test.ts src/composables/useLocale.test.ts
@@ -304,7 +304,7 @@ pnpm --filter @story-studio/studio test src/modules/content/content.test.ts src/
 
 Expected: 全部通过。
 
-- [ ] **Step 3：运行全仓验证**
+- [x] **Step 3：运行全仓验证**
 
 ```bash
 pnpm run lint
@@ -316,11 +316,11 @@ git diff --check
 
 Expected: 全部退出码为 0；既有 Rollup pure annotation、Tauri dynamic import 和 chunk warning 可记录为非阻塞 warning。
 
-- [ ] **Step 4：真实页面验证**
+- [x] **Step 4：真实页面验证**
 
 在 `http://127.0.0.1:4433/#content` 检查历史入口、空状态、记录数量、对话框布局和删除二次确认；不得发送真实 AI 请求。控制台不得出现新增 error/warn。
 
-- [ ] **Step 5：恢复生成文件并回填记录**
+- [x] **Step 5：恢复生成文件并回填记录**
 
 只恢复验证产生的两个 tsbuildinfo 文件。规格和计划填写实际验证计数、完成时间、commit 或未提交状态和未覆盖风险；月度 TODO 把任务移动到已完成。
 
@@ -330,3 +330,11 @@ Expected: 全部退出码为 0；既有 Rollup pure annotation、Tauri dynamic i
 - 风险：恢复历史可能与即时撤销冲突；恢复后必须清空旧即时快照。
 - 风险：旧历史数据形状异常；迁移严格过滤无效记录但保留合法空正文。
 - 回滚：移除历史组件和原子动作，回退共享字段与 schema 14 迁移；已有 schema 14 数据回退前需单独评估兼容，不直接降版本覆盖。
+
+## 完成记录
+
+- 完成时间：2026-07-12。
+- 实际完成：5 个任务全部按 TDD 落地，schema 14、纯逻辑、统一文档原子动作、正文页历史组件、双语文案与文档同步均已完成。
+- 验证结果：目标测试 6 个文件共 58 项通过；Studio 全量测试 49 个文件共 272 项通过；lint、typecheck、test、build 均通过；真实页面历史入口和空状态检查通过。
+- commit：待本地提交后回填。
+- 后续边界：普通编辑版本、跨章节历史、差异高亮与历史导出仍不在本期范围内。

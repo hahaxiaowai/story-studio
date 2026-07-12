@@ -58,7 +58,7 @@ describe('studio data document', () => {
         ],
       },
     })
-    expect(document.schemaVersion).toBe(13)
+    expect(document.schemaVersion).toBe(14)
     expect(document.workspaces.map(workspace => workspace.title)).toEqual(['魔兽世界'])
     expect(document.propertyDefinitions.map(property => property.id)).toEqual([
       'character-name',
@@ -248,7 +248,7 @@ describe('studio data document', () => {
     const document = resolveStudioDataDocument(v2Document as unknown as StudioDataDocument)
 
     expect(document).toMatchObject({
-      schemaVersion: 13,
+      schemaVersion: 14,
       activeWorkspaceId: 'workspace-mo-shou-shi-jie',
       preferences: {
         locale: 'zh-CN',
@@ -270,7 +270,7 @@ describe('studio data document', () => {
 
     const document = resolveStudioDataDocument(v3Document)
 
-    expect(document.schemaVersion).toBe(13)
+    expect(document.schemaVersion).toBe(14)
     expect(document.worlds.map(world => world.workspaceId)).toEqual(['workspace-mo-shou-shi-jie'])
     expect(document.worlds[0]?.maps[0]?.title).toBe('世界地图')
   })
@@ -291,7 +291,7 @@ describe('studio data document', () => {
 
     const document = resolveStudioDataDocument(v4Document)
 
-    expect(document.schemaVersion).toBe(13)
+    expect(document.schemaVersion).toBe(14)
     expect(document.contents).toEqual([])
     expect(document.workspaces[0]?.moduleCounts.content).toBe(0)
   })
@@ -334,7 +334,7 @@ describe('studio data document', () => {
 
     const document = resolveStudioDataDocument(v5Document)
 
-    expect(document.schemaVersion).toBe(13)
+    expect(document.schemaVersion).toBe(14)
     expect(document.materialTags).toEqual([])
     expect(document.materials).toEqual([
       {
@@ -360,7 +360,7 @@ describe('studio data document', () => {
 
     const document = resolveStudioDataDocument(v6Document)
 
-    expect(document.schemaVersion).toBe(13)
+    expect(document.schemaVersion).toBe(14)
     expect(document.assistantSettings).toEqual({
       defaultProviderId: 'provider-codex-terminal',
       defaultModel: '5.5',
@@ -420,7 +420,7 @@ describe('studio data document', () => {
 
     const document = resolveStudioDataDocument(v7Document)
 
-    expect(document.schemaVersion).toBe(13)
+    expect(document.schemaVersion).toBe(14)
     expect(document.assistantChatThreads[0]?.messages[0]).toMatchObject({
       status: 'error',
       error: '上次生成已中断。',
@@ -451,7 +451,7 @@ describe('studio data document', () => {
 
     const document = resolveStudioDataDocument(v8Document)
 
-    expect(document.schemaVersion).toBe(13)
+    expect(document.schemaVersion).toBe(14)
     expect(document.assistantSettings.storyStyles.map(style => style.id)).toContain('story-style-general')
     expect(document.assistantSettings.defaultStoryStyleId).toBe('story-style-epic-fantasy')
     expect('storyStyleId' in document.workspaces[0]!).toBe(false)
@@ -520,7 +520,7 @@ describe('studio data document', () => {
 
     const document = resolveStudioDataDocument(v9Document)
 
-    expect(document.schemaVersion).toBe(13)
+    expect(document.schemaVersion).toBe(14)
     expect(document.contents.map(entry => ({
       id: entry.id,
       fineOutline: entry.fineOutline,
@@ -554,10 +554,55 @@ describe('studio data document', () => {
 
     const document = resolveStudioDataDocument(v12Document)
 
-    expect(document.schemaVersion).toBe(13)
+    expect(document.schemaVersion).toBe(14)
     expect(document.contents[0]).toMatchObject({
       id: 'content-with-outline',
       fineOutline: '1. 开场\n2. 冲突',
+    })
+  })
+
+  it('migrates v13 content entries with normalized AI revision history', () => {
+    const defaultDocument = createDefaultStudioDataDocument()
+    const validHistory = Array.from({ length: 21 }, (_, index) => ({
+      id: `revision-${index + 1}`,
+      instruction: index === 20 ? '  恢复版本  ' : `要求 ${index + 1}`,
+      targetKind: index === 20 ? 'invalid-target' : 'selection',
+      previousBody: index === 0 ? '' : `正文 ${index}`,
+      nextBody: `正文 ${index + 1}`,
+      createdAt: `2026-07-12T10:${String(index).padStart(2, '0')}:00.000Z`,
+    }))
+    const v13Document = {
+      ...defaultDocument,
+      schemaVersion: 13,
+      contents: [
+        {
+          id: 'content-with-history',
+          workspaceId: 'workspace-mo-shou-shi-jie',
+          volume: '第一卷',
+          chapter: '第一章',
+          body: '正文 21',
+          fineOutline: '',
+          order: 0,
+          aiRevisionHistory: [
+            { id: '', instruction: '无效', targetKind: 'chapter', previousBody: 'a', nextBody: 'b', createdAt: '' },
+            ...validHistory,
+          ],
+          createdAt: '2026-07-12T08:00:00.000Z',
+          updatedAt: '2026-07-12T10:20:00.000Z',
+        },
+      ],
+    } as unknown as StudioDataDocument
+
+    const document = resolveStudioDataDocument(v13Document)
+    const history = document.contents[0]?.aiRevisionHistory
+
+    expect(document.schemaVersion).toBe(14)
+    expect(history).toHaveLength(20)
+    expect(history?.[0]?.id).toBe('revision-2')
+    expect(history?.at(-1)).toMatchObject({
+      id: 'revision-21',
+      instruction: '恢复版本',
+      targetKind: 'chapter',
     })
   })
 
@@ -601,7 +646,7 @@ describe('studio data document', () => {
 
     const document = resolveStudioDataDocument(v10Document)
 
-    expect(document.schemaVersion).toBe(13)
+    expect(document.schemaVersion).toBe(14)
     expect(document.assistantChatThreads[0]?.messages.map(message => ({
       id: message.id,
       sourceContentEntryId: message.sourceContentEntryId,

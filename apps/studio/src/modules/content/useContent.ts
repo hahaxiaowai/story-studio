@@ -4,17 +4,21 @@ import { computed, ref } from 'vue'
 import { useStudioData } from '../storage/useStudioData'
 import { useWorkspaces } from '../workspaces/useWorkspaces'
 import {
+  appendContentAiRevision,
   assignOutlineBeatToContentEntry,
   createContentEntry,
   getContentEntriesByWorkspace,
   getFilteredContentEntries,
   moveContentEntry,
+  removeContentAiRevision,
   removeContentEntry,
+  restoreContentAiRevision,
   updateContentEntry,
 } from './content'
 
 export type UpdateContentInput = Omit<Parameters<typeof updateContentEntry>[1], 'now'>
 export type MoveContentDirection = Parameters<typeof moveContentEntry>[1]['direction']
+export type ApplyAiRevisionInput = Omit<Parameters<typeof appendContentAiRevision>[1], 'now'>
 
 export interface ContentEntryCounts {
   total: number
@@ -27,6 +31,9 @@ export function useContent(): {
   allEntries: ComputedRef<WorkspaceContentEntry[]>
   entryCounts: ComputedRef<ContentEntryCounts>
   addEntry: () => WorkspaceContentEntry
+  applyAiRevision: (entryId: string, input: ApplyAiRevisionInput) => void
+  restoreAiRevision: (entryId: string, revisionId: string, instruction: string) => void
+  deleteAiRevision: (entryId: string, revisionId: string) => void
   updateEntry: (entryId: string, input: UpdateContentInput) => void
   linkEntryToBeat: (entryId: string, outlineBeatId: string) => void
   moveEntry: (entryId: string, direction: MoveContentDirection) => void
@@ -69,6 +76,37 @@ export function useContent(): {
             ...input,
             now: new Date().toISOString(),
           })
+        : entry)
+    })
+  }
+
+  function applyAiRevision(entryId: string, input: ApplyAiRevisionInput): void {
+    studioData.updateDocument((document) => {
+      document.contents = document.contents.map(entry => entry.id === entryId
+        ? appendContentAiRevision(entry, {
+            ...input,
+            now: new Date().toISOString(),
+          })
+        : entry)
+    })
+  }
+
+  function restoreAiRevision(entryId: string, revisionId: string, instruction: string): void {
+    studioData.updateDocument((document) => {
+      document.contents = document.contents.map(entry => entry.id === entryId
+        ? restoreContentAiRevision(entry, {
+            revisionId,
+            instruction,
+            now: new Date().toISOString(),
+          })
+        : entry)
+    })
+  }
+
+  function deleteAiRevision(entryId: string, revisionId: string): void {
+    studioData.updateDocument((document) => {
+      document.contents = document.contents.map(entry => entry.id === entryId
+        ? removeContentAiRevision(entry, revisionId, new Date().toISOString())
         : entry)
     })
   }
@@ -137,6 +175,9 @@ export function useContent(): {
     allEntries: workspaceEntries,
     entryCounts,
     addEntry,
+    applyAiRevision,
+    restoreAiRevision,
+    deleteAiRevision,
     updateEntry,
     linkEntryToBeat,
     moveEntry,

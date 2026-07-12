@@ -208,6 +208,17 @@ export interface WorkspaceMaterialRef {
   createdAt: string
 }
 
+export type ContentAiRevisionTargetKind = 'selection' | 'chapter'
+
+export interface ContentAiRevision {
+  id: string
+  instruction: string
+  targetKind: ContentAiRevisionTargetKind
+  previousBody: string
+  nextBody: string
+  createdAt: string
+}
+
 export interface WorkspaceContentEntry {
   id: string
   workspaceId: string
@@ -216,6 +227,7 @@ export interface WorkspaceContentEntry {
   chapter: string
   fineOutline: string
   body: string
+  aiRevisionHistory: ContentAiRevision[]
   order: number
   createdAt: string
   updatedAt: string
@@ -289,7 +301,7 @@ export interface AssistantChatThread {
   updatedAt: string
 }
 
-export type StudioDataSchemaVersion = 13
+export type StudioDataSchemaVersion = 14
 
 export interface StudioPreferences {
   locale: 'zh-CN' | 'en-US'

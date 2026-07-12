@@ -15,9 +15,10 @@ import { useContent } from '@/modules/content/useContent'
 import { useContentInlineAssistant } from '@/modules/content/useContentInlineAssistant'
 import { useOutline } from '@/modules/outlines/useOutline'
 import { useWorkspaces } from '@/modules/workspaces/useWorkspaces'
+import ContentAiRevisionHistory from './ContentAiRevisionHistory.vue'
 
 const { t } = useLocale()
-const { searchQuery, entries, allEntries, entryCounts, addEntry, updateEntry, linkEntryToBeat, moveEntry, removeEntry } = useContent()
+const { searchQuery, entries, allEntries, entryCounts, addEntry, applyAiRevision, restoreAiRevision, deleteAiRevision, updateEntry, linkEntryToBeat, moveEntry, removeEntry } = useContent()
 const { settings } = useAssistant()
 const { activeWorkspace } = useWorkspaces()
 const { beats } = useOutline()
@@ -304,14 +305,38 @@ function applyInlineAssistantSuggestion(): void {
     suggestion: inlineAssistant.output.value,
   })
 
+  if (nextBody === selectedEntry.value.body)
+    return
+
   inlineAssistantUndoSnapshot.value = {
     entryId: selectedEntry.value.id,
     previousBody: selectedEntry.value.body,
     nextBody,
   }
-  updateSelectedEntry({ body: nextBody })
+  applyAiRevision(selectedEntry.value.id, {
+    instruction: inlineAssistantInstruction.value,
+    targetKind: inlineAssistantActiveTarget.value.kind,
+    nextBody,
+  })
   dismissInlineAssistantSuggestion()
   inlineAssistantInstruction.value = ''
+}
+
+function restoreSelectedEntryAiRevision(revisionId: string): void {
+  if (!selectedEntry.value)
+    return
+
+  restoreAiRevision(selectedEntry.value.id, revisionId, t('content.aiRevisionRestoreInstruction'))
+  inlineAssistantUndoSnapshot.value = undefined
+  inlineAssistantInstruction.value = ''
+  dismissInlineAssistantSuggestion()
+}
+
+function deleteSelectedEntryAiRevision(revisionId: string): void {
+  if (!selectedEntry.value)
+    return
+
+  deleteAiRevision(selectedEntry.value.id, revisionId)
 }
 
 function undoInlineAssistantSuggestion(): void {
@@ -457,6 +482,12 @@ function clampNumber(value: number, min: number, max: number): number {
               </p>
             </div>
             <div class="flex shrink-0 items-center gap-1">
+              <ContentAiRevisionHistory
+                :chapter-title="selectedTitle"
+                :revisions="selectedEntry.aiRevisionHistory"
+                @restore="restoreSelectedEntryAiRevision"
+                @delete="deleteSelectedEntryAiRevision"
+              />
               <Button variant="ghost" size="icon-sm" :aria-label="t('content.moveUp')" :disabled="!canMoveSelectedEntryUp" @click="moveSelectedEntry('up')">
                 <ArrowUpIcon class="size-4" />
               </Button>

@@ -30,6 +30,13 @@ describe('useLocale', () => {
     expect(translate('en-US', 'backup.error.schema-too-new')).toBeTruthy()
   })
 
+  it('translates content AI revision history actions', () => {
+    expect(translate('zh-CN', 'content.aiRevisionHistory')).toBe('AI 修改历史')
+    expect(translate('en-US', 'content.aiRevisionHistory')).toBe('AI revision history')
+    expect(translate('zh-CN', 'content.aiRevisionRestoreInstruction')).toBe('从 AI 修改历史恢复')
+    expect(translate('en-US', 'content.aiRevisionDeleteConfirm')).toBeTruthy()
+  })
+
   it('recognizes supported locales', () => {
     expect(isLocale('zh-CN')).toBe(true)
     expect(isLocale('en-US')).toBe(true)

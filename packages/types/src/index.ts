@@ -12,6 +12,8 @@ export type {
   BeatEvent,
   CharacterChange,
   CharacterChangeCategory,
+  ContentAiRevision,
+  ContentAiRevisionTargetKind,
   EntityKind,
   EntityRecord,
   MaterialAsset,

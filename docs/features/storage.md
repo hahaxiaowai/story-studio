@@ -49,6 +49,8 @@ Story Studio 使用单一 `StudioDataDocument` 保存工作区、故事内容、
 - `StudioStorageDriver`
 - `STUDIO_DATA_SCHEMA_VERSION`
 
+当前 schema 版本为 14。schema 14 为每个 `WorkspaceContentEntry` 增加 `aiRevisionHistory`，旧文档迁移时补空数组并把历史裁剪到每章最近 20 条。
+
 ## 状态流和副作用
 
 - 首次没有存储文档时会创建默认文档并立即保存。
@@ -67,6 +69,7 @@ Story Studio 使用单一 `StudioDataDocument` 保存工作区、故事内容、
 - schema 低于 3 或高于当前版本的备份会被拒绝，避免默认数据或新版数据覆盖当前文档。
 - 迁移后的文档仍需通过完整顶层结构检查，伪造或残缺 JSON 不可进入恢复流程。
 - 备份是未加密 JSON，可能包含 API Key；用户需要把文件保存在可信位置。
+- 完整 JSON 备份会包含章节 AI 修改历史；schema 13 备份导入时自动迁移到 schema 14。
 - 当前只支持手动完整备份，不包含自动备份、版本历史、局部合并或发布格式导出。
 
 ## 验证入口

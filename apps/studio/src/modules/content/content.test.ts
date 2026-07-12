@@ -1,12 +1,16 @@
 import type { WorkspaceContentEntry } from '@story-studio/types'
 import { describe, expect, it } from 'vitest'
 import {
+  appendContentAiRevision,
   assignOutlineBeatToContentEntry,
+  CONTENT_AI_REVISION_HISTORY_LIMIT,
   createContentEntry,
   getContentEntriesByWorkspace,
   getFilteredContentEntries,
   moveContentEntry,
+  removeContentAiRevision,
   removeContentEntry,
+  restoreContentAiRevision,
   updateContentEntry,
 } from './content'
 
@@ -29,7 +33,99 @@ describe('content entries', () => {
       updatedAt: '2026-05-28T10:00:00.000Z',
     })
     expect(entry.outlineBeatId).toBeUndefined()
+    expect(entry.aiRevisionHistory).toEqual([])
     expect(entry.id).toMatch(/^content-20260528100000-/)
+  })
+
+  it('applies an AI revision and skips unchanged body text', () => {
+    const entry = createEntry({ body: '钟声仍在回荡。' })
+
+    const revised = appendContentAiRevision(entry, {
+      instruction: '  更紧张  ',
+      targetKind: 'selection',
+      nextBody: '钟声骤停。',
+      now: '2026-07-12T10:00:00.000Z',
+    })
+
+    expect(revised.body).toBe('钟声骤停。')
+    expect(revised.updatedAt).toBe('2026-07-12T10:00:00.000Z')
+    expect(revised.aiRevisionHistory).toHaveLength(1)
+    expect(revised.aiRevisionHistory[0]).toMatchObject({
+      instruction: '更紧张',
+      targetKind: 'selection',
+      previousBody: '钟声仍在回荡。',
+      nextBody: '钟声骤停。',
+      createdAt: '2026-07-12T10:00:00.000Z',
+    })
+    expect(appendContentAiRevision(revised, {
+      instruction: '不变化',
+      targetKind: 'chapter',
+      nextBody: revised.body,
+      now: '2026-07-12T10:01:00.000Z',
+    })).toBe(revised)
+  })
+
+  it('keeps only the latest 20 AI revisions', () => {
+    let entry = createEntry({ body: '正文 0' })
+
+    for (let index = 1; index <= 21; index++) {
+      entry = appendContentAiRevision(entry, {
+        instruction: `改写 ${index}`,
+        targetKind: 'chapter',
+        nextBody: `正文 ${index}`,
+        now: `2026-07-12T10:${String(index).padStart(2, '0')}:00.000Z`,
+      })
+    }
+
+    expect(entry.aiRevisionHistory).toHaveLength(CONTENT_AI_REVISION_HISTORY_LIMIT)
+    expect(entry.aiRevisionHistory[0]?.instruction).toBe('改写 2')
+    expect(entry.aiRevisionHistory.at(-1)?.instruction).toBe('改写 21')
+  })
+
+  it('restores a revision and records a reversible chapter revision', () => {
+    const revised = appendContentAiRevision(createEntry({ body: '旧正文' }), {
+      instruction: '润色',
+      targetKind: 'selection',
+      nextBody: '新正文',
+      now: '2026-07-12T10:00:00.000Z',
+    })
+    const revisionId = revised.aiRevisionHistory[0]!.id
+
+    const restored = restoreContentAiRevision(revised, {
+      revisionId,
+      instruction: '从 AI 修改历史恢复',
+      now: '2026-07-12T11:00:00.000Z',
+    })
+
+    expect(restored.body).toBe('旧正文')
+    expect(restored.aiRevisionHistory.at(-1)).toMatchObject({
+      instruction: '从 AI 修改历史恢复',
+      targetKind: 'chapter',
+      previousBody: '新正文',
+      nextBody: '旧正文',
+    })
+    expect(restoreContentAiRevision(restored, {
+      revisionId: 'missing',
+      instruction: '恢复',
+      now: '2026-07-12T12:00:00.000Z',
+    })).toBe(restored)
+  })
+
+  it('deletes one AI revision without changing the body', () => {
+    const revised = appendContentAiRevision(createEntry({ body: '旧正文' }), {
+      instruction: '润色',
+      targetKind: 'chapter',
+      nextBody: '新正文',
+      now: '2026-07-12T10:00:00.000Z',
+    })
+    const revisionId = revised.aiRevisionHistory[0]!.id
+
+    const nextEntry = removeContentAiRevision(revised, revisionId, '2026-07-12T11:00:00.000Z')
+
+    expect(nextEntry.body).toBe('新正文')
+    expect(nextEntry.aiRevisionHistory).toEqual([])
+    expect(nextEntry.updatedAt).toBe('2026-07-12T11:00:00.000Z')
+    expect(removeContentAiRevision(nextEntry, 'missing', '2026-07-12T12:00:00.000Z')).toBe(nextEntry)
   })
 
   it('updates volume, chapter, fine outline, body, and updatedAt', () => {
@@ -237,6 +333,7 @@ function createEntry(input: Partial<WorkspaceContentEntry>): WorkspaceContentEnt
     chapter: input.chapter ?? '第一章',
     body: input.body ?? '',
     fineOutline: input.fineOutline ?? '',
+    aiRevisionHistory: input.aiRevisionHistory ?? [],
     order: input.order ?? 0,
     createdAt: input.createdAt ?? '2026-05-28T10:00:00.000Z',
     updatedAt: input.updatedAt ?? '2026-05-28T10:00:00.000Z',

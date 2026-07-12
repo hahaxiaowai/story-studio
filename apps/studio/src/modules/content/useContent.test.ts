@@ -104,6 +104,7 @@ describe('useContent', () => {
         chapter: '外部章节',
         fineOutline: '',
         body: '',
+        aiRevisionHistory: [],
         order: 0,
         createdAt: '2026-05-28T10:00:00.000Z',
         updatedAt: '2026-05-28T10:00:00.000Z',
@@ -233,6 +234,61 @@ describe('useContent', () => {
         expect.objectContaining({
           id: 'workspace-mo-shou-shi-jie',
           moduleCounts: expect.objectContaining({ content: 1 }),
+        }),
+      ]),
+    }))
+  })
+
+  it('applies, restores, and deletes chapter AI revisions atomically', async () => {
+    const driver = createDriver(createDefaultStudioDataDocument())
+    await useStudioData(driver).ready
+
+    const content = useContent()
+    const firstEntry = content.addEntry()
+    const secondEntry = content.addEntry()
+    content.updateEntry(firstEntry.id, { body: '旧正文' })
+    content.updateEntry(secondEntry.id, { body: '另一章' })
+
+    content.applyAiRevision(firstEntry.id, {
+      instruction: '增强张力',
+      targetKind: 'selection',
+      nextBody: '新正文',
+    })
+
+    const appliedEntry = content.allEntries.value.find(entry => entry.id === firstEntry.id)!
+    const revisionId = appliedEntry.aiRevisionHistory[0]!.id
+    expect(appliedEntry).toMatchObject({
+      body: '新正文',
+      aiRevisionHistory: [expect.objectContaining({ instruction: '增强张力' })],
+    })
+
+    content.restoreAiRevision(firstEntry.id, revisionId, '从 AI 修改历史恢复')
+
+    const restoredEntry = content.allEntries.value.find(entry => entry.id === firstEntry.id)!
+    expect(restoredEntry.body).toBe('旧正文')
+    expect(restoredEntry.aiRevisionHistory).toHaveLength(2)
+    expect(restoredEntry.aiRevisionHistory.at(-1)).toMatchObject({
+      instruction: '从 AI 修改历史恢复',
+      previousBody: '新正文',
+      nextBody: '旧正文',
+    })
+
+    content.deleteAiRevision(firstEntry.id, revisionId)
+    await nextTick()
+
+    const finalEntry = content.allEntries.value.find(entry => entry.id === firstEntry.id)!
+    expect(finalEntry.body).toBe('旧正文')
+    expect(finalEntry.aiRevisionHistory.map(revision => revision.id)).not.toContain(revisionId)
+    expect(content.allEntries.value.find(entry => entry.id === secondEntry.id)).toMatchObject({
+      body: '另一章',
+      aiRevisionHistory: [],
+    })
+    expect(driver.save).toHaveBeenLastCalledWith(expect.objectContaining({
+      contents: expect.arrayContaining([
+        expect.objectContaining({
+          id: firstEntry.id,
+          body: '旧正文',
+          aiRevisionHistory: [expect.objectContaining({ instruction: '从 AI 修改历史恢复' })],
         }),
       ]),
     }))

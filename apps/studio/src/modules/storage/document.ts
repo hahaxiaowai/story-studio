@@ -1,11 +1,11 @@
-import type { AssistantChatMessage, AssistantChatThread, EntityRecord, MaterialAsset, MaterialTag, PropertyDefinition, StudioDataDocument, StudioPreferences, WorkspaceContentEntry, WorkspaceOutline, WorkspaceWorld, WorldSettingGroup } from '@story-studio/types'
+import type { AssistantChatMessage, AssistantChatThread, ContentAiRevision, EntityRecord, MaterialAsset, MaterialTag, PropertyDefinition, StudioDataDocument, StudioPreferences, WorkspaceContentEntry, WorkspaceOutline, WorkspaceWorld, WorldSettingGroup } from '@story-studio/types'
 import { createAssistantSettings, normalizeAssistantSettings, updateDefaultAssistantStoryStyle } from '../assistant/assistant'
 import { defaultPropertyDefinitions } from '../properties/properties'
 import { seedWorkspaces } from '../workspaces/workspaces'
 import { createWorkspaceWorld } from '../worlds/world'
 import { createDefaultEntityRecords, createDefaultOutlines, createDefaultWorlds, isLegacyPrototypeSeedDocument } from './defaultContent'
 
-export const STUDIO_DATA_SCHEMA_VERSION = 13
+export const STUDIO_DATA_SCHEMA_VERSION = 14
 
 export const LEGACY_LOCALE_STORAGE_KEY = 'story-studio:locale'
 export const LEGACY_THEME_MODE_STORAGE_KEY = 'story-studio:theme-mode'
@@ -230,8 +230,48 @@ function normalizeContentEntries(contents: WorkspaceContentEntry[], outlines: Wo
     chapter: entry.chapter ?? '',
     fineOutline: normalizeStorageText((entry as WorkspaceContentEntry & { fineOutline?: string }).fineOutline),
     body: entry.body ?? '',
+    aiRevisionHistory: normalizeContentAiRevisionHistory(
+      (entry as WorkspaceContentEntry & { aiRevisionHistory?: unknown }).aiRevisionHistory,
+    ),
     order: Number.isFinite(entry.order) ? entry.order : index,
   }))
+}
+
+function normalizeContentAiRevisionHistory(value: unknown): ContentAiRevision[] {
+  if (!Array.isArray(value))
+    return []
+
+  return value
+    .filter(isContentAiRevisionCandidate)
+    .map(revision => ({
+      id: revision.id.trim(),
+      instruction: revision.instruction.trim(),
+      targetKind: revision.targetKind === 'selection' ? 'selection' : 'chapter',
+      previousBody: revision.previousBody,
+      nextBody: revision.nextBody,
+      createdAt: revision.createdAt,
+    } satisfies ContentAiRevision))
+    .slice(-20)
+}
+
+function isContentAiRevisionCandidate(value: unknown): value is {
+  id: string
+  instruction: string
+  targetKind: unknown
+  previousBody: string
+  nextBody: string
+  createdAt: string
+} {
+  if (!value || typeof value !== 'object' || Array.isArray(value))
+    return false
+
+  return typeof Reflect.get(value, 'id') === 'string'
+    && Reflect.get(value, 'id').trim().length > 0
+    && typeof Reflect.get(value, 'instruction') === 'string'
+    && typeof Reflect.get(value, 'previousBody') === 'string'
+    && typeof Reflect.get(value, 'nextBody') === 'string'
+    && typeof Reflect.get(value, 'createdAt') === 'string'
+    && Reflect.get(value, 'createdAt').trim().length > 0
 }
 
 function normalizeContentOutlineBeatId(entry: WorkspaceContentEntry, beatWorkspaceById: Map<string, string>): string | undefined {

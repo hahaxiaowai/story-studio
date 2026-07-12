@@ -86,4 +86,14 @@ describe('content workspace chapter reorder wiring', () => {
     expect(componentSource).toContain('v-if="showInlineAssistantToolbar"')
     expect(componentSource).toContain('v-if="inlineAssistantPanelOpen"')
   })
+
+  it('persists and manages AI revision history for the selected chapter', () => {
+    expect(componentSource).toContain('applyAiRevision(selectedEntry.value.id')
+    expect(componentSource).toContain('if (nextBody === selectedEntry.value.body)')
+    expect(componentSource).toContain('restoreAiRevision(selectedEntry.value.id')
+    expect(componentSource).toContain('deleteAiRevision(selectedEntry.value.id')
+    expect(componentSource).toContain('inlineAssistantUndoSnapshot.value = undefined')
+    expect(componentSource).toContain('<ContentAiRevisionHistory')
+    expect(componentSource).toContain(':revisions="selectedEntry.aiRevisionHistory"')
+  })
 })

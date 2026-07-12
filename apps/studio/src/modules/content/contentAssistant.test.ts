@@ -322,6 +322,7 @@ function createEntry(input: Partial<WorkspaceContentEntry> = {}): WorkspaceConte
     chapter: input.chapter ?? '第一章',
     body: input.body ?? '',
     fineOutline: input.fineOutline ?? '',
+    aiRevisionHistory: input.aiRevisionHistory ?? [],
     order: input.order ?? 0,
     createdAt: input.createdAt ?? '2026-06-16T08:00:00.000Z',
     updatedAt: input.updatedAt ?? '2026-06-16T08:00:00.000Z',

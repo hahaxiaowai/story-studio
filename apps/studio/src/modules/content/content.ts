@@ -1,4 +1,6 @@
-import type { WorkspaceContentEntry } from '@story-studio/types'
+import type { ContentAiRevisionTargetKind, WorkspaceContentEntry } from '@story-studio/types'
+
+export const CONTENT_AI_REVISION_HISTORY_LIMIT = 20
 
 export interface CreateContentEntryInput {
   workspaceId: string
@@ -27,6 +29,19 @@ export interface MoveContentEntryInput {
   now: string
 }
 
+export interface AppendContentAiRevisionInput {
+  instruction: string
+  targetKind: ContentAiRevisionTargetKind
+  nextBody: string
+  now: string
+}
+
+export interface RestoreContentAiRevisionInput {
+  revisionId: string
+  instruction: string
+  now: string
+}
+
 export function createContentEntry(input: CreateContentEntryInput): WorkspaceContentEntry {
   return {
     id: createContentEntryId(input.now),
@@ -35,9 +50,68 @@ export function createContentEntry(input: CreateContentEntryInput): WorkspaceCon
     chapter: `第${input.order + 1}章`,
     fineOutline: '',
     body: '',
+    aiRevisionHistory: [],
     order: input.order,
     createdAt: input.now,
     updatedAt: input.now,
+  }
+}
+
+export function appendContentAiRevision(
+  entry: WorkspaceContentEntry,
+  input: AppendContentAiRevisionInput,
+): WorkspaceContentEntry {
+  if (entry.body === input.nextBody)
+    return entry
+
+  const revision = {
+    id: createContentAiRevisionId(input.now),
+    instruction: input.instruction.trim(),
+    targetKind: input.targetKind,
+    previousBody: entry.body,
+    nextBody: input.nextBody,
+    createdAt: input.now,
+  }
+
+  return {
+    ...entry,
+    body: input.nextBody,
+    aiRevisionHistory: [...entry.aiRevisionHistory, revision].slice(-CONTENT_AI_REVISION_HISTORY_LIMIT),
+    updatedAt: input.now,
+  }
+}
+
+export function restoreContentAiRevision(
+  entry: WorkspaceContentEntry,
+  input: RestoreContentAiRevisionInput,
+): WorkspaceContentEntry {
+  const revision = entry.aiRevisionHistory.find(revision => revision.id === input.revisionId)
+
+  if (!revision)
+    return entry
+
+  return appendContentAiRevision(entry, {
+    instruction: input.instruction,
+    targetKind: 'chapter',
+    nextBody: revision.previousBody,
+    now: input.now,
+  })
+}
+
+export function removeContentAiRevision(
+  entry: WorkspaceContentEntry,
+  revisionId: string,
+  now: string,
+): WorkspaceContentEntry {
+  const aiRevisionHistory = entry.aiRevisionHistory.filter(revision => revision.id !== revisionId)
+
+  if (aiRevisionHistory.length === entry.aiRevisionHistory.length)
+    return entry
+
+  return {
+    ...entry,
+    aiRevisionHistory,
+    updatedAt: now,
   }
 }
 
@@ -130,6 +204,13 @@ function createContentEntryId(now: string): string {
   const randomSegment = Math.random().toString(36).slice(2, 8)
 
   return `content-${stamp}-${randomSegment}`
+}
+
+function createContentAiRevisionId(now: string): string {
+  const stamp = now.replace(/\D/g, '').slice(0, 14)
+  const randomSegment = Math.random().toString(36).slice(2, 8)
+
+  return `content-ai-revision-${stamp}-${randomSegment}`
 }
 
 function normalizeOptionalId(value: string): string | undefined {

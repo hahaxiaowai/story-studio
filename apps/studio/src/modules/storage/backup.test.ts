@@ -22,6 +22,7 @@ describe('studio data backup', () => {
       chapter: '第一章',
       fineOutline: '',
       body: '正文',
+      aiRevisionHistory: [],
       order: 0,
       createdAt: '2026-07-12T08:00:00.000Z',
       updatedAt: '2026-07-12T08:00:00.000Z',
@@ -73,7 +74,7 @@ describe('studio data backup', () => {
     ['invalid-document', JSON.stringify({ schemaVersion: 13, workspaces: [], activeWorkspaceId: '' })],
     ['invalid-document', JSON.stringify({ schemaVersion: 13, workspaces: [{}], activeWorkspaceId: 'missing' })],
     ['schema-too-old', JSON.stringify({ schemaVersion: 2, workspaces: [], activeWorkspaceId: '' })],
-    ['schema-too-new', JSON.stringify({ schemaVersion: 14, workspaces: [], activeWorkspaceId: '' })],
+    ['schema-too-new', JSON.stringify({ schemaVersion: 15, workspaces: [], activeWorkspaceId: '' })],
   ] as const)('rejects %s backups without creating default data', (code, source) => {
     expect(() => parseStudioDataBackup(source)).toThrowError(
       expect.objectContaining<Partial<StudioDataBackupError>>({ code }),

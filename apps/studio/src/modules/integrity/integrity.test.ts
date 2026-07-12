@@ -97,6 +97,7 @@ function createContentEntry(input: Partial<StudioDataDocument['contents'][number
     chapter: input.chapter ?? '章节',
     fineOutline: input.fineOutline ?? '',
     body: input.body ?? '',
+    aiRevisionHistory: input.aiRevisionHistory ?? [],
     order: input.order ?? 0,
     createdAt: input.createdAt ?? '2026-07-04T00:00:00.000Z',
     updatedAt: input.updatedAt ?? '2026-07-04T00:00:00.000Z',
