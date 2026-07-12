@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { LanguagesIcon, MoonIcon, SunIcon } from '@lucide/vue'
-import { computed } from 'vue'
+import { DatabaseBackupIcon, LanguagesIcon, MoonIcon, SunIcon } from '@lucide/vue'
+import { computed, ref } from 'vue'
 import { isLocale, useLocale } from '@/composables/useLocale'
 import { useThemeMode } from '@/composables/useThemeMode'
+import DataBackupDialog from './DataBackupDialog.vue'
 import { Button } from './ui/button'
 import {
   DropdownMenu,
@@ -18,6 +19,7 @@ const { isDark, toggleThemeMode } = useThemeMode()
 const { locale, localeLabel, setLocale, t } = useLocale()
 
 const themeLabel = computed<string>(() => t(isDark.value ? 'theme.dark' : 'theme.light'))
+const backupDialogOpen = ref(false)
 
 function handleLocaleChange(value: unknown): void {
   if (typeof value === 'string' && isLocale(value))
@@ -27,6 +29,18 @@ function handleLocaleChange(value: unknown): void {
 
 <template>
   <div class="ml-auto flex items-center gap-1 px-4">
+    <Button
+      variant="ghost"
+      size="icon-sm"
+      type="button"
+      :aria-label="t('backup.open')"
+      :title="t('backup.open')"
+      @click="backupDialogOpen = true"
+    >
+      <DatabaseBackupIcon />
+      <span class="sr-only">{{ t('backup.open') }}</span>
+    </Button>
+
     <Button
       variant="ghost"
       size="icon-sm"
@@ -69,5 +83,7 @@ function handleLocaleChange(value: unknown): void {
         </DropdownMenuRadioGroup>
       </DropdownMenuContent>
     </DropdownMenu>
+
+    <DataBackupDialog v-model:open="backupDialogOpen" />
   </div>
 </template>

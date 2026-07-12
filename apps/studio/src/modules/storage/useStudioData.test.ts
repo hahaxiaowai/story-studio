@@ -81,6 +81,39 @@ describe('useStudioData', () => {
     expect(isProxy(savedDocument)).toBe(false)
     expect(isProxy(savedDocument?.workspaces)).toBe(false)
   })
+
+  it('replaces and immediately persists an imported document', async () => {
+    const current = createDefaultStudioDataDocument('2026-07-12T08:00:00.000Z')
+    const imported = {
+      ...createDefaultStudioDataDocument('2026-07-11T08:00:00.000Z'),
+      activeWorkspaceId: 'imported',
+    }
+    const driver = createDriver(current)
+    const studioData = useStudioData(driver)
+    await studioData.ready
+
+    await studioData.replaceDocument(imported)
+
+    expect(studioData.document.value).toEqual(imported)
+    expect(driver.save).toHaveBeenLastCalledWith(imported)
+  })
+
+  it('restores the current document when imported persistence fails', async () => {
+    const current = createDefaultStudioDataDocument('2026-07-12T08:00:00.000Z')
+    const imported = {
+      ...current,
+      activeWorkspaceId: 'imported',
+    }
+    const driver = createDriver(current)
+    const studioData = useStudioData(driver)
+    await studioData.ready
+    driver.save.mockRejectedValueOnce(new Error('disk full'))
+
+    await expect(studioData.replaceDocument(imported)).rejects.toThrow('disk full')
+
+    expect(studioData.document.value).toEqual(current)
+    expect(studioData.loadError.value?.message).toBe('disk full')
+  })
 })
 
 function createDriver(document: StudioDataDocument | undefined): StudioStorageDriver & {

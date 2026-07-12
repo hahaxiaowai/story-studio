@@ -17,6 +17,7 @@ export function useStudioData(driver = storageDriver ?? createStudioStorageDrive
   isLoaded: ComputedRef<boolean>
   loadError: Ref<Error | undefined>
   ready: Promise<void>
+  replaceDocument: (nextDocument: StudioDataDocument) => Promise<void>
   saveNow: () => Promise<void>
   updateDocument: (updater: (document: StudioDataDocument) => void) => void
 } {
@@ -28,6 +29,7 @@ export function useStudioData(driver = storageDriver ?? createStudioStorageDrive
     isLoaded: computed(() => isLoaded.value),
     loadError,
     ready: readyPromise,
+    replaceDocument,
     saveNow,
     updateDocument,
   }
@@ -66,6 +68,24 @@ function updateDocument(updater: (document: StudioDataDocument) => void): void {
   void saveNow().catch((error) => {
     loadError.value = toError(error)
   })
+}
+
+async function replaceDocument(nextDocument: StudioDataDocument): Promise<void> {
+  const previousDocument = createPersistableDocument(document.value)
+  const persistableNextDocument = createPersistableDocument(nextDocument)
+  document.value = persistableNextDocument
+
+  try {
+    if (storageDriver)
+      await storageDriver.save(persistableNextDocument)
+
+    loadError.value = undefined
+  }
+  catch (error) {
+    document.value = previousDocument
+    loadError.value = toError(error)
+    throw loadError.value
+  }
 }
 
 async function saveNow(): Promise<void> {

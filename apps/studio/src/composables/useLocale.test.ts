@@ -21,6 +21,15 @@ describe('useLocale', () => {
     expect(translate('en-US', 'outline.title')).toBe('Outline workspace')
   })
 
+  it('translates the backup workflow and compatibility errors', () => {
+    expect(translate('zh-CN', 'backup.open')).toBe('数据备份')
+    expect(translate('en-US', 'backup.open')).toBe('Data backup')
+    expect(translate('zh-CN', 'backup.sensitiveWarning')).toContain('API Key')
+    expect(translate('en-US', 'backup.sensitiveWarning')).toContain('API keys')
+    expect(translate('zh-CN', 'backup.error.schema-too-old')).toBeTruthy()
+    expect(translate('en-US', 'backup.error.schema-too-new')).toBeTruthy()
+  })
+
   it('recognizes supported locales', () => {
     expect(isLocale('zh-CN')).toBe(true)
     expect(isLocale('en-US')).toBe(true)

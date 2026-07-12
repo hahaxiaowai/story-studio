@@ -25,9 +25,21 @@
 
 ## 状态
 
-- 当前状态：已确认。
+- 当前状态：已完成。
 - 创建时间：2026-07-12。
+- 完成时间：2026-07-12。
 - 执行范围：手动导出完整 JSON、导入校验与摘要、确认恢复、保存失败回滚；不做自动备份、版本历史和发布格式导出。
+
+## 完成记录
+
+- 新增备份编解码、结构与版本校验、摘要和稳定错误代码。
+- 新增浏览器 Blob 下载、文件读取和 object URL 清理适配。
+- `useStudioData()` 已支持立即持久化的整体替换，并在保存失败时回滚内存快照。
+- 顶部操作区已接入双语备份对话框，选择文件只展示摘要，明确确认后才恢复。
+- 已同步存储功能说明、测试锚点、规格和月度任务状态。
+- 目标测试 5 个文件、25 个测试通过；全仓 Studio 48 个测试文件、262 个测试通过。
+- `pnpm run lint`、`pnpm run typecheck`、`pnpm run test`、`pnpm run build` 均通过。
+- 真实页面验证通过：入口和对话框可用，未选择文件前不展示确认恢复按钮，控制台无 error/warn。
 
 ---
 
@@ -48,7 +60,7 @@
 - Produces: `summarizeStudioDataBackup(document): StudioDataBackupSummary`
 - Consumes: `resolveStudioDataDocument()` and `STUDIO_DATA_SCHEMA_VERSION` from `document.ts`
 
-- [ ] **Step 1：写导出与摘要失败测试**
+- [x] **Step 1：写导出与摘要失败测试**
 
 在 `backup.test.ts` 创建固定文档，断言文件名、MIME、格式化 JSON、统计摘要和源文档不变：
 
@@ -74,7 +86,7 @@ it('creates a formatted backup without mutating the source document', () => {
 })
 ```
 
-- [ ] **Step 2：运行测试并确认 RED**
+- [x] **Step 2：运行测试并确认 RED**
 
 Run:
 
@@ -84,7 +96,7 @@ pnpm --filter @story-studio/studio test src/modules/storage/backup.test.ts
 
 Expected: FAIL，原因是 `./backup` 模块或导出函数不存在。
 
-- [ ] **Step 3：实现最小导出与摘要逻辑**
+- [x] **Step 3：实现最小导出与摘要逻辑**
 
 在 `backup.ts` 定义公开类型，并实现：
 
@@ -110,13 +122,13 @@ export function summarizeStudioDataBackup(document: StudioDataDocument): StudioD
 
 时间格式使用本地日期字段和两位补零，不依赖 locale 字符串。
 
-- [ ] **Step 4：运行测试并确认 GREEN**
+- [x] **Step 4：运行测试并确认 GREEN**
 
 Run: `pnpm --filter @story-studio/studio test src/modules/storage/backup.test.ts`
 
 Expected: PASS。
 
-- [ ] **Step 5：写导入成功和迁移失败测试**
+- [x] **Step 5：写导入成功和迁移失败测试**
 
 增加独立测试，覆盖：
 
@@ -142,11 +154,11 @@ it.each([
 })
 ```
 
-- [ ] **Step 6：运行测试并确认 RED**
+- [x] **Step 6：运行测试并确认 RED**
 
 Expected: FAIL，原因是 `parseStudioDataBackup` 或错误类型不存在。
 
-- [ ] **Step 7：实现身份、版本校验和迁移**
+- [x] **Step 7：实现身份、版本校验和迁移**
 
 实现顺序必须是：`JSON.parse` → 根对象检查 → 必填字段类型检查 → schema 下限/上限检查 → `resolveStudioDataDocument(candidate)`。错误类保存稳定 code，UI 不依赖英文错误消息判断分支。
 
@@ -177,7 +189,7 @@ export function parseStudioDataBackup(source: string): StudioDataDocument {
 }
 ```
 
-- [ ] **Step 8：运行测试并确认 GREEN**
+- [x] **Step 8：运行测试并确认 GREEN**
 
 Run: `pnpm --filter @story-studio/studio test src/modules/storage/backup.test.ts`
 
@@ -197,7 +209,7 @@ Expected: PASS，且各错误用例命中预期 code。
 - Produces: `replaceDocument(nextDocument: StudioDataDocument): Promise<void>` in `useStudioData()` return value
 - Consumes: Task 1 返回的已校验、已迁移 `StudioDataDocument`
 
-- [ ] **Step 1：写替换成功失败测试**
+- [x] **Step 1：写替换成功失败测试**
 
 ```ts
 it('replaces and immediately persists an imported document', async () => {
@@ -227,13 +239,13 @@ it('restores the current document when imported persistence fails', async () => 
 })
 ```
 
-- [ ] **Step 2：运行测试并确认 RED**
+- [x] **Step 2：运行测试并确认 RED**
 
 Run: `pnpm --filter @story-studio/studio test src/modules/storage/useStudioData.test.ts`
 
 Expected: FAIL，原因是 `replaceDocument` 不存在。
 
-- [ ] **Step 3：实现原子替换**
+- [x] **Step 3：实现原子替换**
 
 复用 `createPersistableDocument()` 创建旧快照和保存载荷，不改变导入文档时间戳：
 
@@ -257,7 +269,7 @@ async function replaceDocument(nextDocument: StudioDataDocument): Promise<void> 
 
 将函数加入 `useStudioData()` 的显式返回类型和返回对象。
 
-- [ ] **Step 4：运行测试并确认 GREEN**
+- [x] **Step 4：运行测试并确认 GREEN**
 
 Run: `pnpm --filter @story-studio/studio test src/modules/storage/useStudioData.test.ts`
 
@@ -278,7 +290,7 @@ Expected: PASS，既有保存 proxy 测试继续通过。
 - Produces: `readStudioDataBackupFile(file: File): Promise<string>`
 - Consumes: Task 1 `StudioDataBackupFile`
 
-- [ ] **Step 1：写 object URL 生命周期失败测试**
+- [x] **Step 1：写 object URL 生命周期失败测试**
 
 用真实 `Blob` 和最小 DOM spy 验证创建链接、设置 `download`、触发点击、移除链接并释放 URL；另测 `readStudioDataBackupFile(new File(...))` 返回 UTF-8 文本。
 
@@ -298,13 +310,13 @@ it('downloads a backup and releases its object URL', () => {
 })
 ```
 
-- [ ] **Step 2：运行测试并确认 RED**
+- [x] **Step 2：运行测试并确认 RED**
 
 Run: `pnpm --filter @story-studio/studio test src/modules/storage/backupFile.test.ts`
 
 Expected: FAIL，原因是模块不存在。
 
-- [ ] **Step 3：实现浏览器适配**
+- [x] **Step 3：实现浏览器适配**
 
 ```ts
 export function downloadStudioDataBackup(backup: StudioDataBackupFile): void {
@@ -329,7 +341,7 @@ export async function readStudioDataBackupFile(file: File): Promise<string> {
 }
 ```
 
-- [ ] **Step 4：运行测试并确认 GREEN**
+- [x] **Step 4：运行测试并确认 GREEN**
 
 Run: `pnpm --filter @story-studio/studio test src/modules/storage/backupFile.test.ts`
 
@@ -354,7 +366,7 @@ Expected: PASS。
 - Consumes: Task 3 download/read helpers
 - Produces: top-bar button that controls `DataBackupDialog` through `v-model:open`
 
-- [ ] **Step 1：写页面接线与文案失败测试**
+- [x] **Step 1：写页面接线与文案失败测试**
 
 沿用当前组件源码静态测试风格，断言：
 
@@ -370,7 +382,7 @@ expect(headerSource).toContain("t('backup.open')")
 
 在 locale 测试中增加中英文 key 一致性断言，至少覆盖 `backup.open`、`backup.export`、`backup.chooseFile`、`backup.confirmRestore`、四类导入错误和敏感信息提示。
 
-- [ ] **Step 2：运行测试并确认 RED**
+- [x] **Step 2：运行测试并确认 RED**
 
 Run:
 
@@ -380,7 +392,7 @@ pnpm --filter @story-studio/studio test src/components/DataBackupDialog.test.ts 
 
 Expected: FAIL，原因是组件、接线或文案 key 不存在。
 
-- [ ] **Step 3：实现对话框状态与流程**
+- [x] **Step 3：实现对话框状态与流程**
 
 `DataBackupDialog.vue` 使用以下独立状态：
 
@@ -407,7 +419,7 @@ const restoreSucceeded = ref(false)
 
 确认按钮只在 `pendingDocument` 存在时展示，并在 `isRestoring` 时禁用。错误 code 通过显式映射转换成 locale key，不直接展示内部英文错误消息。
 
-- [ ] **Step 4：挂载顶部入口**
+- [x] **Step 4：挂载顶部入口**
 
 在 `AppHeaderActions.vue` 增加 `DatabaseBackupIcon`、`backupDialogOpen`、按钮和对话框；保持主题和语言按钮原有行为不变：
 
@@ -419,11 +431,11 @@ const restoreSucceeded = ref(false)
 <DataBackupDialog v-model:open="backupDialogOpen" />
 ```
 
-- [ ] **Step 5：补齐中英文文案**
+- [x] **Step 5：补齐中英文文案**
 
 文案覆盖标题、说明、当前数据摘要、待恢复摘要、导出、选择文件、确认恢复、取消、恢复中、成功、覆盖警告、API Key 敏感提示和四类错误。不要在模板中硬编码中文业务提示。
 
-- [ ] **Step 6：运行目标测试并确认 GREEN**
+- [x] **Step 6：运行目标测试并确认 GREEN**
 
 Run:
 
@@ -450,11 +462,11 @@ Expected: PASS。
 - Consumes: Tasks 1-4 的实际文件、行为和验证结果
 - Produces: 当前功能事实、测试锚点和 SDD 完成证据
 
-- [ ] **Step 1：同步存储功能说明**
+- [x] **Step 1：同步存储功能说明**
 
 在 `docs/features/storage.md` 增加：顶部数据备份入口、导出流程、导入预览与确认流程、`backup.ts`/`backupFile.ts`/`DataBackupDialog.vue` 关键文件、版本拒绝边界、敏感数据风险和新测试入口。
 
-- [ ] **Step 2：同步测试索引**
+- [x] **Step 2：同步测试索引**
 
 在 `docs/ai/test-map.md` 的“存储和 schema”加入：
 
@@ -464,7 +476,7 @@ Expected: PASS。
 - `apps/studio/src/components/DataBackupDialog.test.ts`
 ```
 
-- [ ] **Step 3：执行完整验证**
+- [x] **Step 3：执行完整验证**
 
 依次运行：
 
@@ -479,7 +491,7 @@ git diff --check
 
 Expected: 所有命令退出码为 0。Turbo cache rename warning、既有 Rollup pure annotation、Tauri dynamic import 或 chunk size warning 只在命令成功时记录为非阻塞 warning。
 
-- [ ] **Step 4：检查并恢复生成文件噪音**
+- [x] **Step 4：检查并恢复生成文件噪音**
 
 运行 `git status --short`。如果只有验证导致的 `apps/studio/tsconfig.app.tsbuildinfo` 改动，使用：
 
@@ -489,7 +501,7 @@ git restore apps/studio/tsconfig.app.tsbuildinfo
 
 不得恢复任何用户或本功能的源码改动。
 
-- [ ] **Step 5：回填完成记录**
+- [x] **Step 5：回填完成记录**
 
 - 规格的完成记录写入实际完成时间、实现范围、逐条验证结果、commit 或“未提交”状态和剩余风险。
 - 本计划状态改为“已完成”，勾选实际完成步骤并记录验证结果。
@@ -501,3 +513,11 @@ git restore apps/studio/tsconfig.app.tsbuildinfo
 - 风险：浏览器 WebView 下载行为在不同 Tauri 平台可能不同；纯逻辑和 DOM 测试通过后仍需桌面运行验证。
 - 风险：整体恢复覆盖所有工作区；通过摘要和二次确认避免误操作。
 - 回滚：移除备份纯逻辑、文件适配、对话框及 `replaceDocument()`，恢复顶部操作区和 locale 文案；不需要 schema 回滚。
+
+## 验证记录
+
+- 2026-07-12：目标测试通过，5 个测试文件、25 个测试通过。
+- 2026-07-12：`pnpm run lint`、`pnpm run typecheck` 通过。
+- 2026-07-12：`pnpm run test` 通过，Studio 48 个测试文件、262 个测试通过；共享包测试同时通过。
+- 2026-07-12：`pnpm run build` 通过；保留既有 Rollup pure annotation、Tauri dynamic import 和 chunk size warning。
+- 2026-07-12：浏览器页面检查通过，对话框摘要、敏感提示、恢复确认门禁和关闭流程符合规格，控制台无 error/warn。

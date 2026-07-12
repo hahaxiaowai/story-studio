@@ -33,9 +33,12 @@
 测试入口：
 
 - `apps/studio/src/modules/storage/document.test.ts`
+- `apps/studio/src/modules/storage/backup.test.ts`
+- `apps/studio/src/modules/storage/backupFile.test.ts`
 - `apps/studio/src/modules/storage/useStudioData.test.ts`
 - `apps/studio/src/modules/storage/indexedDb.test.ts`
 - `apps/studio/src/modules/storage/tauri.test.ts`
+- `apps/studio/src/components/DataBackupDialog.test.ts`
 - `apps/studio/src/modules/integrity/integrity.test.ts`
 - `apps/studio/src/modules/integrity/useWorkspaceIntegrity.test.ts`
 
