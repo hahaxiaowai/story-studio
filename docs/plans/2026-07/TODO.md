@@ -8,7 +8,7 @@
 
 | 任务 | 状态 | 优先级 | 计划文件 | 最后更新 | 下一步 |
 | --- | --- | --- | --- | --- | --- |
-| 正文 AI 修改历史 | 已确认 | P1 | 待新增 `2026-07-12-content-ai-revision-history.md` | 2026-07-12 | 规格评审后拆分 schema、历史逻辑和页面实施计划 |
+| 正文 AI 修改历史 | 已确认 | P1 | [2026-07-12-content-ai-revision-history.md](./2026-07-12-content-ai-revision-history.md) | 2026-07-12 | 按 TDD 实施 schema 14、历史逻辑和正文页交互 |
 
 ## 已完成记录
 
