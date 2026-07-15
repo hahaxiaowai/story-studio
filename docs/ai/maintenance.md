@@ -8,6 +8,8 @@
 - `docs/specs/*.md`：单次变更规格和完成记录。
 - `docs/plans/YYYY-MM/*.md`：计划拆解和历史状态。
 - `docs/adr/*.md`：长期架构决策。
+- `tasks/current.md`：当前主要任务指针，不保存完整计划状态。
+- `tasks/handoff.md`：跨会话临时交接，完成后清空。
 
 ## 功能变更后的检查
 
@@ -30,6 +32,7 @@
 - 实际验证命令和结果。
 - 未覆盖风险。
 - 完成时间和 commit 信息；如果未提交，说明本地变更范围。
+- REVIEW 结论，以及安全、性能、复杂度或异常路径中的未覆盖项。
 
 ## ADR 维护
 
@@ -43,5 +46,6 @@ docs-only 改动至少检查：
 - 文档中引用的关键代码路径是否存在。
 - `git diff --check` 是否通过。
 - 是否残留 `TBD`、`TODO`、`fill in details` 等占位词。
+- 流程文档变更是否通过任务分流、状态职责、Handoff 和 SHIP 复位场景演练。
 
 更多分类验证规则见 `docs/ai/verification.md`。

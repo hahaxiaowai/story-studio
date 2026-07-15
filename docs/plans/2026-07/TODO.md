@@ -14,6 +14,7 @@
 
 | 任务 | 状态 | 优先级 | 计划文件 | 最后更新 | 下一步 |
 | --- | --- | --- | --- | --- | --- |
+| SDD 活动任务流程增强 | 已完成 | P1 | [2026-07-13-sdd-workflow-hardening.md](./2026-07-13-sdd-workflow-hardening.md) | 2026-07-13 | 下一次真实功能或 Bug 任务中验证模板使用体验 |
 | 正文 AI 修改历史 | 已完成 | P1 | [2026-07-12-content-ai-revision-history.md](./2026-07-12-content-ai-revision-history.md) | 2026-07-12 | 后续可扩展普通编辑版本或差异高亮 |
 | 数据备份与恢复 | 已完成 | P0 | [2026-07-12-data-backup-restore.md](./2026-07-12-data-backup-restore.md) | 2026-07-12 | 后续可设计自动备份和版本历史 |
 | 数据完整性检查定位增强 | 已完成 | P1 | [2026-07-04-data-integrity-check.md](./2026-07-04-data-integrity-check.md) | 2026-07-05 00:00 CST | 后续可扩展自动修复或更多检查项 |

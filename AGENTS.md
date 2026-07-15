@@ -38,8 +38,10 @@ Story Studio 是一个 pnpm workspace monorepo，当前包含一个 Vue 3 + Vite
 - `docs/plans/YYYY-MM/*.md`: 从规格拆出的实施计划、月度 TODO 和历史推进状态。
 - `docs/adr/*.md`: 长期架构决策记录。
 - `docs/ai/*.md`: AI 开发流程、文档维护规则和常见任务参考。
+- `tasks/current.md`: 当前主要任务指针，只链接 Spec、Plan 和当前 Task，不复制完整状态。
+- `tasks/handoff.md`: 暂停或跨会话时的临时交接，任务完成后恢复空闲模板。
 
-处理任务时，先读 `AGENTS.md`；涉及代码结构或模块边界时再读 `docs/architecture.md`；涉及已有功能时先读对应 `docs/features/*.md`；涉及新增功能或较大行为调整时按 SDD 更新 `docs/specs/` 和 `docs/plans/`。
+处理任务时，先读 `AGENTS.md`，再按 `docs/ai/task-routing.md` 选择任务路径；存在主要任务时读取 `tasks/current.md`。涉及代码结构或模块边界时再读 `docs/architecture.md`；涉及已有功能时先读对应 `docs/features/*.md`；涉及新增功能或较大行为调整时按 SDD 更新 `docs/specs/` 和 `docs/plans/`；任务暂停或跨会话时再读 `tasks/handoff.md`。
 
 ## Studio 前端结构
 
@@ -125,17 +127,22 @@ Story Studio 是一个 pnpm workspace monorepo，当前包含一个 Vue 3 + Vite
 
 ## SDD 工作流
 
-项目采用 Spec-Driven Development。新增功能或较大行为调整时，先写规格，再拆计划，最后实现。
+项目采用 `DEFINE → PLAN → BUILD → VERIFY → REVIEW → SHIP`。新增功能或较大行为调整时，先写规格，再拆计划，最后实现、验证、评审和收口。
 
 - 规格文档放在 `docs/specs/`。
 - 实施计划放在 `docs/plans/`。
+- 先按 `docs/ai/task-routing.md` 选择任务路径；需求模糊时按 `docs/ai/requirements-dialogue.md` 逐轮澄清。
 - 新建规格优先复制 `docs/specs/_template.md`。
 - 规格先说明背景、目标、范围、非目标、用户流程、数据模型、UI 结构、技术方案、TDD 测试点、验收标准和验证命令。
 - 计划应从已批准的规格拆出具体步骤，标明涉及文件和验证方式。
+- Plan 中的任务按可独立验收的用户行为垂直切分，并记录依赖、规模和预计影响文件。
 - 不要在规格未明确时直接扩大实现范围。
 - 小修小补可以不写完整规格，但仍应遵循 `AGENTS.md` 中的目录、风格和验证约定。
+- Bug 修复前必须记录实际行为、预期行为、环境和最小复现，并建立修复前失败、修复后通过的反馈循环；无法自动化时记录稳定人工路径和风险。没有捕获原始症状时不得声称 Bug 已修复。
 - `docs/specs/` 记录变更，不替代 `docs/features/` 的功能现状说明。
 - 完成 SDD 变更后，在对应规格中回填实际完成内容、验证结果、完成时间、commit 或本地变更范围、未覆盖风险。
+- REVIEW 检查规格符合度、异常路径、测试、安全、性能、复杂度和文档同步；SHIP 同步 Spec、Plan、月度 TODO 和长期文档，并恢复 `tasks/current.md` 与使用过的 `tasks/handoff.md`。
+- 月度 `TODO.md` 仍是多任务索引和自动化任务来源；`tasks/current.md` 只指向当前主要任务。
 - 验证命令按变更类型参考 `docs/ai/verification.md`。
 
 ## 文档同步要求
