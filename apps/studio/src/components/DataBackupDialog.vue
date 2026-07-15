@@ -2,6 +2,7 @@
 import type { StudioDataDocument } from '@story-studio/types'
 import type { MessageKey } from '@/composables/useLocale'
 import { computed, ref, watch } from 'vue'
+import AutomaticBackupPanel from '@/components/AutomaticBackupPanel.vue'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -22,13 +23,17 @@ import {
   downloadStudioDataBackup,
   readStudioDataBackupFile,
 } from '@/modules/storage/backupFile'
+import { isTauriRuntime } from '@/modules/storage/runtime'
+import { useAutomaticBackup } from '@/modules/storage/useAutomaticBackup'
 import { useStudioData } from '@/modules/storage/useStudioData'
 
 const open = defineModel<boolean>('open', { default: false })
 
 const { locale, t } = useLocale()
 const { document, replaceDocument } = useStudioData()
+const automaticBackup = useAutomaticBackup()
 const pendingDocument = ref<StudioDataDocument>()
+const pendingAutomaticBackupId = ref<string>()
 const importErrorKey = ref<MessageKey>()
 const isRestoring = ref(false)
 const restoreSucceeded = ref(false)
@@ -68,6 +73,18 @@ async function selectBackupFile(event: Event): Promise<void> {
   }
 }
 
+async function selectAutomaticBackup(backupId: string): Promise<void> {
+  resetImportState()
+  try {
+    const source = await automaticBackup.read(backupId)
+    pendingDocument.value = parseStudioDataBackup(source)
+    pendingAutomaticBackupId.value = backupId
+  }
+  catch {
+    importErrorKey.value = 'backup.error.automatic-read'
+  }
+}
+
 async function confirmRestore(): Promise<void> {
   if (!pendingDocument.value || isRestoring.value)
     return
@@ -77,8 +94,20 @@ async function confirmRestore(): Promise<void> {
   restoreSucceeded.value = false
 
   try {
+    if (pendingAutomaticBackupId.value) {
+      try {
+        await automaticBackup.createProtection(document.value)
+      }
+      catch {
+        importErrorKey.value = 'backup.error.automatic-protection'
+        return
+      }
+    }
     await replaceDocument(pendingDocument.value)
+    if (pendingAutomaticBackupId.value)
+      await automaticBackup.refresh()
     pendingDocument.value = undefined
+    pendingAutomaticBackupId.value = undefined
     restoreSucceeded.value = true
   }
   catch {
@@ -91,6 +120,7 @@ async function confirmRestore(): Promise<void> {
 
 function resetImportState(): void {
   pendingDocument.value = undefined
+  pendingAutomaticBackupId.value = undefined
   importErrorKey.value = undefined
   isRestoring.value = false
   restoreSucceeded.value = false
@@ -167,6 +197,8 @@ function formatUpdatedAt(value: string): string {
           {{ t('backup.export') }}
         </Button>
       </section>
+
+      <AutomaticBackupPanel v-if="isTauriRuntime()" @select="selectAutomaticBackup" />
 
       <section class="border-border/70 grid gap-3 rounded-lg border p-4">
         <div>

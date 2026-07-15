@@ -28,6 +28,11 @@ describe('useLocale', () => {
     expect(translate('en-US', 'backup.sensitiveWarning')).toContain('API keys')
     expect(translate('zh-CN', 'backup.error.schema-too-old')).toBeTruthy()
     expect(translate('en-US', 'backup.error.schema-too-new')).toBeTruthy()
+    expect(translate('zh-CN', 'backup.automatic.title')).toBe('自动备份')
+    expect(translate('en-US', 'backup.automatic.title')).toBe('Automatic backup')
+    expect(translate('zh-CN', 'backup.error.automatic-protection')).toBeTruthy()
+    expect(translate('en-US', 'backup.error.automatic-read')).toBeTruthy()
+    expect(translate('zh-CN', 'backup.automatic.cleanupWarning')).toBeTruthy()
   })
 
   it('translates content AI revision history actions', () => {

@@ -17,6 +17,15 @@ describe('data backup dialog wiring', () => {
     expect(componentSource).toContain('accept="application/json,.json"')
   })
 
+  it('reads managed backups and protects current data before replacing it', () => {
+    expect(componentSource).toContain('v-if="isTauriRuntime()"')
+    expect(componentSource).toContain('await automaticBackup.read(backupId)')
+    expect(componentSource).toContain('parseStudioDataBackup(source)')
+    expect(componentSource).toContain('await automaticBackup.createProtection(document.value)')
+    expect(componentSource.indexOf('await automaticBackup.createProtection(document.value)'))
+      .toBeLessThan(componentSource.indexOf('await replaceDocument(pendingDocument.value)'))
+  })
+
   it('is opened from the application header', () => {
     expect(headerSource).toContain('<DataBackupDialog v-model:open="backupDialogOpen" />')
     expect(headerSource).toContain('t(\'backup.open\')')

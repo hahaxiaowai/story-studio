@@ -533,7 +533,7 @@ Proposed commit: `feat: 接入桌面自动备份调度`
 - Produces component event: `select: [backupId: string]`
 - Updates restore state: `pendingAutomaticBackupId?: string`
 
-- [ ] **Step 1：先写面板与双语文案失败测试**
+- [x] **Step 1：先写面板与双语文案失败测试**
 
 源码测试断言面板具有：
 
@@ -546,7 +546,7 @@ expect(panelSource).toContain("emit('select', entry.id)")
 
 locale 测试覆盖自动备份标题、开关、最近检查、最近成功、下次检查、定时来源、保护来源、损坏状态、刷新、保护失败、读取失败和清理 warning。
 
-- [ ] **Step 2：实现 Tauri-only 私有面板**
+- [x] **Step 2：实现 Tauri-only 私有面板**
 
 `AutomaticBackupPanel.vue` 使用 `useAutomaticBackup()`，展示：
 
@@ -558,7 +558,7 @@ locale 测试覆盖自动备份标题、开关、最近检查、最近成功、�
 
 组件只 emit ID，不读取或恢复文档。
 
-- [ ] **Step 3：先写保护性恢复失败测试**
+- [x] **Step 3：先写保护性恢复失败测试**
 
 扩展 `DataBackupDialog.test.ts`，断言：
 
@@ -573,7 +573,7 @@ expect(componentSource.indexOf('await automaticBackup.createProtection(document.
 
 模块级行为测试或提取纯协调函数，验证保护 Promise reject 时 `replaceDocument` 调用次数为 0；手动文件导入不创建保护备份；成功恢复后清空 pending ID 并 refresh。
 
-- [ ] **Step 4：接入自动备份选择与保护恢复**
+- [x] **Step 4：接入自动备份选择与保护恢复**
 
 `DataBackupDialog.vue` 增加：
 
@@ -599,13 +599,13 @@ await automaticBackup.refresh()
 
 保护失败映射为独立文案，不复用主数据保存错误；手动文件选择成功时显式清空自动备份 ID。
 
-- [ ] **Step 5：运行 UI 目标测试并确认 GREEN**
+- [x] **Step 5：运行 UI 目标测试并确认 GREEN**
 
 Run: `pnpm --filter @story-studio/studio test src/components/AutomaticBackupPanel.test.ts src/components/DataBackupDialog.test.ts src/composables/useLocale.test.ts src/modules/storage/useAutomaticBackup.test.ts`
 
 Expected: PASS，Tauri-only 展示、损坏禁用、选择、保护失败中止和成功刷新全部通过。
 
-- [ ] **Step 6：建议提交检查点**
+- [x] **Step 6：建议提交检查点**
 
 Proposed commit: `feat: 增加自动备份查看与恢复`
 
@@ -613,7 +613,7 @@ Proposed commit: `feat: 增加自动备份查看与恢复`
 
 **规模：** M。
 
-**状态：** 执行中。
+**状态：** 已完成。
 
 ---
 
@@ -707,7 +707,7 @@ Proposed commit: `docs: 完成 Tauri 自动备份收口`
 
 **规模：** S。
 
-**状态：** 已确认。
+**状态：** 执行中。
 
 ---
 
