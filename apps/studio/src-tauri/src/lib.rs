@@ -1,3 +1,10 @@
+mod automatic_backup;
+
+use automatic_backup::{
+    AutomaticBackupEntry, AutomaticBackupMutationResult, AutomaticBackupSettings,
+    AutomaticBackupSource,
+};
+use chrono::Local;
 use serde_json::Value;
 use std::{
     collections::HashMap,
@@ -99,6 +106,11 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             load_studio_data,
             save_studio_data,
+            get_automatic_backup_settings,
+            set_automatic_backup_enabled,
+            list_automatic_backups,
+            create_automatic_backup,
+            read_automatic_backup,
             run_local_terminal_model,
             run_local_terminal_chat_stream,
             cancel_local_terminal_chat_stream,
@@ -117,6 +129,47 @@ fn load_studio_data(app: tauri::AppHandle) -> Result<Option<Value>, String> {
 #[tauri::command]
 fn save_studio_data(app: tauri::AppHandle, document: Value) -> Result<(), String> {
     save_studio_data_to_path(&studio_data_path(&app)?, &document)
+}
+
+#[tauri::command]
+fn get_automatic_backup_settings(
+    app: tauri::AppHandle,
+) -> Result<AutomaticBackupSettings, String> {
+    automatic_backup::load_settings(&app_data_dir(&app)?)
+}
+
+#[tauri::command]
+fn set_automatic_backup_enabled(
+    app: tauri::AppHandle,
+    enabled: bool,
+) -> Result<AutomaticBackupSettings, String> {
+    let settings = AutomaticBackupSettings { enabled };
+    automatic_backup::save_settings(&app_data_dir(&app)?, &settings)?;
+    Ok(settings)
+}
+
+#[tauri::command]
+fn list_automatic_backups(app: tauri::AppHandle) -> Result<Vec<AutomaticBackupEntry>, String> {
+    automatic_backup::list_backups(&app_data_dir(&app)?)
+}
+
+#[tauri::command]
+fn create_automatic_backup(
+    app: tauri::AppHandle,
+    document: Value,
+    source: AutomaticBackupSource,
+) -> Result<AutomaticBackupMutationResult, String> {
+    automatic_backup::create_backup_at(
+        &app_data_dir(&app)?,
+        &document,
+        source,
+        Local::now().fixed_offset(),
+    )
+}
+
+#[tauri::command]
+fn read_automatic_backup(app: tauri::AppHandle, id: String) -> Result<Value, String> {
+    automatic_backup::read_backup(&app_data_dir(&app)?, &id)
 }
 
 #[tauri::command]
@@ -262,11 +315,11 @@ fn cancel_chat_stream(run_id: String) -> Result<bool, String> {
 }
 
 fn studio_data_path(app: &tauri::AppHandle) -> Result<PathBuf, String> {
-    Ok(app
-        .path()
-        .app_data_dir()
-        .map_err(|error| error.to_string())?
-        .join(STUDIO_DATA_FILE_NAME))
+    Ok(app_data_dir(app)?.join(STUDIO_DATA_FILE_NAME))
+}
+
+fn app_data_dir(app: &tauri::AppHandle) -> Result<PathBuf, String> {
+    app.path().app_data_dir().map_err(|error| error.to_string())
 }
 
 fn load_studio_data_from_path(path: &Path) -> Result<Option<Value>, String> {

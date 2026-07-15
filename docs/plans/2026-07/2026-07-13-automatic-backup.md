@@ -28,7 +28,7 @@
 
 ## 状态
 
-- 当前状态：已确认
+- 当前状态：执行中
 - 优先级：P1
 - 创建时间：2026-07-15
 - 最后更新：2026-07-15
@@ -55,7 +55,7 @@
 - Produces commands: `get_automatic_backup_settings`, `set_automatic_backup_enabled`, `list_automatic_backups`, `create_automatic_backup`, `read_automatic_backup`
 - Consumes: raw `serde_json::Value` documents; it does not know `StudioDataDocument` Rust types
 
-- [ ] **Step 1：先写设置、写入、索引和安全读取失败测试**
+- [x] **Step 1：先写设置、写入、索引和安全读取失败测试**
 
 在 `automatic_backup.rs` 的 `#[cfg(test)]` 中先定义固定目录测试，覆盖：
 
@@ -97,13 +97,13 @@ fn backup_id_rejects_path_traversal_and_unknown_files() {
 
 再增加测试：设置 round-trip、损坏设置文件返回错误、`pre-restore` 来源、临时 `.tmp` 文件不进入索引、非受管命名文件被忽略、列表倒序、摘要计数、损坏 JSON 标记为 `corrupted` 且读取失败。
 
-- [ ] **Step 2：运行 Rust 目标测试并确认 RED**
+- [x] **Step 2：运行 Rust 目标测试并确认 RED**
 
 Run: `cd apps/studio/src-tauri && cargo test automatic_backup -- --nocapture`
 
 Expected: FAIL，原因是模块、类型和函数尚不存在。
 
-- [ ] **Step 3：增加 Chrono 直接依赖和原生领域类型**
+- [x] **Step 3：增加 Chrono 直接依赖和原生领域类型**
 
 在 `Cargo.toml` 增加已有 lockfile 可解析的直接依赖：
 
@@ -146,7 +146,7 @@ pub struct AutomaticBackupSummary {
 
 设置缺失返回 `enabled: true`；设置写入使用 `automatic-backup-settings.json.tmp` 加 rename，不把设置放进备份目录或故事文档。
 
-- [ ] **Step 4：实现原子备份、索引、摘要和安全读取**
+- [x] **Step 4：实现原子备份、索引、摘要和安全读取**
 
 核心签名保持：
 
@@ -171,7 +171,7 @@ story-studio-{source}-backup-YYYYMMDDTHHMMSSmmm±HHMM.json
 
 写入 `*.json.tmp` 后 rename；ID 必须等于目录扫描得到的合法文件名，且拒绝 `/`、`\\`、`..`、绝对路径和未知文件。损坏文件从文件名解析来源和创建时间，返回 `status: corrupted`、空 `documentUpdatedAt` 和无 summary，不自动删除。
 
-- [ ] **Step 5：在 `lib.rs` 注册薄 command**
+- [x] **Step 5：在 `lib.rs` 注册薄 command**
 
 加入模块并在 handler 注册五个命令：
 
@@ -202,13 +202,13 @@ fn read_automatic_backup(app: tauri::AppHandle, id: String) -> Result<Value, Str
 
 所有 command 只负责取得 `app_data_dir()` 并调用模块函数。
 
-- [ ] **Step 6：运行目标测试并确认 GREEN**
+- [x] **Step 6：运行目标测试并确认 GREEN**
 
 Run: `cd apps/studio/src-tauri && cargo test automatic_backup -- --nocapture`
 
 Expected: PASS，设置、原子写入、列表、损坏文件和安全 ID 用例全部通过。
 
-- [ ] **Step 7：建议提交检查点**
+- [x] **Step 7：建议提交检查点**
 
 Proposed commit: `feat: 新增 Tauri 自动备份文件服务`
 
@@ -218,7 +218,7 @@ Proposed commit: `feat: 新增 Tauri 自动备份文件服务`
 
 **规模：** M。
 
-**状态：** 已确认。
+**状态：** 已完成。
 
 ---
 
@@ -328,7 +328,7 @@ Proposed commit: `feat: 增加自动备份分层轮换`
 
 **规模：** S。
 
-**状态：** 已确认。
+**状态：** 执行中。
 
 ---
 

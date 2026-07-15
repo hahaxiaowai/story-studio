@@ -2,10 +2,10 @@
 
 ## 状态
 
-- 当前状态：已确认
+- 当前状态：执行中
 - 当前规格：[`docs/specs/2026-07-13-automatic-backup.md`](../docs/specs/2026-07-13-automatic-backup.md)
 - 当前计划：[`docs/plans/2026-07/2026-07-13-automatic-backup.md`](../docs/plans/2026-07/2026-07-13-automatic-backup.md)
-- 当前 Task：Task 1：桌面端可以安全创建、列出和读取受管备份
+- 当前 Task：Task 2：新备份按本机时间自动分层轮换
 - 最后更新：2026-07-15
 
 本文件只指向当前主要任务，不复制 Spec、Plan 或月度 `TODO.md` 的状态。候选任务和并行计划仍以 `docs/plans/YYYY-MM/TODO.md` 为索引，自动化仍从月度索引选择任务。
@@ -14,14 +14,18 @@
 
 ## 当前工作树范围
 
+- `apps/studio/src-tauri/src/automatic_backup.rs`
+- `apps/studio/src-tauri/src/lib.rs`
+- `apps/studio/src-tauri/Cargo.toml`
+- `apps/studio/src-tauri/Cargo.lock`
 - `docs/plans/2026-07/2026-07-13-automatic-backup.md`
 - `docs/plans/2026-07/TODO.md`
 - `tasks/current.md`
 
 ## 最近验证
 
-文档检查：`git diff --check`、计划占位词、代码围栏和相对链接检查通过。
+Task 1：`cargo test automatic_backup -- --nocapture` 10/10 通过；`cargo test` 30/30 通过，存在一个既有 dead-code warning。
 
 ## 下一步唯一动作
 
-提交已确认计划，创建隔离工作树并按 TDD 执行 Task 1。
+按 TDD 完成 Task 2 本机时间分层轮换、清理失败隔离和独立重试命令。
