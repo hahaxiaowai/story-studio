@@ -1,6 +1,7 @@
 use chrono::{DateTime, FixedOffset, SecondsFormat};
 use serde_json::Value;
 use std::{
+    collections::{HashMap, HashSet},
     fs,
     path::{Path, PathBuf},
 };
@@ -54,6 +55,12 @@ pub struct AutomaticBackupEntry {
 #[serde(rename_all = "camelCase")]
 pub struct AutomaticBackupMutationResult {
     pub entry: AutomaticBackupEntry,
+    pub cleanup_warnings: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AutomaticBackupCleanupResult {
     pub cleanup_warnings: Vec<String>,
 }
 
@@ -111,9 +118,16 @@ pub fn create_backup_at(
         .ok_or_else(|| "自动备份文件名无效。".to_string())?;
     let entry = read_backup_entry(&path, id, source, now)?;
 
+    let entries = list_backups(app_data_dir)?;
+    let mut keep_ids = select_backup_ids_to_keep(&entries, now);
+    keep_ids.insert(entry.id.clone());
+    let cleanup_warnings = prune_backups_with(app_data_dir, &entries, &keep_ids, |path| {
+        fs::remove_file(path)
+    });
+
     Ok(AutomaticBackupMutationResult {
         entry,
-        cleanup_warnings: Vec::new(),
+        cleanup_warnings,
     })
 }
 
@@ -162,6 +176,109 @@ pub fn read_backup(app_data_dir: &Path, id: &str) -> Result<Value, String> {
 
 pub fn backup_directory(app_data_dir: &Path) -> PathBuf {
     app_data_dir.join(AUTOMATIC_BACKUP_DIRECTORY_NAME)
+}
+
+pub fn prune_backups_at(
+    app_data_dir: &Path,
+    now: DateTime<FixedOffset>,
+) -> Result<AutomaticBackupCleanupResult, String> {
+    let entries = list_backups(app_data_dir)?;
+    let keep_ids = select_backup_ids_to_keep(&entries, now);
+    let cleanup_warnings = prune_backups_with(app_data_dir, &entries, &keep_ids, |path| {
+        fs::remove_file(path)
+    });
+
+    Ok(AutomaticBackupCleanupResult { cleanup_warnings })
+}
+
+pub fn select_backup_ids_to_keep(
+    entries: &[AutomaticBackupEntry],
+    now: DateTime<FixedOffset>,
+) -> HashSet<String> {
+    let mut keep_ids = HashSet::new();
+    let mut bucket_latest = HashMap::<String, (DateTime<FixedOffset>, String)>::new();
+    let mut global_latest = None::<(DateTime<FixedOffset>, String)>;
+
+    for entry in entries {
+        if entry.status == AutomaticBackupStatus::Corrupted {
+            keep_ids.insert(entry.id.clone());
+            continue;
+        }
+
+        let Ok(created_at) = DateTime::parse_from_rfc3339(&entry.created_at) else {
+            keep_ids.insert(entry.id.clone());
+            continue;
+        };
+        if global_latest.as_ref().is_none_or(|(latest_at, latest_id)| {
+            created_at > *latest_at || (created_at == *latest_at && entry.id > *latest_id)
+        }) {
+            global_latest = Some((created_at, entry.id.clone()));
+        }
+
+        let age = now.signed_duration_since(created_at);
+        let bucket = if age < chrono::Duration::zero() || age <= chrono::Duration::hours(24) {
+            Some(format!("hour:{}", created_at.format("%Y-%m-%d-%H-%z")))
+        } else if age <= chrono::Duration::days(7) {
+            Some(format!("day:{}", created_at.format("%Y-%m-%d")))
+        } else {
+            None
+        };
+
+        if let Some(bucket) = bucket {
+            update_latest(
+                bucket_latest
+                    .entry(bucket)
+                    .or_insert((created_at, entry.id.clone())),
+                created_at,
+                &entry.id,
+            );
+        }
+    }
+
+    keep_ids.extend(bucket_latest.into_values().map(|(_, id)| id));
+    if let Some((_, id)) = global_latest {
+        keep_ids.insert(id);
+    }
+
+    keep_ids
+}
+
+fn update_latest(
+    latest: &mut (DateTime<FixedOffset>, String),
+    created_at: DateTime<FixedOffset>,
+    id: &str,
+) {
+    if created_at > latest.0 || (created_at == latest.0 && id > latest.1.as_str()) {
+        *latest = (created_at, id.to_string());
+    }
+}
+
+fn prune_backups_with<F>(
+    app_data_dir: &Path,
+    entries: &[AutomaticBackupEntry],
+    keep_ids: &HashSet<String>,
+    mut remove_file: F,
+) -> Vec<String>
+where
+    F: FnMut(&Path) -> std::io::Result<()>,
+{
+    let directory = backup_directory(app_data_dir);
+    let mut warnings = Vec::new();
+
+    for entry in entries {
+        if entry.status != AutomaticBackupStatus::Valid
+            || keep_ids.contains(&entry.id)
+            || parse_backup_file_name(&entry.id).is_none()
+        {
+            continue;
+        }
+
+        if let Err(error) = remove_file(&directory.join(&entry.id)) {
+            warnings.push(format!("自动备份 {} 清理失败：{error}", entry.id));
+        }
+    }
+
+    warnings
 }
 
 fn available_backup_path(
@@ -266,7 +383,10 @@ mod tests {
     use super::*;
     use chrono::{DateTime, FixedOffset};
     use serde_json::json;
-    use std::time::{SystemTime, UNIX_EPOCH};
+    use std::{
+        collections::HashSet,
+        time::{SystemTime, UNIX_EPOCH},
+    };
     use std::{fs, path::PathBuf};
 
     #[test]
@@ -361,7 +481,7 @@ mod tests {
         assert_ne!(first.entry.id, third.entry.id);
         assert_eq!(second.entry.source, AutomaticBackupSource::PreRestore);
         assert!(third.entry.id.ends_with("-1.json"));
-        assert_eq!(list_backups(&root).unwrap().len(), 3);
+        assert_eq!(read_backup(&root, &third.entry.id).unwrap(), document);
         let _ = fs::remove_dir_all(root);
     }
 
@@ -434,6 +554,114 @@ mod tests {
         assert!(read_backup(&root, "missing.json").is_err());
     }
 
+    #[test]
+    fn keeps_latest_backup_per_recent_hour() {
+        let entries = entries_at(&[
+            ("10-old", "2026-07-15T10:05:00+08:00"),
+            ("10-new", "2026-07-15T10:55:00+08:00"),
+            ("11-new", "2026-07-15T11:20:00+08:00"),
+        ]);
+
+        let kept = select_backup_ids_to_keep(&entries, parse_time("2026-07-15T12:00:00+08:00"));
+
+        assert!(!kept.contains("10-old"));
+        assert!(kept.contains("10-new"));
+        assert!(kept.contains("11-new"));
+    }
+
+    #[test]
+    fn keeps_latest_backup_per_day_from_second_through_seventh_day() {
+        let entries = entries_at(&[
+            ("day-two-old", "2026-07-13T09:00:00+08:00"),
+            ("day-two-new", "2026-07-13T20:00:00+08:00"),
+            ("day-six", "2026-07-09T08:00:00+08:00"),
+        ]);
+
+        let kept = select_backup_ids_to_keep(&entries, parse_time("2026-07-15T12:00:00+08:00"));
+
+        assert!(!kept.contains("day-two-old"));
+        assert!(kept.contains("day-two-new"));
+        assert!(kept.contains("day-six"));
+    }
+
+    #[test]
+    fn retention_boundaries_include_exactly_24_hours_and_7_days() {
+        let entries = entries_at(&[
+            ("exact-hour", "2026-07-14T12:00:00+08:00"),
+            ("exact-week", "2026-07-08T12:00:00+08:00"),
+            ("older-than-week", "2026-07-08T11:59:59+08:00"),
+            ("global-latest", "2026-07-15T11:00:00+08:00"),
+        ]);
+
+        let kept = select_backup_ids_to_keep(&entries, parse_time("2026-07-15T12:00:00+08:00"));
+
+        assert!(kept.contains("exact-hour"));
+        assert!(kept.contains("exact-week"));
+        assert!(!kept.contains("older-than-week"));
+    }
+
+    #[test]
+    fn retention_buckets_combine_sources_and_protect_corrupted_files() {
+        let mut entries = entries_at(&[
+            ("scheduled-old", "2026-07-15T10:05:00+08:00"),
+            ("pre-restore-new", "2026-07-15T10:55:00+08:00"),
+            ("latest", "2026-07-15T11:20:00+08:00"),
+        ]);
+        entries[1].source = AutomaticBackupSource::PreRestore;
+        entries.push(test_entry(
+            "corrupted-old",
+            "2026-06-01T10:00:00+08:00",
+            AutomaticBackupStatus::Corrupted,
+        ));
+
+        let kept = select_backup_ids_to_keep(&entries, parse_time("2026-07-15T12:00:00+08:00"));
+
+        assert!(!kept.contains("scheduled-old"));
+        assert!(kept.contains("pre-restore-new"));
+        assert!(kept.contains("corrupted-old"));
+    }
+
+    #[test]
+    fn clock_rollback_still_protects_the_global_latest_valid_backup() {
+        let entries = entries_at(&[
+            ("current", "2026-07-15T11:00:00+08:00"),
+            ("future-old", "2026-07-16T10:00:00+08:00"),
+            ("future-latest", "2026-07-16T11:00:00+08:00"),
+        ]);
+
+        let kept = select_backup_ids_to_keep(&entries, parse_time("2026-07-15T12:00:00+08:00"));
+
+        assert!(kept.contains("future-latest"));
+    }
+
+    #[test]
+    fn prune_continues_after_a_delete_failure_and_collects_warning() {
+        let root = test_root("prune-failure");
+        let keep_id = "story-studio-scheduled-backup-20260715T110000000+0800.json";
+        let failing_id = "story-studio-scheduled-backup-20260701T110000000+0800.json";
+        let deleted_id = "story-studio-scheduled-backup-20260702T110000000+0800.json";
+        let entries = entries_at(&[
+            (keep_id, "2026-07-15T11:00:00+08:00"),
+            (failing_id, "2026-07-01T11:00:00+08:00"),
+            (deleted_id, "2026-07-02T11:00:00+08:00"),
+        ]);
+        let keep_ids = HashSet::from([keep_id.to_string()]);
+        let mut removed = Vec::new();
+
+        let warnings = prune_backups_with(&root, &entries, &keep_ids, |path| {
+            let id = path.file_name().unwrap().to_str().unwrap().to_string();
+            if id == failing_id {
+                return Err(std::io::Error::other("permission denied"));
+            }
+            removed.push(id);
+            Ok(())
+        });
+
+        assert_eq!(warnings.len(), 1);
+        assert!(warnings[0].contains(failing_id));
+        assert_eq!(removed, vec![deleted_id]);
+    }
+
     fn test_document(updated_at: &str) -> serde_json::Value {
         json!({
             "schemaVersion": 14,
@@ -443,6 +671,29 @@ mod tests {
             "materials": [{ "id": "material-1" }],
             "assistantChatThreads": [{ "id": "thread-1" }]
         })
+    }
+
+    fn entries_at(values: &[(&str, &str)]) -> Vec<AutomaticBackupEntry> {
+        values
+            .iter()
+            .map(|(id, created_at)| test_entry(id, created_at, AutomaticBackupStatus::Valid))
+            .collect()
+    }
+
+    fn test_entry(
+        id: &str,
+        created_at: &str,
+        status: AutomaticBackupStatus,
+    ) -> AutomaticBackupEntry {
+        AutomaticBackupEntry {
+            id: id.to_string(),
+            source: AutomaticBackupSource::Scheduled,
+            created_at: parse_time(created_at).to_rfc3339_opts(SecondsFormat::Millis, false),
+            document_updated_at: String::new(),
+            byte_size: 0,
+            status,
+            summary: None,
+        }
     }
 
     fn parse_time(value: &str) -> DateTime<FixedOffset> {

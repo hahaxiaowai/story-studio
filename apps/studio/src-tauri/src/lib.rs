@@ -1,8 +1,8 @@
 mod automatic_backup;
 
 use automatic_backup::{
-    AutomaticBackupEntry, AutomaticBackupMutationResult, AutomaticBackupSettings,
-    AutomaticBackupSource,
+    AutomaticBackupCleanupResult, AutomaticBackupEntry, AutomaticBackupMutationResult,
+    AutomaticBackupSettings, AutomaticBackupSource,
 };
 use chrono::Local;
 use serde_json::Value;
@@ -111,6 +111,7 @@ pub fn run() {
             list_automatic_backups,
             create_automatic_backup,
             read_automatic_backup,
+            prune_automatic_backups,
             run_local_terminal_model,
             run_local_terminal_chat_stream,
             cancel_local_terminal_chat_stream,
@@ -170,6 +171,13 @@ fn create_automatic_backup(
 #[tauri::command]
 fn read_automatic_backup(app: tauri::AppHandle, id: String) -> Result<Value, String> {
     automatic_backup::read_backup(&app_data_dir(&app)?, &id)
+}
+
+#[tauri::command]
+fn prune_automatic_backups(
+    app: tauri::AppHandle,
+) -> Result<AutomaticBackupCleanupResult, String> {
+    automatic_backup::prune_backups_at(&app_data_dir(&app)?, Local::now().fixed_offset())
 }
 
 #[tauri::command]

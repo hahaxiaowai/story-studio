@@ -5,7 +5,7 @@
 - 当前状态：执行中
 - 当前规格：[`docs/specs/2026-07-13-automatic-backup.md`](../docs/specs/2026-07-13-automatic-backup.md)
 - 当前计划：[`docs/plans/2026-07/2026-07-13-automatic-backup.md`](../docs/plans/2026-07/2026-07-13-automatic-backup.md)
-- 当前 Task：Task 2：新备份按本机时间自动分层轮换
+- 当前 Task：Task 3：应用运行时自动检查并允许持久开关
 - 最后更新：2026-07-15
 
 本文件只指向当前主要任务，不复制 Spec、Plan 或月度 `TODO.md` 的状态。候选任务和并行计划仍以 `docs/plans/YYYY-MM/TODO.md` 为索引，自动化仍从月度索引选择任务。
@@ -24,8 +24,8 @@
 
 ## 最近验证
 
-Task 1：`cargo test automatic_backup -- --nocapture` 10/10 通过；`cargo test` 30/30 通过，存在一个既有 dead-code warning。
+Task 2：`cargo test automatic_backup -- --nocapture` 16/16 通过；`cargo test` 36/36 通过，存在一个既有 dead-code warning。
 
 ## 下一步唯一动作
 
-按 TDD 完成 Task 2 本机时间分层轮换、清理失败隔离和独立重试命令。
+按 TDD 完成 Task 3 Tauri client、10 分钟互斥调度、相同版本跳过和持久开关。

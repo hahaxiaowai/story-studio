@@ -240,7 +240,7 @@ Proposed commit: `feat: 新增 Tauri 自动备份文件服务`
 - Produces: `AutomaticBackupCleanupResult { cleanup_warnings }`
 - Updates: `AutomaticBackupMutationResult { entry, cleanup_warnings }`
 
-- [ ] **Step 1：先写时间桶和失败隔离测试**
+- [x] **Step 1：先写时间桶和失败隔离测试**
 
 构造固定 `+08:00` 时间 `2026-07-15T12:00:00+08:00`，增加：
 
@@ -263,13 +263,13 @@ fn keeps_latest_backup_per_recent_hour() {
 
 另写用例覆盖：第 2～7 天自然日桶、恰好 24 小时和 7 天边界、超过 7 天、两种来源同桶、全局最新时间回拨兜底、损坏项始终保留、一个 remove 失败后其他旧文件仍被删除且 warning 被收集。
 
-- [ ] **Step 2：运行 Rust 目标测试并确认 RED**
+- [x] **Step 2：运行 Rust 目标测试并确认 RED**
 
 Run: `cd apps/studio/src-tauri && cargo test automatic_backup::tests::keeps_latest_backup_per_recent_hour -- --exact`
 
 Expected: FAIL，轮换选择函数尚不存在。
 
-- [ ] **Step 3：实现纯时间桶选择**
+- [x] **Step 3：实现纯时间桶选择**
 
 使用 `DateTime<FixedOffset>` 和备份创建时间；算法顺序固定：
 
@@ -288,7 +288,7 @@ pub fn select_backup_ids_to_keep(
 
 负 age 视为系统时间回拨，不进入过期删除，并由小时桶与全局最新兜底保留。
 
-- [ ] **Step 4：实现删除失败隔离并接入创建流程**
+- [x] **Step 4：实现删除失败隔离并接入创建流程**
 
 ```rust
 fn prune_backups_with<F>(
@@ -314,13 +314,13 @@ fn prune_automatic_backups(
 
 该命令重新扫描当前索引并运行同一轮换函数，使文档没有变化的后续检查也能重试上次删除失败项。
 
-- [ ] **Step 5：运行全部原生自动备份测试并确认 GREEN**
+- [x] **Step 5：运行全部原生自动备份测试并确认 GREEN**
 
 Run: `cd apps/studio/src-tauri && cargo test automatic_backup -- --nocapture`
 
 Expected: PASS，所有轮换边界和失败隔离用例通过。
 
-- [ ] **Step 6：建议提交检查点**
+- [x] **Step 6：建议提交检查点**
 
 Proposed commit: `feat: 增加自动备份分层轮换`
 
@@ -328,7 +328,7 @@ Proposed commit: `feat: 增加自动备份分层轮换`
 
 **规模：** S。
 
-**状态：** 执行中。
+**状态：** 已完成。
 
 ---
 
@@ -510,7 +510,7 @@ Proposed commit: `feat: 接入桌面自动备份调度`
 
 **规模：** M。
 
-**状态：** 已确认。
+**状态：** 执行中。
 
 ---
 

@@ -8,7 +8,7 @@
 
 | 任务 | 状态 | 优先级 | 计划文件 | 最后更新 | 下一步 |
 | --- | --- | --- | --- | --- | --- |
-| Tauri 自动备份 | 执行中 | P1 | [2026-07-13-automatic-backup.md](./2026-07-13-automatic-backup.md) | 2026-07-15 | 按 TDD 执行 Task 2 自动备份分层轮换 |
+| Tauri 自动备份 | 执行中 | P1 | [2026-07-13-automatic-backup.md](./2026-07-13-automatic-backup.md) | 2026-07-15 | 按 TDD 执行 Task 3 桌面自动备份调度与开关 |
 
 ## 已完成记录
 
