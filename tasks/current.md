@@ -5,7 +5,7 @@
 - 当前状态：执行中
 - 当前规格：[`docs/specs/2026-07-13-automatic-backup.md`](../docs/specs/2026-07-13-automatic-backup.md)
 - 当前计划：[`docs/plans/2026-07/2026-07-13-automatic-backup.md`](../docs/plans/2026-07/2026-07-13-automatic-backup.md)
-- 当前 Task：Task 3：应用运行时自动检查并允许持久开关
+- 当前 Task：Task 4：用户可以在现有对话框查看并保护性恢复自动备份
 - 最后更新：2026-07-15
 
 本文件只指向当前主要任务，不复制 Spec、Plan 或月度 `TODO.md` 的状态。候选任务和并行计划仍以 `docs/plans/YYYY-MM/TODO.md` 为索引，自动化仍从月度索引选择任务。
@@ -18,14 +18,18 @@
 - `apps/studio/src-tauri/src/lib.rs`
 - `apps/studio/src-tauri/Cargo.toml`
 - `apps/studio/src-tauri/Cargo.lock`
+- `apps/studio/src/modules/storage/automaticBackup.ts`
+- `apps/studio/src/modules/storage/tauriAutomaticBackup.ts`
+- `apps/studio/src/modules/storage/useAutomaticBackup.ts`
+- `apps/studio/src/App.vue`
 - `docs/plans/2026-07/2026-07-13-automatic-backup.md`
 - `docs/plans/2026-07/TODO.md`
 - `tasks/current.md`
 
 ## 最近验证
 
-Task 2：`cargo test automatic_backup -- --nocapture` 16/16 通过；`cargo test` 36/36 通过，存在一个既有 dead-code warning。
+Task 3：目标前端测试 12/12 通过；Studio 全量测试 52 文件、284 测试通过；Studio 类型检查及新增 TypeScript 文件 ESLint 通过。
 
 ## 下一步唯一动作
 
-按 TDD 完成 Task 3 Tauri client、10 分钟互斥调度、相同版本跳过和持久开关。
+按 TDD 完成 Task 4 自动备份面板、损坏项禁用和恢复前保护备份。

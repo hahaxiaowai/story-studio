@@ -353,7 +353,7 @@ Proposed commit: `feat: 增加自动备份分层轮换`
 - Produces `createAutomaticBackupController(input)` for isolated tests
 - Produces singleton `useAutomaticBackup()` for App and dialog
 
-- [ ] **Step 1：定义前端类型和纯判断失败测试**
+- [x] **Step 1：定义前端类型和纯判断失败测试**
 
 在 `automaticBackup.test.ts` 覆盖：
 
@@ -366,7 +366,7 @@ it('detects an existing valid backup for the current document version', () => {
 
 `corrupted` 项和空 `documentUpdatedAt` 不得命中；列表帮助函数按 `createdAt` 倒序；最近成功时间只取 `valid` 项。
 
-- [ ] **Step 2：实现领域类型和纯函数并确认 GREEN**
+- [x] **Step 2：实现领域类型和纯函数并确认 GREEN**
 
 `automaticBackup.ts` 定义：
 
@@ -405,7 +405,7 @@ Run: `pnpm --filter @story-studio/studio test src/modules/storage/automaticBacku
 
 Expected: PASS。
 
-- [ ] **Step 3：先写 Tauri client 参数失败测试**
+- [x] **Step 3：先写 Tauri client 参数失败测试**
 
 在 `tauriAutomaticBackup.test.ts` 用注入 `invoke` 断言：
 
@@ -419,7 +419,7 @@ expect(invoke).toHaveBeenCalledWith('set_automatic_backup_enabled', { enabled: f
 expect(invoke).toHaveBeenCalledWith('prune_automatic_backups')
 ```
 
-- [ ] **Step 4：实现 `AutomaticBackupClient` 并确认 GREEN**
+- [x] **Step 4：实现 `AutomaticBackupClient` 并确认 GREEN**
 
 ```ts
 export interface AutomaticBackupClient {
@@ -440,7 +440,7 @@ Run: `pnpm --filter @story-studio/studio test src/modules/storage/tauriAutomatic
 
 Expected: PASS。
 
-- [ ] **Step 5：先写控制器调度失败测试**
+- [x] **Step 5：先写控制器调度失败测试**
 
 使用 fake timers 和可控 Promise 覆盖：
 
@@ -457,7 +457,7 @@ it('checks immediately after data is ready and every ten minutes', async () => {
 
 另覆盖：Web `isTauri: false` 零调用；关闭开关停止 interval；重开立即检查；相同 `updatedAt` 跳过 create 但仍调用 prune；变化后传 plain JSON 创建 `scheduled`；并发调用只执行一次；设置读取失败时不创建备份；检查失败设置 error 后下一轮清除或更新；清理 warnings 进入可见状态；stop 清理 interval。
 
-- [ ] **Step 6：实现控制器和 singleton composable**
+- [x] **Step 6：实现控制器和 singleton composable**
 
 ```ts
 export interface AutomaticBackupController {
@@ -480,7 +480,7 @@ export interface AutomaticBackupController {
 
 `checkNow()` 在 `try/finally` 中维护互斥；创建前使用 JSON round-trip 去除 Vue proxy。版本已存在时调用独立 `prune()` 重试清理；创建成功时使用 create result 中的 warnings。`createProtection()` 创建 `pre-restore` 后刷新列表并保存 cleanup warnings。`start()` 等待 `studioData.ready` 后读取设置，关闭则只刷新列表；开启则立即检查并建立 interval。设置读取失败时记录错误且不建立自动写入任务，直到用户成功保存合法开关设置。
 
-- [ ] **Step 7：在 App 生命周期启动一次控制器**
+- [x] **Step 7：在 App 生命周期启动一次控制器**
 
 `App.vue` 接线：
 
@@ -496,13 +496,13 @@ onUnmounted(() => automaticBackup.stop())
 
 不得在 `DataBackupDialog` 打开/关闭时启动或停止调度。
 
-- [ ] **Step 8：运行前端目标测试并确认 GREEN**
+- [x] **Step 8：运行前端目标测试并确认 GREEN**
 
 Run: `pnpm --filter @story-studio/studio test src/modules/storage/automaticBackup.test.ts src/modules/storage/tauriAutomaticBackup.test.ts src/modules/storage/useAutomaticBackup.test.ts`
 
 Expected: PASS，调度、互斥、开关、重试和 Web 隔离全部通过。
 
-- [ ] **Step 9：建议提交检查点**
+- [x] **Step 9：建议提交检查点**
 
 Proposed commit: `feat: 接入桌面自动备份调度`
 
@@ -510,7 +510,7 @@ Proposed commit: `feat: 接入桌面自动备份调度`
 
 **规模：** M。
 
-**状态：** 执行中。
+**状态：** 已完成。
 
 ---
 
@@ -613,7 +613,7 @@ Proposed commit: `feat: 增加自动备份查看与恢复`
 
 **规模：** M。
 
-**状态：** 已确认。
+**状态：** 执行中。
 
 ---
 
