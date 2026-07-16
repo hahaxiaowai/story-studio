@@ -29,7 +29,9 @@ function formatSize(value: number): string {
 <template>
   <section class="border-border/70 grid gap-3 rounded-lg border p-4">
     <div class="flex items-center justify-between gap-3">
-      <h3 class="text-sm font-semibold">{{ t('backup.automatic.title') }}（{{ automaticBackup.entries.value.length }}）</h3>
+      <h3 class="text-sm font-semibold">
+        {{ t('backup.automatic.title') }}（{{ automaticBackup.entries.value.length }}）
+      </h3>
       <Button type="button" variant="outline" :aria-pressed="automaticBackup.settings.value.enabled" @click="automaticBackup.setEnabled(!automaticBackup.settings.value.enabled)">
         {{ automaticBackup.settings.value.enabled ? t('backup.automatic.enabled') : t('backup.automatic.disabled') }}
       </Button>
@@ -42,8 +44,12 @@ function formatSize(value: number): string {
     <Button type="button" variant="outline" :disabled="automaticBackup.isChecking.value" @click="automaticBackup.refresh">
       {{ t('backup.automatic.refresh') }}
     </Button>
-    <p v-if="automaticBackup.error.value" class="text-destructive text-xs">{{ automaticBackup.error.value.message }}</p>
-    <p v-for="warning in automaticBackup.cleanupWarnings.value" :key="warning" class="text-amber-700 text-xs">{{ t('backup.automatic.cleanupWarning') }}：{{ warning }}</p>
+    <p v-if="automaticBackup.error.value" class="text-destructive text-xs">
+      {{ automaticBackup.error.value.message }}
+    </p>
+    <p v-for="warning in automaticBackup.cleanupWarnings.value" :key="warning" class="text-amber-700 text-xs">
+      {{ t('backup.automatic.cleanupWarning') }}：{{ warning }}
+    </p>
     <div v-for="entry in automaticBackup.entries.value" :key="entry.id" class="bg-muted/50 grid gap-1 rounded-md p-3 text-xs">
       <strong>{{ t(entry.source === 'scheduled' ? 'backup.automatic.scheduled' : 'backup.automatic.preRestore') }}</strong>
       <span>{{ formatDate(entry.createdAt) }} · {{ formatSize(entry.byteSize) }}</span>
