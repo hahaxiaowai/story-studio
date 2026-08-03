@@ -17,7 +17,7 @@ AI 在处理 Story Studio 任务时，优先按下面顺序建立上下文：
 
 - 先确认任务属于 docs-only、代码修复、功能新增还是架构调整。
 - 需求模糊时按 `docs/ai/requirements-dialogue.md` 逐轮澄清，用户确认 Spec 前不进入 Plan。
-- 非平凡功能变更先写 Spec，再拆计划，最后实现。
+- 先按 XS / S / M / L 判断风险；XS/S 可以使用 Micro Spec，M/L 或高风险边界先写 Spec，再拆计划。
 - 已有功能变更先读取对应 feature doc；没有 feature doc 时，按当前代码补一个最小文档。
 - 真实代码或行为改动优先采用 TDD，先写能失败的测试，再实现。
 - Bug 修复先捕获原始症状；无法自动化时记录稳定人工路径和风险。
@@ -35,11 +35,11 @@ AI 在处理 Story Studio 任务时，优先按下面顺序建立上下文：
 一次完整变更按 `DEFINE → PLAN → BUILD → VERIFY → REVIEW → SHIP` 收束：
 
 1. DEFINE：Spec 定义事实、目标、范围、非目标、异常场景、验收示例和验证方式；未确认前不进入 PLAN。
-2. PLAN：从已确认 Spec 拆出垂直任务，记录验收、验证、依赖、规模和预计影响文件；人工确认前不进入 BUILD。
+2. PLAN：从已确认 Spec 拆出垂直任务，记录结果契约、验收、验证、依赖、风险和预计影响模块；人工确认前不进入 BUILD。
 3. BUILD：一次只执行一个已确认 Task；行为变更使用 Red → Green → Refactor，不扩大 Spec 范围。
 4. VERIFY：先运行目标测试，再按风险扩展验证，记录命令、退出码、测试数量、警告和未覆盖风险。
 5. REVIEW：核对规格符合度、异常路径、测试、安全、性能、复杂度和文档同步；发现问题返回 BUILD。
-6. SHIP：回填 Spec/Plan，更新月度 TODO 和必要长期文档，恢复 current 与使用过的 handoff 空闲模板。
+6. SHIP：回填 Spec/Plan，更新月度 TODO 和必要长期文档，恢复 current 与使用过的 handoff 空闲模板，并运行 `pnpm run sdd:check`。
 
 Plan 状态与阶段 gate 的关系：
 
@@ -49,14 +49,39 @@ Plan 状态与阶段 gate 的关系：
 - 已完成：实现、验证和必要文档回填已完成。
 - 暂缓：暂不继续推进，需要说明原因和恢复条件。
 
+新式 Plan 还允许 `待验证` 和 `待评审`，分别表示实现已完成但验证或规格评审尚未闭合。
+
 如果执行中发现范围变化、数据模型变化、架构边界变化或验收标准变化，先更新 Spec 和 Plan，再继续实现。
 
 ## 活动任务入口
 
 - `tasks/current.md` 只指向当前主要 Spec、Plan 和 Task，不复制正文或替代月度索引。
+- 新建或迁移后的 Plan 使用 frontmatter 保存状态权威；`tasks/current.md` 和 `docs/plans/YYYY-MM/TODO.md` 是可校验投影。
 - `docs/plans/YYYY-MM/TODO.md` 继续承担多任务索引和自动化调度职责。
 - 暂停或跨会话时填写 `tasks/handoff.md`；继续执行后更新或清空过期交接内容。
 - SHIP 后 current 和使用过的 handoff 必须恢复空闲模板，完成证据保留在 Spec/Plan。
+
+## Plan 元数据
+
+新式 Plan 顶部使用最小 frontmatter：
+
+```yaml
+---
+sdd: true
+id: 2026-08-03-example
+status: 执行中
+risk: M
+spec: docs/specs/2026-08-03-example.md
+updated: 2026-08-03
+feature: updated
+architecture: not-needed
+test-map: updated
+adr: not-needed
+evidence: pending
+---
+```
+
+`status` 是权威状态；TODO/current 必须与之匹配。计划标记 `已完成` 时，四项文档同步决策只能是 `updated` 或 `not-needed`，`evidence` 必须为 `recorded`。
 
 ## Bug 门禁
 
@@ -82,6 +107,7 @@ VERIFY 完成后先按 Spec 逐项评审，再根据影响范围同步文档：
 - 长期架构决策变化：新增或更新 `docs/adr/*.md`。
 - 计划状态变化：更新对应 `docs/plans/YYYY-MM/*.md`。
 - 任务状态变化：同步月度 `TODO.md`；SHIP 后恢复活动任务模板。
+- 新式 Plan：运行 `pnpm run sdd:check`，不通过时不得标记完成。
 
 代码或配置变更后按 `AGENTS.md` 的验证要求运行命令。docs-only 改动使用结构、链接、路径、占位词、whitespace 和职责场景检查。
 

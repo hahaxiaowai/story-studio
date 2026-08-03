@@ -6,6 +6,16 @@
 
 目标测试文件可参考 `docs/ai/test-map.md`。
 
+## SDD 流程或模板改动
+
+```bash
+pnpm run sdd:test
+pnpm run sdd:check
+git diff --check
+```
+
+`sdd:test` 验证检查器自身；`sdd:check` 验证所有带 `sdd: true` 的 Plan、对应月度 TODO、活动任务指针、完成证据和相对链接。历史 Plan 不强制一次性迁移。
+
 ## docs-only
 
 适用范围：

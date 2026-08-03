@@ -38,6 +38,10 @@
 - `apps/studio/src/modules/storage/useStudioData.test.ts`
 - `apps/studio/src/modules/storage/indexedDb.test.ts`
 - `apps/studio/src/modules/storage/tauri.test.ts`
+- `apps/studio/src/modules/storage/automaticBackup.test.ts`
+- `apps/studio/src/modules/storage/tauriAutomaticBackup.test.ts`
+- `apps/studio/src/modules/storage/useAutomaticBackup.test.ts`
+- `apps/studio/src/components/AutomaticBackupPanel.test.ts`
 - `apps/studio/src/components/DataBackupDialog.test.ts`
 - `apps/studio/src/modules/integrity/integrity.test.ts`
 - `apps/studio/src/modules/integrity/useWorkspaceIntegrity.test.ts`

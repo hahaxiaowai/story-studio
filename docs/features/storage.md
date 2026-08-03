@@ -28,6 +28,17 @@ Story Studio 使用单一 `StudioDataDocument` 保存工作区、故事内容、
 6. 用户明确确认后，`replaceDocument()` 整体替换文档并立即持久化。
 7. 持久化失败时恢复导入前的内存快照并展示错误。
 
+## Tauri 自动备份
+
+- 仅 Tauri 桌面运行时启用；Web 端继续只提供手动导出和文件恢复。
+- 文档加载完成后立即检查，之后每 10 分钟检查一次；相同 `updatedAt` 的有效版本不会重复写入。
+- 设备级开关默认开启，保存在应用数据目录，不进入 `StudioDataDocument`。
+- 原生层把完整 JSON 原子写入 `app_data_dir/automatic-backups/`，前端只使用不透明备份 ID。
+- 最近 24 小时按自然小时保留最新一份，第 2～7 天按自然日保留最新一份；全局最新有效项和损坏文件始终保留。
+- 备份对话框展示定时备份、恢复前保护备份、运行状态和损坏项；损坏项不能恢复。
+- 恢复自动备份前先创建 `pre-restore` 保护备份；保护失败时不调用 `replaceDocument()`。
+- 自动备份错误不阻断主数据保存、手动导出或手动文件恢复。
+
 ## 关键文件
 
 - `apps/studio/src/modules/storage/useStudioData.ts`
@@ -37,6 +48,10 @@ Story Studio 使用单一 `StudioDataDocument` 保存工作区、故事内容、
 - `apps/studio/src/modules/storage/backupFile.ts`
 - `apps/studio/src/modules/storage/indexedDb.ts`
 - `apps/studio/src/modules/storage/tauri.ts`
+- `apps/studio/src/modules/storage/automaticBackup.ts`
+- `apps/studio/src/modules/storage/tauriAutomaticBackup.ts`
+- `apps/studio/src/modules/storage/useAutomaticBackup.ts`
+- `apps/studio/src/components/AutomaticBackupPanel.vue`
 - `apps/studio/src/components/DataBackupDialog.vue`
 - `apps/studio/src/components/AppHeaderActions.vue`
 - `apps/studio/src-tauri/src/lib.rs`
@@ -70,7 +85,8 @@ Story Studio 使用单一 `StudioDataDocument` 保存工作区、故事内容、
 - 迁移后的文档仍需通过完整顶层结构检查，伪造或残缺 JSON 不可进入恢复流程。
 - 备份是未加密 JSON，可能包含 API Key；用户需要把文件保存在可信位置。
 - 完整 JSON 备份会包含章节 AI 修改历史；schema 13 备份导入时自动迁移到 schema 14。
-- 当前只支持手动完整备份，不包含自动备份、版本历史、局部合并或发布格式导出。
+- Web 当前只支持手动完整备份；Tauri 额外支持受管自动备份。两端都不包含通用版本历史、局部合并或发布格式导出。
+- 自动备份不在应用退出后运行，不包含 Web 快照、云同步、压缩、加密、永久保留或单条删除。
 
 ## 验证入口
 
@@ -80,4 +96,9 @@ Story Studio 使用单一 `StudioDataDocument` 保存工作区、故事内容、
 - `apps/studio/src/modules/storage/backupFile.test.ts`
 - `apps/studio/src/modules/storage/indexedDb.test.ts`
 - `apps/studio/src/modules/storage/tauri.test.ts`
+- `apps/studio/src/modules/storage/automaticBackup.test.ts`
+- `apps/studio/src/modules/storage/tauriAutomaticBackup.test.ts`
+- `apps/studio/src/modules/storage/useAutomaticBackup.test.ts`
+- `apps/studio/src/components/AutomaticBackupPanel.test.ts`
 - `apps/studio/src/components/DataBackupDialog.test.ts`
+- `apps/studio/src-tauri/src/automatic_backup.rs` 中的 Rust 单元测试

@@ -9,6 +9,8 @@
     "dev": "turbo run dev",
     "lint": "turbo run lint",
     "prepare": "simple-git-hooks",
+    "sdd:check": "node scripts/check-sdd.mjs",
+    "sdd:test": "vitest run scripts/check-sdd.test.mjs",
     "tauri:dev": "pnpm --filter @story-studio/studio tauri:dev",
     "test": "turbo run test",
     "typecheck": "turbo run typecheck",

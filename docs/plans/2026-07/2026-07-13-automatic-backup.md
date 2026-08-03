@@ -1,6 +1,18 @@
-# Tauri 自动备份实施计划
+---
+sdd: true
+id: 2026-07-13-automatic-backup
+status: 暂缓
+risk: L
+spec: docs/specs/2026-07-13-automatic-backup.md
+updated: 2026-08-03
+feature: updated
+architecture: updated
+test-map: updated
+adr: not-needed
+evidence: partial
+---
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use `superpowers:subagent-driven-development` or `superpowers:executing-plans` to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking. 当前仓库默认使用 `superpowers:executing-plans`；只有用户明确要求子代理时才使用 subagent-driven-development。
+# Tauri 自动备份实施计划
 
 **Goal:** 在 Tauri 桌面端提供默认开启、每 10 分钟检查、分层轮换、可查看并保护性恢复的完整文档自动备份，同时保持 Web 手动备份行为不变。
 
@@ -28,10 +40,10 @@
 
 ## 状态
 
-- 当前状态：执行中
+- 当前状态：暂缓
 - 优先级：P1
 - 创建时间：2026-07-15
-- 最后更新：2026-07-15
+- 最后更新：2026-08-03
 
 ---
 
@@ -707,7 +719,7 @@ Proposed commit: `docs: 完成 Tauri 自动备份收口`
 
 **规模：** S。
 
-**状态：** 执行中。
+**状态：** 暂缓，等待剩余真实桌面验收。
 
 ---
 
@@ -757,9 +769,10 @@ Proposed commit: `docs: 完成 Tauri 自动备份收口`
 
 ## 完成记录
 
-- 完成时间：未完成。
-- 验证结果：尚未执行实现验证。
-- 评审结果：尚未进入 REVIEW。
-- commit：尚未提交计划或实现。
-- 未覆盖风险：以来源规格为准，实施中新增风险必须先回填。
-- 后续事项：计划确认后进入隔离工作树执行 Task 1。
+- 完成时间：未完成；2026-08-03 完成自动化验证和部分真实桌面验证。
+- 验证结果：目标 Vitest 6 文件、22 项通过；自动备份 Rust 16 项通过；Studio 全量 53 文件、286 项通过；Rust 全量 36 项在沙箱外通过；lint、typecheck、build 通过。构建保留 VueUse PURE 注释、Tauri core 混合导入和大 chunk 既有警告；Rust 保留 1 个既有 dead-code warning。
+- 真实运行：Tauri 首次启动后在 `app_data_dir/automatic-backups/` 创建 1 份 `scheduled` 备份；关闭并重新启动后，相同 `updatedAt` 仍只有 1 份文件，未重复写入。
+- 评审结果：代码和自动化覆盖路径穿越、时间桶、损坏文件、删除失败、并发检查、Web 零副作用和保护失败；完整真实桌面交互尚未闭合。
+- commit：实现已在 `5d4c688`、`103f5b8`、`03e18d4`、`71a8550`、`7433434` 中进入 `main` 和 `origin/main`；本次收口尚未提交。
+- 未覆盖风险：未在用户真实数据上演练开关持久化、损坏项 UI、保护恢复、保护写入失败和多时间文件轮换；不能声称完整桌面验收通过。
+- 后续事项：在隔离测试数据目录或专用测试工作区完成剩余真实桌面流程后，再把本计划标记为已完成。

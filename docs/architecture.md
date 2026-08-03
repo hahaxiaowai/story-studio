@@ -48,6 +48,7 @@ Story Studio 是一个本地优先的故事创作桌面应用。当前仓库是 
 - Web 环境使用 IndexedDB 驱动。
 - Tauri 环境通过 `apps/studio/src/modules/storage/tauri.ts` 调用 Rust 命令读写本地数据文件。
 - `apps/studio/src/modules/storage/document.ts` 负责创建默认文档、迁移历史文档、合并旧偏好和规范化数据。
+- Tauri 自动备份保持独立边界：前端 `useAutomaticBackup.ts` 负责调度和运行状态，`tauriAutomaticBackup.ts` 封装命令，Rust `automatic_backup.rs` 负责受管文件、设置、安全读取和轮换；它不扩展主存储驱动。
 
 所有业务模块都应通过 `useStudioData().updateDocument()` 写入文档，避免绕过 schema 迁移和统一保存流程。
 
