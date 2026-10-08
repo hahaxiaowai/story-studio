@@ -1,10 +1,10 @@
 ---
 sdd: true
 id: 2026-07-13-automatic-backup
-status: 暂缓
+status: 执行中
 risk: L
 spec: docs/specs/2026-07-13-automatic-backup.md
-updated: 2026-08-03
+updated: 2026-08-31
 feature: updated
 architecture: updated
 test-map: updated
@@ -40,10 +40,10 @@ evidence: partial
 
 ## 状态
 
-- 当前状态：暂缓
+- 当前状态：执行中
 - 优先级：P1
 - 创建时间：2026-07-15
-- 最后更新：2026-08-03
+- 最后更新：2026-08-31
 
 ---
 

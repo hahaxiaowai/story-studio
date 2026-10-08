@@ -1,0 +1,86 @@
+- generic [ref=e3]:
+  - generic [ref=e6]:
+    - list [ref=e8]:
+      - listitem [ref=e9]:
+        - button "魔兽世界 工作区" [ref=e10]:
+          - generic [ref=e14]:
+            - generic [ref=e15]: 魔兽世界
+            - generic [ref=e16]: 工作区
+    - generic [ref=e20]:
+      - generic [ref=e21]:
+        - generic [ref=e22]: 当前工作区
+        - list [ref=e23]:
+          - listitem [ref=e24]:
+            - link "大纲" [ref=e25] [cursor=pointer]:
+              - /url: "#outline"
+          - listitem [ref=e29]:
+            - button "人物" [ref=e30]
+          - listitem [ref=e39]:
+            - button "世界" [ref=e40]
+          - listitem [ref=e46]:
+            - button "内容" [expanded] [ref=e47]
+            - list [ref=e54]:
+              - listitem [ref=e55]:
+                - link "正文" [ref=e56] [cursor=pointer]:
+                  - /url: "#manuscript"
+              - listitem [ref=e58]:
+                - link "章节" [ref=e59] [cursor=pointer]:
+                  - /url: "#manuscript"
+          - listitem [ref=e61]:
+            - link "数据检查" [ref=e62] [cursor=pointer]:
+              - /url: "#integrity"
+      - generic [ref=e67]:
+        - generic [ref=e68]: 公共功能
+        - list [ref=e69]:
+          - listitem [ref=e70]:
+            - link "素材" [ref=e71] [cursor=pointer]:
+              - /url: "#materials"
+          - listitem [ref=e75]:
+            - link "AI 对话" [ref=e76] [cursor=pointer]:
+              - /url: "#assistant-chat"
+          - listitem [ref=e80]:
+            - link "AI 设置" [ref=e81] [cursor=pointer]:
+              - /url: "#assistant"
+    - list [ref=e87]:
+      - listitem [ref=e88]:
+        - button "SS 写作者 本地工作区" [ref=e89]:
+          - generic [ref=e90]: SS
+          - generic [ref=e92]:
+            - generic [ref=e93]: 写作者
+            - generic [ref=e94]: 本地工作区
+    - button "Toggle Sidebar" [ref=e98]
+  - main [ref=e99]:
+    - generic [ref=e100]:
+      - generic [ref=e101]:
+        - button "Toggle Sidebar" [ref=e102]
+        - navigation "breadcrumb" [ref=e104]:
+          - list [ref=e105]:
+            - listitem [ref=e106]:
+              - link "魔兽世界" [ref=e107] [cursor=pointer]:
+                - /url: "#manuscript"
+            - listitem [ref=e108]
+            - listitem [ref=e111]:
+              - link "内容" [disabled] [ref=e112]
+      - generic [ref=e113]:
+        - button "数据备份" [ref=e114]
+        - button "切换到深色模式" [ref=e116]
+        - button "语言" [ref=e118]:
+          - generic [ref=e119]: 中文
+    - main "Story Studio 工作区" [ref=e121]:
+      - generic [ref=e122]:
+        - generic [ref=e123]:
+          - generic [ref=e124]:
+            - paragraph [ref=e125]: markdown
+            - heading "正文" [level=1] [ref=e126]
+          - button "新建章节" [ref=e127]
+        - generic [ref=e128]:
+          - complementary [ref=e129]:
+            - generic [ref=e130]:
+              - generic [ref=e131]:
+                - heading "章节列表" [level=2] [ref=e132]
+                - generic [ref=e133]: 0 / 0
+              - searchbox "搜索卷、章或正文" [ref=e134]
+            - generic [ref=e135]: 还没有正文
+          - generic [ref=e138]:
+            - paragraph [ref=e139]: 还没有正文
+            - button "新建章节" [ref=e140]
